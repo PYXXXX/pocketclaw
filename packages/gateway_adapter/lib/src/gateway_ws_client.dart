@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'connectable_gateway_client.dart';
 import 'gateway_connection_config.dart';
+import 'gateway_device_token.dart';
 import 'gateway_request_error.dart';
 
 typedef WebSocketChannelFactory = WebSocketChannel Function(Uri uri);
@@ -170,21 +171,43 @@ final class GatewayWsClient implements ConnectableGatewayClient {
       var connectRequest = config.connectRequest;
       final challenge = _lastChallenge;
       final deviceAuthProvider = config.deviceAuthProvider;
+
+      Map<String, Object?>? device;
       if (challenge != null && deviceAuthProvider != null) {
-        final device = await deviceAuthProvider.buildDeviceAuth(
+        device = await deviceAuthProvider.buildDeviceAuth(
           challenge: challenge,
           connectRequest: connectRequest,
         );
+      }
+
+      final deviceId = device?['id'] as String?;
+      if (deviceId != null && config.deviceTokenStore != null) {
+        final stored = await config.deviceTokenStore!.read(
+          deviceId: deviceId,
+          role: connectRequest.role,
+        );
+        if (stored != null) {
+          final auth = <String, Object?>{
+            ...?connectRequest.auth,
+            'deviceToken': stored.token,
+          };
+          connectRequest = connectRequest.copyWith(auth: auth);
+        }
+      }
+
+      if (device != null) {
         connectRequest = connectRequest.copyWith(device: device);
       }
 
-      await request(
+      final response = await request(
         GatewayRequest(
           id: _nextRequestId('connect'),
           method: 'connect',
           params: connectRequest.toParams(),
         ),
       );
+
+      await _persistDeviceTokenIfPresent(response.payload, deviceId, connectRequest.role);
 
       _connectTimeoutTimer?.cancel();
       _connectTimeoutTimer = null;
@@ -208,6 +231,47 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         _connectCompleter?.completeError(error);
       }
     }
+  }
+
+  Future<void> _persistDeviceTokenIfPresent(
+    Map<String, Object?>? payload,
+    String? deviceId,
+    String requestedRole,
+  ) async {
+    final store = config.deviceTokenStore;
+    if (store == null || payload == null || deviceId == null) {
+      return;
+    }
+
+    final auth = payload['auth'];
+    if (auth is! Map<String, Object?>) {
+      return;
+    }
+
+    final deviceToken = auth['deviceToken'];
+    if (deviceToken is! String || deviceToken.isEmpty) {
+      return;
+    }
+
+    final role = auth['role'] as String? ?? requestedRole;
+    final scopes = <String>[];
+    final rawScopes = auth['scopes'];
+    if (rawScopes is List<Object?>) {
+      for (final item in rawScopes) {
+        if (item is String) {
+          scopes.add(item);
+        }
+      }
+    }
+
+    await store.write(
+      GatewayDeviceToken(
+        deviceId: deviceId,
+        role: role,
+        token: deviceToken,
+        scopes: scopes,
+      ),
+    );
   }
 
   void _handleResponse(GatewayResponse response) {

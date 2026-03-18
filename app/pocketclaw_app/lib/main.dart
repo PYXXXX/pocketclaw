@@ -42,6 +42,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       const GatewayConnectRequestFactory();
   final MemoryGatewayDeviceIdentityStore _deviceIdentityStore =
       MemoryGatewayDeviceIdentityStore();
+  final MemoryGatewayDeviceTokenStore _deviceTokenStore =
+      MemoryGatewayDeviceTokenStore();
 
   late LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
@@ -92,7 +94,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _timeline = <ChatTimelineItem>[
       ChatTimelineItem(
         role: ChatTimelineRole.system,
-        text: 'PocketClaw is configured for real Gateway usage. Apply connection settings and connect.',
+        text: 'PocketClaw supports token, password, and device-token-based reconnect flows. Apply connection settings and connect.',
         createdAt: DateTime.now().toUtc(),
       ),
     ];
@@ -122,6 +124,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         deviceAuthProvider: CryptographyDeviceAuthProvider(
           store: _deviceIdentityStore,
         ),
+        deviceTokenStore: _deviceTokenStore,
       ),
     );
   }
@@ -185,7 +188,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
-          text: 'Applied real Gateway configuration for ${profile.url}',
+          text: 'Applied Gateway configuration for ${profile.url}. Token and password are optional; device-token reuse is automatic when available.',
           createdAt: DateTime.now().toUtc(),
         ),
       ];
@@ -627,6 +630,10 @@ class _GatewayConfigCard extends StatelessWidget {
             Text(
               'Gateway connection',
               style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Token and password are optional. PocketClaw will also reuse device tokens issued by the Gateway after pairing or approved device auth.',
             ),
             const SizedBox(height: 12),
             TextField(

@@ -10,7 +10,7 @@ void main() {
     test('sends connect request after connect.challenge and resolves handshake', () async {
       final incoming = StreamController<Object?>();
       final outgoing = <String>[];
-      final fakeChannel = _FakeWebSocketChannel(
+      final fakeChannel = _TestWebSocketChannel(
         stream: incoming.stream,
         onAdd: (data) => outgoing.add(data as String),
       );
@@ -48,14 +48,66 @@ void main() {
 
       await connectFuture;
     });
+
+    test('persists issued device token from hello payload', () async {
+      final incoming = StreamController<Object?>();
+      final outgoing = <String>[];
+      final fakeChannel = _TestWebSocketChannel(
+        stream: incoming.stream,
+        onAdd: (data) => outgoing.add(data as String),
+      );
+      final tokenStore = MemoryGatewayDeviceTokenStore();
+
+      final client = GatewayWsClient(
+        config: GatewayConnectionConfig(
+          url: 'ws://127.0.0.1:18789',
+          connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
+          deviceAuthProvider: _StaticDeviceAuthProvider(),
+          deviceTokenStore: tokenStore,
+        ),
+        channelFactory: (_) => fakeChannel,
+      );
+
+      final connectFuture = client.connect();
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'event',
+        'event': 'connect.challenge',
+        'payload': <String, Object?>{'nonce': 'nonce-1'},
+      }));
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final request = jsonDecode(outgoing.first) as Map<String, Object?>;
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'res',
+        'id': request['id'] as String,
+        'ok': true,
+        'payload': <String, Object?>{
+          'auth': <String, Object?>{
+            'deviceToken': 'issued-device-token',
+            'role': 'operator',
+            'scopes': <String>['operator.admin'],
+          },
+        },
+      }));
+
+      await connectFuture;
+
+      final stored = await tokenStore.read(
+        deviceId: 'device-1',
+        role: 'operator',
+      );
+      expect(stored?.token, 'issued-device-token');
+    });
   });
 }
 
-class _FakeWebSocketChannel implements WebSocketChannel {
-  _FakeWebSocketChannel({
+class _TestWebSocketChannel implements WebSocketChannel {
+  _TestWebSocketChannel({
     required this.stream,
     required void Function(Object? data) onAdd,
-  }) : sink = _FakeWebSocketSink(onAdd);
+  }) : sink = _TestWebSocketSink(onAdd);
 
   @override
   final Stream<Object?> stream;
@@ -76,8 +128,8 @@ class _FakeWebSocketChannel implements WebSocketChannel {
   Future<void> get ready => Future<void>.value();
 }
 
-class _FakeWebSocketSink implements WebSocketSink {
-  _FakeWebSocketSink(this._onAdd);
+class _TestWebSocketSink implements WebSocketSink {
+  _TestWebSocketSink(this._onAdd);
 
   final void Function(Object? data) _onAdd;
 
@@ -95,4 +147,20 @@ class _FakeWebSocketSink implements WebSocketSink {
 
   @override
   Future<void> get done => Future<void>.value();
+}
+
+class _StaticDeviceAuthProvider implements GatewayDeviceAuthProvider {
+  @override
+  Future<Map<String, Object?>> buildDeviceAuth({
+    required ConnectChallenge challenge,
+    required ConnectRequest connectRequest,
+  }) async {
+    return <String, Object?>{
+      'id': 'device-1',
+      'publicKey': 'pub',
+      'signature': 'sig',
+      'signedAt': 1,
+      'nonce': challenge.nonce,
+    };
+  }
 }
