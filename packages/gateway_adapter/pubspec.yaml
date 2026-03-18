@@ -9,6 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  cryptography: ^2.7.0
   gateway_transport:
     path: ../gateway_transport
   web_socket_channel: ^3.0.1

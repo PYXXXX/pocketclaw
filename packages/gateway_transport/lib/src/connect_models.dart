@@ -27,6 +27,7 @@ final class ConnectRequest {
     required this.role,
     required this.scopes,
     this.auth,
+    this.device,
     this.caps = const <String>[],
     this.locale,
     this.userAgent,
@@ -36,9 +37,26 @@ final class ConnectRequest {
   final String role;
   final List<String> scopes;
   final Map<String, Object?>? auth;
+  final Map<String, Object?>? device;
   final List<String> caps;
   final String? locale;
   final String? userAgent;
+
+  ConnectRequest copyWith({
+    Map<String, Object?>? auth,
+    Map<String, Object?>? device,
+  }) {
+    return ConnectRequest(
+      client: client,
+      role: role,
+      scopes: scopes,
+      auth: auth ?? this.auth,
+      device: device ?? this.device,
+      caps: caps,
+      locale: locale,
+      userAgent: userAgent,
+    );
+  }
 
   Map<String, Object?> toParams() => <String, Object?>{
         'minProtocol': 3,
@@ -54,6 +72,7 @@ final class ConnectRequest {
         'scopes': scopes,
         'caps': caps,
         if (auth != null) 'auth': auth,
+        if (device != null) 'device': device,
         if (locale != null) 'locale': locale,
         if (userAgent != null) 'userAgent': userAgent,
       };

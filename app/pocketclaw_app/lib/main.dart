@@ -40,6 +40,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _passwordController = TextEditingController();
   final GatewayConnectRequestFactory _connectRequestFactory =
       const GatewayConnectRequestFactory();
+  final MemoryGatewayDeviceIdentityStore _deviceIdentityStore =
+      MemoryGatewayDeviceIdentityStore();
 
   late LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
@@ -116,6 +118,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         connectRequest: _connectRequestFactory.build(
           token: profile.token,
           password: profile.password,
+        ),
+        deviceAuthProvider: CryptographyDeviceAuthProvider(
+          store: _deviceIdentityStore,
         ),
       ),
     );
@@ -663,7 +668,7 @@ class _GatewayConfigCard extends StatelessWidget {
               child: const Text('Apply real Gateway configuration'),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -15,10 +15,12 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     GatewayFrameCodec? codec,
     WebSocketChannelFactory? channelFactory,
   })  : _codec = codec ?? GatewayFrameCodec(),
+        _parser = const GatewayParser(),
         _channelFactory = channelFactory ?? WebSocketChannel.connect;
 
   final GatewayConnectionConfig config;
   final GatewayFrameCodec _codec;
+  final GatewayParser _parser;
   final WebSocketChannelFactory _channelFactory;
   final Map<String, Completer<GatewayResponse>> _pending =
       <String, Completer<GatewayResponse>>{};
@@ -35,6 +37,7 @@ final class GatewayWsClient implements ConnectableGatewayClient {
   Completer<void>? _connectCompleter;
   Timer? _connectTimeoutTimer;
   bool _connectRequestSent = false;
+  ConnectChallenge? _lastChallenge;
   int _requestCounter = 0;
 
   @override
@@ -61,6 +64,7 @@ final class GatewayWsClient implements ConnectableGatewayClient {
 
     _connectCompleter = Completer<void>();
     _connectRequestSent = false;
+    _lastChallenge = null;
     _channel = _channelFactory(config.uri);
     _socketSubscription = _channel!.stream.listen(
       _handleRawFrame,
@@ -71,11 +75,11 @@ final class GatewayWsClient implements ConnectableGatewayClient {
 
     _connectTimeoutTimer = Timer(config.connectTimeout, () {
       if (_connectCompleter?.isCompleted == false) {
-        final message = 'Timed out waiting for Gateway handshake.';
+        const message = 'Timed out waiting for Gateway handshake.';
         _emitState(
           const GatewayConnectionState(
             phase: GatewayConnectionPhase.error,
-            message: 'Timed out waiting for Gateway handshake.',
+            message: message,
           ),
         );
         _connectCompleter?.completeError(StateError(message));
@@ -90,6 +94,7 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     _connectTimeoutTimer?.cancel();
     _connectTimeoutTimer = null;
     _connectRequestSent = false;
+    _lastChallenge = null;
 
     final channel = _channel;
     _channel = null;
@@ -139,16 +144,16 @@ final class GatewayWsClient implements ConnectableGatewayClient {
       case GatewayResponse():
         _handleResponse(message);
       case GatewayRequest():
-        // Client mode does not currently expect inbound request frames.
         break;
     }
   }
 
   void _handleEvent(GatewayEvent event) {
-    final challenge = const GatewayParser().parseConnectChallenge(event);
+    final challenge = _parser.parseConnectChallenge(event);
     if (challenge != null && !_connectRequestSent) {
+      _lastChallenge = challenge;
       _emitState(
-        GatewayConnectionState(
+        const GatewayConnectionState(
           phase: GatewayConnectionPhase.challengeReceived,
           message: 'Received connect.challenge',
         ),
@@ -162,11 +167,22 @@ final class GatewayWsClient implements ConnectableGatewayClient {
 
   Future<void> _sendConnectRequest() async {
     try {
+      var connectRequest = config.connectRequest;
+      final challenge = _lastChallenge;
+      final deviceAuthProvider = config.deviceAuthProvider;
+      if (challenge != null && deviceAuthProvider != null) {
+        final device = await deviceAuthProvider.buildDeviceAuth(
+          challenge: challenge,
+          connectRequest: connectRequest,
+        );
+        connectRequest = connectRequest.copyWith(device: device);
+      }
+
       await request(
         GatewayRequest(
           id: _nextRequestId('connect'),
           method: 'connect',
-          params: config.connectRequest.toParams(),
+          params: connectRequest.toParams(),
         ),
       );
 

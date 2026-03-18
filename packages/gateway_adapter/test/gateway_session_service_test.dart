@@ -1,31 +1,63 @@
 import 'package:gateway_adapter/gateway_adapter.dart';
+import 'package:gateway_transport/gateway_transport.dart';
 import 'package:test/test.dart';
+
+import '_test_gateway_client.dart';
 
 void main() {
   group('GatewaySessionService', () {
-    test('lists fake sessions with defaults', () async {
-      final service = GatewaySessionService(FakeGatewayClient());
-      final result = await service.list();
+    test('lists sessions with defaults', () async {
+      final service = GatewaySessionService(
+        TestGatewayClient(
+          onRequest: (request) async {
+            expect(request.method, GatewayMethodNames.sessionsList);
+            return GatewayResponse(
+              id: request.id,
+              ok: true,
+              payload: const <String, Object?>{
+                'sessions': <Map<String, Object?>>[
+                  <String, Object?>{
+                    'key': 'agent:main:pc-home',
+                    'model': 'codex-lb-responses/gpt-5.4',
+                  },
+                ],
+                'defaults': <String, Object?>{
+                  'model': 'codex-lb-responses/gpt-5.4',
+                },
+              },
+            );
+          },
+        ),
+      );
 
-      expect(result.sessions, isNotEmpty);
+      final result = await service.list();
+      expect(result.sessions, hasLength(1));
       expect(result.defaults?['model'], 'codex-lb-responses/gpt-5.4');
     });
 
-    test('patches fake session state', () async {
-      final client = FakeGatewayClient();
-      final service = GatewaySessionService(client);
+    test('patches session state', () async {
+      final service = GatewaySessionService(
+        TestGatewayClient(
+          onRequest: (request) async {
+            expect(request.method, GatewayMethodNames.sessionsPatch);
+            expect(request.params?['model'], 'codex-lb/gpt-5.4');
+            expect(request.params?['fastMode'], true);
+            return GatewayResponse(
+              id: request.id,
+              ok: true,
+              payload: const <String, Object?>{},
+            );
+          },
+        ),
+      );
 
-      await service.patch(const SessionPatchParams(
+      final response = await service.patch(const SessionPatchParams(
         key: 'agent:main:pc-home',
         model: 'codex-lb/gpt-5.4',
         fastMode: true,
       ));
 
-      final result = await service.list();
-      final session = result.sessions.firstWhere((item) => item.key == 'agent:main:pc-home');
-
-      expect(session.model, 'codex-lb/gpt-5.4');
-      expect(session.fastMode, isTrue);
+      expect(response.ok, isTrue);
     });
   });
 }
