@@ -9,11 +9,6 @@ void main() {
   runApp(const PocketClawApp());
 }
 
-enum GatewayClientMode {
-  fake,
-  real,
-}
-
 class PocketClawApp extends StatelessWidget {
   const PocketClawApp({super.key});
 
@@ -58,7 +53,6 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   StreamSubscription<GatewayEvent>? _eventSubscription;
   StreamSubscription<ChatStreamEvent>? _chatSubscription;
 
-  GatewayClientMode _clientMode = GatewayClientMode.fake;
   GatewayConnectionState _connectionState = const GatewayConnectionState(
     phase: GatewayConnectionPhase.disconnected,
   );
@@ -67,6 +61,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   AgentIdentity? _assistantIdentity;
   SessionInfo? _currentSessionInfo;
   String? _activeRunId;
+  String? _lastError;
 
   @override
   void initState() {
@@ -86,13 +81,19 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     );
     _currentSession = _registry.sessions.first;
 
-    _gatewayClient = FakeGatewayClient();
+    _gatewayClient = _buildGatewayClient(_gatewayProfile);
     _chatService = GatewayChatService(_gatewayClient);
     _sessionService = GatewaySessionService(_gatewayClient);
     _agentService = GatewayAgentService(_gatewayClient);
     _attachClientSubscriptions();
 
-    unawaited(_loadCurrentViewData());
+    _timeline = <ChatTimelineItem>[
+      ChatTimelineItem(
+        role: ChatTimelineRole.system,
+        text: 'PocketClaw is configured for real Gateway usage. Apply connection settings and connect.',
+        createdAt: DateTime.now().toUtc(),
+      ),
+    ];
   }
 
   @override
@@ -106,6 +107,18 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _tokenController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  ConnectableGatewayClient _buildGatewayClient(GatewayProfile profile) {
+    return GatewayWsClient(
+      config: GatewayConnectionConfig(
+        url: profile.url,
+        connectRequest: _connectRequestFactory.build(
+          token: profile.token,
+          password: profile.password,
+        ),
+      ),
+    );
   }
 
   void _attachClientSubscriptions() {
@@ -151,42 +164,29 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _attachClientSubscriptions();
   }
 
-  Future<void> _applyGatewayClientMode() async {
+  Future<void> _applyGatewayConfiguration() async {
     final profile = _gatewayProfile.copyWith(
       url: _gatewayUrlController.text.trim(),
       token: _tokenController.text,
       password: _passwordController.text,
     );
 
-    final client = _clientMode == GatewayClientMode.fake
-        ? FakeGatewayClient()
-        : GatewayWsClient(
-            config: GatewayConnectionConfig(
-              url: profile.url,
-              connectRequest: _connectRequestFactory.build(
-                token: profile.token,
-                password: profile.password,
-              ),
-            ),
-          );
-
     setState(() {
       _gatewayProfile = profile;
+      _lastError = null;
+      _assistantIdentity = null;
+      _models = const <ModelInfo>[];
+      _currentSessionInfo = null;
       _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
-          text: _clientMode == GatewayClientMode.fake
-              ? 'Switched to fake development client.'
-              : 'Switched to real Gateway WebSocket client for ${profile.url}',
+          text: 'Applied real Gateway configuration for ${profile.url}',
           createdAt: DateTime.now().toUtc(),
         ),
       ];
-      _currentSessionInfo = null;
-      _assistantIdentity = null;
-      _models = const <ModelInfo>[];
     });
 
-    await _replaceGatewayClient(client);
+    await _replaceGatewayClient(_buildGatewayClient(profile));
   }
 
   void _handleChatStreamEvent(ChatStreamEvent event) {
@@ -220,11 +220,31 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _loadCurrentViewData() async {
-    await Future.wait<void>([
-      _loadHistoryForCurrentSession(),
-      _loadAssistantAndModels(),
-      _loadSessionInfo(),
-    ]);
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await Future.wait<void>([
+        _loadHistoryForCurrentSession(),
+        _loadAssistantAndModels(),
+        _loadSessionInfo(),
+      ]);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastError = null;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastError = error.toString();
+      });
+      _appendTimeline(ChatTimelineRole.system, 'Load failed: $error');
+    }
   }
 
   Future<void> _loadHistoryForCurrentSession() async {
@@ -323,53 +343,104 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _connect() async {
-    await _gatewayClient.connect();
-    await _loadCurrentViewData();
+    try {
+      await _gatewayClient.connect();
+      _appendTimeline(ChatTimelineRole.system, 'Connected to ${_gatewayProfile.url}');
+      await _loadCurrentViewData();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastError = error.toString();
+      });
+      _appendTimeline(ChatTimelineRole.system, 'Connect failed: $error');
+    }
   }
 
   Future<void> _disconnect() async {
     await _gatewayClient.disconnect();
+    _appendTimeline(ChatTimelineRole.system, 'Disconnected from ${_gatewayProfile.url}');
   }
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) {
+    if (text.isEmpty || _connectionState.phase != GatewayConnectionPhase.connected) {
       return;
     }
 
     _appendTimeline(ChatTimelineRole.user, text);
     _messageController.clear();
 
-    final response = await _chatService.send(
-      sessionKey: _currentSession.sessionKey.value,
-      message: text,
-    );
+    try {
+      final response = await _chatService.send(
+        sessionKey: _currentSession.sessionKey.value,
+        message: text,
+      );
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _activeRunId = response.payload?['runId'] as String?;
+        _lastError = null;
+      });
+
+      await _loadSessionInfo();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastError = error.toString();
+      });
+      _appendTimeline(ChatTimelineRole.system, 'Send failed: $error');
     }
-    setState(() {
-      _activeRunId = response.payload?['runId'] as String?;
-    });
-
-    await _loadSessionInfo();
   }
 
   Future<void> _abortRun() async {
-    await _chatService.abort(
-      sessionKey: _currentSession.sessionKey.value,
-      runId: _activeRunId,
-    );
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await _chatService.abort(
+        sessionKey: _currentSession.sessionKey.value,
+        runId: _activeRunId,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastError = error.toString();
+      });
+      _appendTimeline(ChatTimelineRole.system, 'Abort failed: $error');
+    }
   }
 
   Future<void> _applyModel(String modelId) async {
-    await _sessionService.patch(
-      SessionPatchParams(
-        key: _currentSession.sessionKey.value,
-        model: modelId,
-      ),
-    );
-    await _loadSessionInfo();
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await _sessionService.patch(
+        SessionPatchParams(
+          key: _currentSession.sessionKey.value,
+          model: modelId,
+        ),
+      );
+      await _loadSessionInfo();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastError = error.toString();
+      });
+      _appendTimeline(ChatTimelineRole.system, 'Model update failed: $error');
+    }
   }
 
   @override
@@ -424,16 +495,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                   ),
                   const SizedBox(height: 12),
                   _GatewayConfigCard(
-                    clientMode: _clientMode,
                     gatewayUrlController: _gatewayUrlController,
                     tokenController: _tokenController,
                     passwordController: _passwordController,
-                    onModeChanged: (mode) {
-                      setState(() {
-                        _clientMode = mode;
-                      });
-                    },
-                    onApply: _applyGatewayClientMode,
+                    onApply: _applyGatewayConfiguration,
                   ),
                   const SizedBox(height: 12),
                   _ConnectionStatusCard(
@@ -448,6 +513,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                     models: _models,
                     onSelectModel: _applyModel,
                   ),
+                  if (_lastError != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _lastError!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Expanded(
                     child: Card(
@@ -457,7 +529,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                             ? const Align(
                                 alignment: Alignment.topLeft,
                                 child: Text(
-                                  'Timeline is empty. Apply a client, connect, and send a message.',
+                                  'Timeline is empty. Apply connection settings, connect, and start chatting.',
                                 ),
                               )
                             : ListView.separated(
@@ -491,7 +563,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
-                        onPressed: _sendMessage,
+                        onPressed: _connectionState.phase == GatewayConnectionPhase.connected
+                            ? _sendMessage
+                            : null,
                         child: const Text('Send'),
                       ),
                       const SizedBox(width: 8),
@@ -526,19 +600,15 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
 class _GatewayConfigCard extends StatelessWidget {
   const _GatewayConfigCard({
-    required this.clientMode,
     required this.gatewayUrlController,
     required this.tokenController,
     required this.passwordController,
-    required this.onModeChanged,
     required this.onApply,
   });
 
-  final GatewayClientMode clientMode;
   final TextEditingController gatewayUrlController;
   final TextEditingController tokenController;
   final TextEditingController passwordController;
-  final ValueChanged<GatewayClientMode> onModeChanged;
   final Future<void> Function() onApply;
 
   @override
@@ -552,25 +622,6 @@ class _GatewayConfigCard extends StatelessWidget {
             Text(
               'Gateway connection',
               style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            SegmentedButton<GatewayClientMode>(
-              segments: const [
-                ButtonSegment<GatewayClientMode>(
-                  value: GatewayClientMode.fake,
-                  label: Text('Fake'),
-                  icon: Icon(Icons.science_outlined),
-                ),
-                ButtonSegment<GatewayClientMode>(
-                  value: GatewayClientMode.real,
-                  label: Text('Real'),
-                  icon: Icon(Icons.router_outlined),
-                ),
-              ],
-              selected: <GatewayClientMode>{clientMode},
-              onSelectionChanged: (selection) {
-                onModeChanged(selection.first);
-              },
             ),
             const SizedBox(height: 12),
             TextField(
@@ -609,7 +660,7 @@ class _GatewayConfigCard extends StatelessWidget {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: onApply,
-              child: const Text('Apply client configuration'),
+              child: const Text('Apply real Gateway configuration'),
             ),
           ],
         ),
