@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  analyze:
+  validate:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,6 +17,13 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Show tool versions
         run: |
@@ -31,3 +38,14 @@ jobs:
 
       - name: Analyze workspace
         run: ~/.pub-cache/bin/melos run analyze
+
+      - name: Run package tests
+        run: ~/.pub-cache/bin/melos run test
+
+      - name: Prepare Flutter app scaffolding
+        working-directory: app/pocketclaw_app
+        run: flutter create . --project-name pocketclaw_app --platforms=android,ios
+
+      - name: Smoke build Android APK
+        working-directory: app/pocketclaw_app
+        run: flutter build apk --debug
