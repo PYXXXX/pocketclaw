@@ -10,3 +10,25 @@ class SessionKey {
     return SessionKey._('agent:$agentId:$clientKey');
   }
 }
+
+final class SessionKeyFactory {
+  const SessionKeyFactory();
+
+  SessionKey createTimestamped({
+    required String agentId,
+    String prefix = 'pc',
+    DateTime? now,
+  }) {
+    final timestamp = (now ?? DateTime.now().toUtc())
+        .toIso8601String()
+        .replaceAll(':', '')
+        .replaceAll('-', '')
+        .replaceAll('.', '')
+        .toLowerCase();
+
+    return SessionKey.forClient(
+      agentId: agentId,
+      clientKey: '$prefix-$timestamp',
+    );
+  }
+}
