@@ -4,29 +4,46 @@ final class LocalSessionEntry {
   const LocalSessionEntry({
     required this.sessionKey,
     required this.title,
+    this.draftText = '',
   });
 
   factory LocalSessionEntry.fromJson(Map<String, Object?> json) {
     return LocalSessionEntry(
       sessionKey: SessionKey.value(json['sessionKey'] as String),
       title: json['title'] as String? ?? 'Untitled',
+      draftText: json['draftText'] as String? ?? '',
     );
   }
 
   final SessionKey sessionKey;
   final String title;
+  final String draftText;
+
+  LocalSessionEntry copyWith({
+    SessionKey? sessionKey,
+    String? title,
+    String? draftText,
+  }) {
+    return LocalSessionEntry(
+      sessionKey: sessionKey ?? this.sessionKey,
+      title: title ?? this.title,
+      draftText: draftText ?? this.draftText,
+    );
+  }
 
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'sessionKey': sessionKey.value,
       'title': title,
+      'draftText': draftText,
     };
   }
 }
 
 class LocalSessionRegistry {
-  LocalSessionRegistry({List<LocalSessionEntry> initialSessions = const <LocalSessionEntry>[]})
-      : _sessions = List<LocalSessionEntry>.from(initialSessions);
+  LocalSessionRegistry({
+    List<LocalSessionEntry> initialSessions = const <LocalSessionEntry>[],
+  }) : _sessions = List<LocalSessionEntry>.from(initialSessions);
 
   factory LocalSessionRegistry.fromJsonList(List<Object?> values) {
     return LocalSessionRegistry(
@@ -74,13 +91,6 @@ class LocalSessionRegistry {
       }
     }
     _sessions.add(entry);
-  }
-
-  List<Map<String, Object?>> toJsonList() {
-    return _sessions.map((entry) => entry.toJson()).toList();
-  }
-}
-_sessions.add(entry);
   }
 
   List<Map<String, Object?>> toJsonList() {

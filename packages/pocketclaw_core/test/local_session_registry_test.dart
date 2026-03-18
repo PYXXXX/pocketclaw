@@ -20,10 +20,12 @@ void main() {
         LocalSessionEntry(
           sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
           title: 'Home',
+          draftText: 'draft-1',
         ),
         LocalSessionEntry(
           sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-2'),
           title: 'Second',
+          draftText: 'draft-2',
         ),
       ],
     );
