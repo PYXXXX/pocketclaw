@@ -2,11 +2,11 @@
 
 ## Immediate engineering priorities
 
-1. Define Gateway handshake models
-2. Define chat event and tool event models
-3. Build a minimal Gateway client abstraction
-4. Add session-key generation and local session registry
-5. Replace the placeholder app home with a real app shell
+1. Define local connect-flow state and onboarding completion state
+2. Shape a real onboarding and connect flow
+3. Tighten Gateway compatibility against the official Android reference
+4. Replace the placeholder app home with a real app shell
+5. Add session title editing and other chat-first polish
 
 ## Suggested implementation order
 

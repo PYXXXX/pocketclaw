@@ -46,6 +46,12 @@ PocketClaw should maintain at least the following local state:
 - `draftBySessionKey`
 - `displayTitleBySessionKey`
 
+At minimum, the client should persist:
+
+- the local session registry
+- the currently selected session key
+- client-side display titles
+
 Display titles should remain client-side metadata rather than being encoded into the session key.
 
 ## Why this approach

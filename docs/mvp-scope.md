@@ -9,6 +9,7 @@ Deliver a phone-first native client that makes existing OpenClaw Gateway chat pr
 ### Connectivity
 
 - Gateway URL management
+- OS-backed encrypted local persistence for connection settings
 - token / password bootstrap
 - device pairing flow
 - reconnect and basic connection state reporting

@@ -9,6 +9,10 @@ class SessionKey {
   }) {
     return SessionKey._('agent:$agentId:$clientKey');
   }
+
+  static SessionKey value(String value) {
+    return SessionKey._(value);
+  }
 }
 
 final class SessionKeyFactory {

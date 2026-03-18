@@ -7,6 +7,17 @@ final class GatewayProfile {
     this.defaultSessionKey = 'agent:main:pc-home',
   });
 
+  factory GatewayProfile.fromJson(Map<String, Object?> json) {
+    return GatewayProfile(
+      url: json['url'] as String? ?? 'ws://127.0.0.1:18789',
+      token: json['token'] as String? ?? '',
+      password: json['password'] as String? ?? '',
+      defaultAgentId: json['defaultAgentId'] as String? ?? 'main',
+      defaultSessionKey:
+          json['defaultSessionKey'] as String? ?? 'agent:main:pc-home',
+    );
+  }
+
   final String url;
   final String token;
   final String password;
@@ -27,5 +38,15 @@ final class GatewayProfile {
       defaultAgentId: defaultAgentId ?? this.defaultAgentId,
       defaultSessionKey: defaultSessionKey ?? this.defaultSessionKey,
     );
+  }
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'url': url,
+      'token': token,
+      'password': password,
+      'defaultAgentId': defaultAgentId,
+      'defaultSessionKey': defaultSessionKey,
+    };
   }
 }

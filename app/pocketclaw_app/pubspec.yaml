@@ -11,6 +11,8 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.2
   gateway_transport:
     path: ../../packages/gateway_transport
   gateway_adapter:

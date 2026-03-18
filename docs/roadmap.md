@@ -21,6 +21,7 @@
 
 - session switching
 - client-defined session creation
+- persisted local session registry
 - history loading
 - message sending
 - streaming output

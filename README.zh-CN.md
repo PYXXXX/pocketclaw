@@ -16,6 +16,7 @@ PocketClaw 是一个面向现有 OpenClaw Gateway 部署的原生移动客户端
 - **Gateway-compatible first** —— 以兼容现有 OpenClaw Gateway 行为为第一优先级。
 - **No custom backend** —— 不新增中间后端，直接连接 Gateway 现有能力。
 - **Mobile-first** —— 先把手机端体验做好，再扩展到更多控制能力。
+- **本地凭据加密** —— 连接配置与设备侧认证材料优先放进系统提供的安全存储。
 - **通过客户端控制 sessionKey 实现多会话** —— 不改变 Gateway 语义。
 - **可扩展到穿戴设备** —— 为未来 `WristClaw` 之类的手表客户端保留架构空间。
 - **Fully vibe coded** —— 项目明确采用 AI-first、快速迭代的开发方式。
@@ -57,6 +58,8 @@ PocketClaw 会先从聊天优先、控制面适度的移动客户端做起。
 - [`docs/session-key-strategy.md`](./docs/session-key-strategy.md)
 - [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md)
 - [`docs/development-workflow.md`](./docs/development-workflow.md)
+- [`docs/official-android-reference.md`](./docs/official-android-reference.md)
+- [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md)
 
 ## 语言策略
 

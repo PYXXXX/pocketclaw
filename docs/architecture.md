@@ -30,6 +30,7 @@ Responsibilities:
 Responsibilities:
 
 - token / password bootstrap
+- OS-backed encrypted local storage for connection profiles
 - device identity generation and persistence
 - challenge signing
 - device token storage

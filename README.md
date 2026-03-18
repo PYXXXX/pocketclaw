@@ -16,6 +16,7 @@ Early scaffold.
 - **Gateway-compatible first** — work with current OpenClaw Gateway behavior.
 - **No custom backend** — connect directly to the Gateway transport surface.
 - **Mobile-first** — optimize for phone use before expanding into broader control surfaces.
+- **Encrypted local credentials** — keep connection profiles and device-issued auth material in OS-backed secure storage.
 - **Multi-session by client-controlled session keys** — create and switch sessions without changing Gateway semantics.
 - **Wearable-aware** — keep architecture adaptable for future watch-focused clients such as `WristClaw`.
 - **Fully vibe coded** — the project intentionally embraces an AI-first, rapid-iteration development workflow.
@@ -57,6 +58,8 @@ For the current phase, PocketClaw does not assume:
 - [`docs/session-key-strategy.md`](./docs/session-key-strategy.md)
 - [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md)
 - [`docs/development-workflow.md`](./docs/development-workflow.md)
+- [`docs/official-android-reference.md`](./docs/official-android-reference.md)
+- [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md)
 
 ## Language policy
 

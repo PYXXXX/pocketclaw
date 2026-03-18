@@ -5,6 +5,12 @@ import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'src/storage/local_session_registry_store.dart';
+import 'src/storage/secure_gateway_device_identity_store.dart';
+import 'src/storage/secure_gateway_device_token_store.dart';
+import 'src/storage/secure_gateway_profile_store.dart';
+import 'src/storage/secure_key_value_store.dart';
+
 void main() {
   runApp(const PocketClawApp());
 }
@@ -40,10 +46,15 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _passwordController = TextEditingController();
   final GatewayConnectRequestFactory _connectRequestFactory =
       const GatewayConnectRequestFactory();
-  final MemoryGatewayDeviceIdentityStore _deviceIdentityStore =
-      MemoryGatewayDeviceIdentityStore();
-  final MemoryGatewayDeviceTokenStore _deviceTokenStore =
-      MemoryGatewayDeviceTokenStore();
+  final SecureKeyValueStore _secureStore = FlutterSecureKeyValueStore();
+  late final GatewayProfileStore _profileStore =
+      SecureGatewayProfileStore(_secureStore);
+  late final GatewayDeviceIdentityStore _deviceIdentityStore =
+      SecureGatewayDeviceIdentityStore(_secureStore);
+  late final GatewayDeviceTokenStore _deviceTokenStore =
+      SecureGatewayDeviceTokenStore(_secureStore);
+  late final LocalSessionRegistryStore _sessionRegistryStore =
+      SharedPreferencesLocalSessionRegistryStore();
 
   late LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
@@ -72,9 +83,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   void initState() {
     super.initState();
     _gatewayProfile = const GatewayProfile();
-    _gatewayUrlController.text = _gatewayProfile.url;
-    _tokenController.text = _gatewayProfile.token;
-    _passwordController.text = _gatewayProfile.password;
+    _applyProfileToControllers(_gatewayProfile);
 
     _registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
@@ -95,10 +104,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _timeline = <ChatTimelineItem>[
       ChatTimelineItem(
         role: ChatTimelineRole.system,
-        text: 'PocketClaw supports token, password, and device-token-based reconnect flows. Apply connection settings and connect.',
+        text:
+            'PocketClaw stores connection settings, device identity, and device tokens in local secure storage when available. Apply connection settings and connect.',
         createdAt: DateTime.now().toUtc(),
       ),
     ];
+
+    unawaited(_restorePersistedGatewayProfile());
+    unawaited(_restorePersistedSessionRegistry());
   }
 
   @override
@@ -128,6 +141,110 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         deviceTokenStore: _deviceTokenStore,
       ),
     );
+  }
+
+  void _applyProfileToControllers(GatewayProfile profile) {
+    _gatewayUrlController.text = profile.url;
+    _tokenController.text = profile.token;
+    _passwordController.text = profile.password;
+  }
+
+  Future<void> _restorePersistedGatewayProfile() async {
+    try {
+      final storedProfile = await _profileStore.read();
+      if (storedProfile == null || !mounted) {
+        return;
+      }
+
+      _applyProfileToControllers(storedProfile);
+      setState(() {
+        _gatewayProfile = storedProfile;
+        _timeline = <ChatTimelineItem>[
+          ChatTimelineItem(
+            role: ChatTimelineRole.system,
+            text:
+                'Restored encrypted Gateway configuration for ${storedProfile.url}. Review if needed, then connect.',
+            createdAt: DateTime.now().toUtc(),
+          ),
+        ];
+      });
+
+      await _replaceGatewayClient(_buildGatewayClient(storedProfile));
+    } catch (error) {
+      _recordError(error, prefix: 'Secure configuration restore failed');
+    }
+  }
+
+  Future<void> _restorePersistedSessionRegistry() async {
+    try {
+      final stored = await _sessionRegistryStore.read();
+      if (stored == null || !mounted || stored.registry.sessions.isEmpty) {
+        return;
+      }
+
+      final sessions = stored.registry.sessions;
+      final currentSessionKey = stored.currentSessionKey;
+      LocalSessionEntry? restoredCurrent;
+      if (currentSessionKey != null) {
+        for (final session in sessions) {
+          if (session.sessionKey.value == currentSessionKey) {
+            restoredCurrent = session;
+            break;
+          }
+        }
+      }
+
+      setState(() {
+        _registry = stored.registry;
+        _currentSession = restoredCurrent ?? sessions.first;
+      });
+      _applyComposerDraft(_currentSession.draftText);
+    } catch (error) {
+      _recordError(error, prefix: 'Local session restore failed');
+    }
+  }
+
+  Future<void> _persistSessionRegistry() async {
+    try {
+      await _sessionRegistryStore.write(
+        registry: _registry,
+        currentSessionKey: _currentSession.sessionKey.value,
+      );
+    } catch (error) {
+      _recordError(error, prefix: 'Saving local sessions failed');
+    }
+  }
+
+  void _applyComposerDraft(String draftText) {
+    _applyingComposerDraft = true;
+    _messageController.value = TextEditingValue(
+      text: draftText,
+      selection: TextSelection.collapsed(offset: draftText.length),
+    );
+    _applyingComposerDraft = false;
+  }
+
+  void _syncCurrentSessionDraft({bool schedulePersist = true}) {
+    final updated = _currentSession.copyWith(draftText: _messageController.text);
+    _registry.replace(updated);
+    _currentSession = updated;
+    if (schedulePersist) {
+      _scheduleSessionRegistryPersist();
+    }
+  }
+
+  void _scheduleSessionRegistryPersist() {
+    _draftPersistTimer?.cancel();
+    _draftPersistTimer = Timer(const Duration(milliseconds: 350), () {
+      unawaited(_persistSessionRegistry());
+    });
+  }
+
+  void _handleComposerChanged() {
+    if (_applyingComposerDraft) {
+      return;
+    }
+    _syncCurrentSessionDraft();
   }
 
   void _attachClientSubscriptions() {
@@ -190,11 +307,18 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
-          text: 'Applied Gateway configuration for ${profile.url}. Token and password are optional; device-token reuse is automatic when available.',
+          text:
+              'Applied Gateway configuration for ${profile.url}. Local persistence uses secure storage when available; token and password remain optional, and device-token reuse is automatic when available.',
           createdAt: DateTime.now().toUtc(),
         ),
       ];
     });
+
+    try {
+      await _profileStore.write(profile);
+    } catch (error) {
+      _recordError(error, prefix: 'Saving encrypted Gateway configuration failed');
+    }
 
     await _replaceGatewayClient(_buildGatewayClient(profile));
   }
@@ -360,6 +484,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       ];
       _currentSessionInfo = null;
     });
+
+    unawaited(_persistSessionRegistry());
   }
 
   Future<void> _connect() async {
@@ -460,9 +586,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           NavigationRail(
             selectedIndex: sessions.indexOf(_currentSession),
             onDestinationSelected: (index) {
+              _syncCurrentSessionDraft(schedulePersist: false);
+              final nextSession = sessions[index];
               setState(() {
-                _currentSession = sessions[index];
+                _currentSession = nextSession;
               });
+              _applyComposerDraft(nextSession.draftText);
+              _scheduleSessionRegistryPersist();
               unawaited(_loadCurrentViewData());
             },
             labelType: NavigationRailLabelType.all,
@@ -626,7 +756,7 @@ class _GatewayConfigCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Token and password are optional. PocketClaw also reuses device tokens issued by the Gateway after pairing or approved device auth.',
+              'Token and password are optional. PocketClaw stores connection settings in local secure storage when available and reuses device tokens issued by the Gateway after pairing or approved device auth.',
             ),
             const SizedBox(height: 12),
             TextField(
@@ -770,6 +900,47 @@ class _SessionInfoCard extends StatelessWidget {
                 ],
               ),
             ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _GuidanceCard extends StatelessWidget {
+  const _GuidanceCard({required this.guidance});
+
+  final GatewayErrorGuidance guidance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              guidance.summary,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            if (guidance.action != null) ...[
+              const SizedBox(height: 8),
+              Text(guidance.action!),
+            ],
+            if (guidance.code != null) ...[
+              const SizedBox(height: 8),
+              Text('Code: ${guidance.code}'),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+}
+}
           ],
         ],
       ),
