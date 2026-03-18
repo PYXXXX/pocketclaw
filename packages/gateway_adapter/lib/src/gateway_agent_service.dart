@@ -1,6 +1,7 @@
 import 'package:gateway_transport/gateway_transport.dart';
 
 import 'agent_identity.dart';
+import 'agent_summary.dart';
 import 'gateway_client.dart';
 import 'gateway_method_names.dart';
 import 'model_info.dart';
@@ -23,6 +24,34 @@ final class GatewayAgentService {
     );
 
     return AgentIdentity.fromJson(response.payload ?? const <String, Object?>{});
+  }
+
+  Future<AgentsListResult> listAgents() async {
+    final response = await _client.request(
+      GatewayRequest(
+        id: _nextRequestId('agents'),
+        method: GatewayMethodNames.agentsList,
+        params: const <String, Object?>{},
+      ),
+    );
+
+    final payload = response.payload ?? const <String, Object?>{};
+    final rawAgents = payload['agents'];
+    final agents = <AgentSummary>[];
+    if (rawAgents is List<Object?>) {
+      for (final item in rawAgents) {
+        if (item is Map<String, Object?>) {
+          agents.add(AgentSummary.fromJson(item));
+        }
+      }
+    }
+
+    return AgentsListResult(
+      defaultId: payload['defaultId'] as String? ?? 'main',
+      mainKey: payload['mainKey'] as String? ?? 'agent:main',
+      scope: payload['scope'] as String? ?? 'per-sender',
+      agents: agents,
+    );
   }
 
   Future<List<ModelInfo>> listModels() async {

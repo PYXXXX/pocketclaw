@@ -1,6 +1,8 @@
 library gateway_adapter;
 
 export 'src/agent_identity.dart';
+export 'src/agent_runtime_event.dart';
+export 'src/agent_summary.dart';
 export 'src/chat_api.dart';
 export 'src/chat_message.dart';
 export 'src/chat_models.dart';

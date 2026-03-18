@@ -6,7 +6,7 @@ import '_test_gateway_client.dart';
 
 void main() {
   group('GatewayAgentService', () {
-    test('loads identity and models', () async {
+    test('loads identity, agents, and models', () async {
       final service = GatewayAgentService(
         TestGatewayClient(
           onRequest: (request) async {
@@ -17,6 +17,27 @@ void main() {
                 payload: const <String, Object?>{
                   'agentId': 'main',
                   'name': 'Qingzhou Bot',
+                },
+              );
+            }
+            if (request.method == GatewayMethodNames.agentsList) {
+              return GatewayResponse(
+                id: request.id,
+                ok: true,
+                payload: const <String, Object?>{
+                  'defaultId': 'main',
+                  'mainKey': 'agent:main',
+                  'scope': 'per-sender',
+                  'agents': <Map<String, Object?>>[
+                    <String, Object?>{
+                      'id': 'main',
+                      'name': 'Main',
+                      'identity': <String, Object?>{
+                        'name': 'Qingzhou Bot',
+                        'emoji': '⛵',
+                      },
+                    },
+                  ],
                 },
               );
             }
@@ -40,9 +61,13 @@ void main() {
       );
 
       final identity = await service.getIdentity(sessionKey: 'agent:main:pc-home');
+      final agents = await service.listAgents();
       final models = await service.listModels();
 
       expect(identity.name, 'Qingzhou Bot');
+      expect(agents.defaultId, 'main');
+      expect(agents.agents, hasLength(1));
+      expect(agents.agents.first.displayName, 'Qingzhou Bot');
       expect(models, hasLength(1));
       expect(models.first.id, 'codex-lb-responses/gpt-5.4');
     });

@@ -5,5 +5,6 @@ abstract final class GatewayMethodNames {
   static const String sessionsList = 'sessions.list';
   static const String sessionsPatch = 'sessions.patch';
   static const String agentIdentityGet = 'agent.identity.get';
+  static const String agentsList = 'agents.list';
   static const String modelsList = 'models.list';
 }

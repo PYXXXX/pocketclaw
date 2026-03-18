@@ -22,6 +22,7 @@ final class SessionsListParams {
 final class SessionPatchParams {
   const SessionPatchParams({
     required this.key,
+    this.label,
     this.model,
     this.thinkingLevel,
     this.fastMode,
@@ -29,6 +30,7 @@ final class SessionPatchParams {
   });
 
   final String key;
+  final String? label;
   final String? model;
   final String? thinkingLevel;
   final bool? fastMode;
@@ -36,6 +38,7 @@ final class SessionPatchParams {
 
   Map<String, Object?> toJson() => <String, Object?>{
         'key': key,
+        if (label != null) 'label': label,
         if (model != null) 'model': model,
         if (thinkingLevel != null) 'thinkingLevel': thinkingLevel,
         if (fastMode != null) 'fastMode': fastMode,

@@ -56,6 +56,7 @@ final class GatewayChatService {
   Future<GatewayResponse> send({
     required String sessionKey,
     required String message,
+    List<Object?>? attachments,
   }) {
     return _client.request(
       GatewayRequest(
@@ -64,6 +65,7 @@ final class GatewayChatService {
         params: ChatSendParams(
           sessionKey: sessionKey,
           message: message,
+          attachments: attachments,
           idempotencyKey: _nextRequestId('run'),
         ).toJson(),
       ),

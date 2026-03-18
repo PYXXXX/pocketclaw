@@ -35,5 +35,36 @@ void main() {
       expect(history.messages.first.text, 'hello');
       expect(history.messages.first.role, ChatMessageRole.assistant);
     });
+
+    test('sends chat with optional attachments passthrough', () async {
+      final client = TestGatewayClient(
+        onRequest: (request) async {
+          expect(request.method, GatewayMethodNames.chatSend);
+          expect(request.params?['message'], 'see image');
+          expect(request.params?['attachments'], isA<List<Object?>>());
+          return GatewayResponse(
+            id: request.id,
+            ok: true,
+            payload: const <String, Object?>{'runId': 'run-1'},
+          );
+        },
+      );
+
+      final service = GatewayChatService(client);
+      final response = await service.send(
+        sessionKey: 'agent:main:pc-home',
+        message: 'see image',
+        attachments: const <Object?>[
+          <String, Object?>{
+            'kind': 'image',
+            'mimeType': 'image/png',
+            'name': 'demo.png',
+          },
+        ],
+      );
+
+      expect(response.ok, isTrue);
+      expect(response.payload?['runId'], 'run-1');
+    });
   });
 }

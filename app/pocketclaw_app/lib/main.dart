@@ -74,6 +74,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _gatewayUrlController = TextEditingController();
   final TextEditingController _tokenController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _sessionTitleController = TextEditingController();
   final GatewayConnectRequestFactory _connectRequestFactory =
       const GatewayConnectRequestFactory();
   final SecureKeyValueStore _secureStore = FlutterSecureKeyValueStore();
@@ -107,6 +108,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   );
   List<ChatTimelineItem> _timeline = <ChatTimelineItem>[];
   List<ModelInfo> _models = const <ModelInfo>[];
+  List<AgentSummary> _agents = const <AgentSummary>[];
+  List<SessionInfo> _gatewaySessions = const <SessionInfo>[];
   AgentIdentity? _assistantIdentity;
   SessionInfo? _currentSessionInfo;
   String? _activeRunId;
@@ -117,6 +120,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   bool _isBootstrapping = true;
   ConnectMethod _connectMethod = ConnectMethod.manual;
   ConnectFlowStage _connectFlowStage = ConnectFlowStage.welcome;
+  String _selectedAgentId = 'main';
 
   @override
   void initState() {
@@ -133,6 +137,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       ],
     );
     _currentSession = _registry.sessions.first;
+    _selectedAgentId = _agentIdForSession(_currentSession.sessionKey.value);
+    _applySessionTitle(_currentSession.title);
 
     _gatewayClient = _buildGatewayClient(_gatewayProfile);
     _chatService = GatewayChatService(_gatewayClient);
@@ -165,6 +171,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _gatewayUrlController.dispose();
     _tokenController.dispose();
     _passwordController.dispose();
+    _sessionTitleController.dispose();
     super.dispose();
   }
 
@@ -208,6 +215,38 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _passwordController.text = profile.password;
   }
 
+  String _agentIdForSession(String sessionKey) {
+    final parts = sessionKey.split(':');
+    if (parts.length >= 2 && parts.first == 'agent') {
+      return parts[1];
+    }
+    return 'main';
+  }
+
+  void _applySessionTitle(String title) {
+    _sessionTitleController.value = TextEditingValue(
+      text: title,
+      selection: TextSelection.collapsed(offset: title.length),
+    );
+  }
+
+  String _displayNameForAgent(String agentId) {
+    for (final agent in _agents) {
+      if (agent.id == agentId) {
+        return agent.displayName;
+      }
+    }
+    return agentId;
+  }
+
+  String _titleForGatewaySession(SessionInfo session) {
+    final label = session.label?.trim();
+    if (label != null && label.isNotEmpty) {
+      return label;
+    }
+    return session.key;
+  }
+
   Future<void> _restorePersistedGatewayProfile() async {
     try {
       final storedProfile = await _profileStore.read();
@@ -248,8 +287,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       setState(() {
         _registry = stored.registry;
         _currentSession = restoredCurrent ?? sessions.first;
+        _selectedAgentId = _agentIdForSession(_currentSession.sessionKey.value);
       });
       _applyComposerDraft(_currentSession.draftText);
+      _applySessionTitle(_currentSession.title);
     } catch (error) {
       _recordError(error, prefix: 'Local session restore failed');
     }
@@ -327,6 +368,77 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _syncCurrentSessionDraft();
   }
 
+  Future<void> _selectCurrentSession(LocalSessionEntry session) async {
+    _syncCurrentSessionDraft(schedulePersist: false);
+    setState(() {
+      _currentSession = session;
+      _selectedAgentId = _agentIdForSession(session.sessionKey.value);
+    });
+    _applyComposerDraft(session.draftText);
+    _applySessionTitle(session.title);
+    _scheduleSessionRegistryPersist();
+    await _loadCurrentViewData();
+  }
+
+  Future<void> _renameCurrentSession(String title) async {
+    final nextTitle = title.trim();
+    if (nextTitle.isEmpty || nextTitle == _currentSession.title) {
+      _applySessionTitle(_currentSession.title);
+      return;
+    }
+
+    final updated = _currentSession.copyWith(title: nextTitle);
+    setState(() {
+      _registry.replace(updated);
+      _currentSession = updated;
+    });
+    _applySessionTitle(nextTitle);
+    await _persistSessionRegistry();
+
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+    try {
+      await _sessionService.patch(
+        SessionPatchParams(
+          key: _currentSession.sessionKey.value,
+          label: nextTitle,
+        ),
+      );
+      await _loadSessionInfo();
+    } catch (error) {
+      _recordError(error, prefix: 'Rename failed');
+    }
+  }
+
+  Future<void> _openOrCreateAgentHomeSession(String agentId) async {
+    final homeKey = SessionKey.forClient(agentId: agentId, clientKey: 'pc-home');
+    for (final session in _registry.sessions) {
+      if (session.sessionKey.value == homeKey.value) {
+        await _selectCurrentSession(session);
+        return;
+      }
+    }
+
+    final title = '${_displayNameForAgent(agentId)} · Home';
+    final entry = LocalSessionEntry(sessionKey: homeKey, title: title);
+    setState(() {
+      _registry.remember(entry);
+    });
+    await _persistSessionRegistry();
+    await _selectCurrentSession(entry);
+  }
+
+  Future<void> _openGatewaySession(SessionInfo session) async {
+    final entry = LocalSessionEntry(
+      sessionKey: SessionKey.value(session.key),
+      title: _titleForGatewaySession(session),
+    );
+    _registry.replace(entry);
+    await _persistSessionRegistry();
+    await _selectCurrentSession(entry);
+  }
+
   void _attachClientSubscriptions() {
     _connectionSubscription = _gatewayClient.connectionStates.listen((state) {
       if (!mounted) {
@@ -342,6 +454,24 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       if (!mounted) {
         return;
       }
+
+      final runtimeEvent = AgentRuntimeEvent.tryParse(event);
+      if (runtimeEvent != null &&
+          (_activeRunId == null || runtimeEvent.runId == _activeRunId)) {
+        if (runtimeEvent.kind == AgentRuntimeEventKind.tool ||
+            runtimeEvent.kind == AgentRuntimeEventKind.internal) {
+          _appendTimeline(
+            ChatTimelineRole.tool,
+            runtimeEvent.summary,
+            title: runtimeEvent.title,
+            status: runtimeEvent.status,
+            details: runtimeEvent.details,
+            createdAt: runtimeEvent.timestamp,
+          );
+        }
+        return;
+      }
+
       if (event.event == 'connect.challenge') {
         _appendTimeline(
           ChatTimelineRole.system,
@@ -574,6 +704,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _loadHistoryForCurrentSession(),
         _loadAssistantAndModels(),
         _loadSessionInfo(),
+        _loadAgents(),
       ]);
       if (!mounted) {
         return;
@@ -641,7 +772,21 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       return;
     }
     setState(() {
+      _gatewaySessions = result.sessions;
       _currentSessionInfo = info;
+    });
+  }
+
+  Future<void> _loadAgents() async {
+    final result = await _agentService.listAgents();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _agents = result.agents;
+      if (_selectedAgentId.isEmpty) {
+        _selectedAgentId = result.defaultId;
+      }
     });
   }
 
@@ -661,7 +806,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     );
   }
 
-  void _appendTimeline(ChatTimelineRole role, String text) {
+  void _appendTimeline(
+    ChatTimelineRole role,
+    String text, {
+    String? title,
+    String? status,
+    String? details,
+    DateTime? createdAt,
+  }) {
     if (!mounted) {
       return;
     }
@@ -671,17 +823,22 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         ChatTimelineItem(
           role: role,
           text: text,
-          createdAt: DateTime.now().toUtc(),
+          createdAt: createdAt ?? DateTime.now().toUtc(),
+          title: title,
+          status: status,
+          details: details,
         ),
       ];
     });
   }
 
   void _createSession() {
-    final sessionKey = _sessionKeyFactory.createTimestamped(agentId: 'main');
+    final sessionKey = _sessionKeyFactory.createTimestamped(
+      agentId: _selectedAgentId,
+    );
     final entry = LocalSessionEntry(
       sessionKey: sessionKey,
-      title: 'New session ${_registry.sessions.length + 1}',
+      title: '${_displayNameForAgent(_selectedAgentId)} ${_registry.sessions.length + 1}',
     );
 
     setState(() {
@@ -697,6 +854,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _currentSessionInfo = null;
     });
 
+    _applySessionTitle(entry.title);
     unawaited(_persistSessionRegistry());
   }
 
@@ -807,6 +965,60 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
+  Future<void> _applyThinkingLevel(String? thinkingLevel) async {
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await _sessionService.patch(
+        SessionPatchParams(
+          key: _currentSession.sessionKey.value,
+          thinkingLevel: thinkingLevel,
+        ),
+      );
+      await _loadSessionInfo();
+    } catch (error) {
+      _recordError(error, prefix: 'Thinking update failed');
+    }
+  }
+
+  Future<void> _applyVerboseLevel(String? verboseLevel) async {
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await _sessionService.patch(
+        SessionPatchParams(
+          key: _currentSession.sessionKey.value,
+          verboseLevel: verboseLevel,
+        ),
+      );
+      await _loadSessionInfo();
+    } catch (error) {
+      _recordError(error, prefix: 'Verbose update failed');
+    }
+  }
+
+  Future<void> _toggleFastMode(bool enabled) async {
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await _sessionService.patch(
+        SessionPatchParams(
+          key: _currentSession.sessionKey.value,
+          fastMode: enabled,
+        ),
+      );
+      await _loadSessionInfo();
+    } catch (error) {
+      _recordError(error, prefix: 'Fast mode update failed');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final connectSnapshot = _snapshotForConnectFlow();
@@ -878,21 +1090,26 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                   timeline: _timeline,
                   assistantIdentity: _assistantIdentity,
                   sessionInfo: _currentSessionInfo,
+                  agents: _agents,
+                  selectedAgentId: _selectedAgentId,
+                  gatewaySessions: _gatewaySessions,
                   models: _models,
                   connectionState: _connectionState,
                   activeRunId: _activeRunId,
+                  sessionTitleController: _sessionTitleController,
                   messageController: _messageController,
                   onDestinationSelected: (index) {
-                    _syncCurrentSessionDraft(schedulePersist: false);
-                    final nextSession = sessions[index];
-                    setState(() {
-                      _currentSession = nextSession;
-                    });
-                    _applyComposerDraft(nextSession.draftText);
-                    _scheduleSessionRegistryPersist();
-                    unawaited(_loadCurrentViewData());
+                    unawaited(_selectCurrentSession(sessions[index]));
                   },
+                  onSessionTitleSubmitted: _renameCurrentSession,
+                  onSelectAgent: (agentId) {
+                    unawaited(_openOrCreateAgentHomeSession(agentId));
+                  },
+                  onOpenGatewaySession: _openGatewaySession,
                   onSelectModel: _applyModel,
+                  onSelectThinking: _applyThinkingLevel,
+                  onSelectVerbose: _applyVerboseLevel,
+                  onToggleFastMode: _toggleFastMode,
                   onSendMessage: _sendMessage,
                   onAbortRun: _abortRun,
                   iconForRole: _iconForRole,
@@ -1135,12 +1352,22 @@ class _ChatShell extends StatelessWidget {
     required this.timeline,
     required this.assistantIdentity,
     required this.sessionInfo,
+    required this.agents,
+    required this.selectedAgentId,
+    required this.gatewaySessions,
     required this.models,
     required this.connectionState,
     required this.activeRunId,
+    required this.sessionTitleController,
     required this.messageController,
     required this.onDestinationSelected,
+    required this.onSessionTitleSubmitted,
+    required this.onSelectAgent,
+    required this.onOpenGatewaySession,
     required this.onSelectModel,
+    required this.onSelectThinking,
+    required this.onSelectVerbose,
+    required this.onToggleFastMode,
     required this.onSendMessage,
     required this.onAbortRun,
     required this.iconForRole,
@@ -1151,18 +1378,33 @@ class _ChatShell extends StatelessWidget {
   final List<ChatTimelineItem> timeline;
   final AgentIdentity? assistantIdentity;
   final SessionInfo? sessionInfo;
+  final List<AgentSummary> agents;
+  final String selectedAgentId;
+  final List<SessionInfo> gatewaySessions;
   final List<ModelInfo> models;
   final GatewayConnectionState connectionState;
   final String? activeRunId;
+  final TextEditingController sessionTitleController;
   final TextEditingController messageController;
   final ValueChanged<int> onDestinationSelected;
+  final ValueChanged<String> onSessionTitleSubmitted;
+  final Future<void> Function(String agentId) onSelectAgent;
+  final Future<void> Function(SessionInfo session) onOpenGatewaySession;
   final Future<void> Function(String modelId) onSelectModel;
+  final Future<void> Function(String? thinkingLevel) onSelectThinking;
+  final Future<void> Function(String? verboseLevel) onSelectVerbose;
+  final Future<void> Function(bool enabled) onToggleFastMode;
   final Future<void> Function() onSendMessage;
   final Future<void> Function() onAbortRun;
   final IconData Function(ChatTimelineRole role) iconForRole;
 
   @override
   Widget build(BuildContext context) {
+    final currentAgentGatewaySessions = gatewaySessions
+        .where((session) => session.key.startsWith('agent:$selectedAgentId:'))
+        .take(8)
+        .toList();
+
     return Row(
       children: [
         NavigationRail(
@@ -1185,18 +1427,83 @@ class _ChatShell extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  currentSession.title,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                TextField(
+                  controller: sessionTitleController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Session title',
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: onSessionTitleSubmitted,
                 ),
                 const SizedBox(height: 12),
                 SelectableText('Session key: ${currentSession.sessionKey.value}'),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Agent',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final agent in agents.isEmpty
+                                ? <AgentSummary>[
+                                    AgentSummary(id: 'main', name: 'Main'),
+                                  ]
+                                : agents)
+                              ChoiceChip(
+                                label: Text(
+                                  agent.emoji == null
+                                      ? agent.displayName
+                                      : '${agent.emoji} ${agent.displayName}',
+                                ),
+                                selected: agent.id == selectedAgentId,
+                                onSelected: (_) => unawaited(onSelectAgent(agent.id)),
+                              ),
+                          ],
+                        ),
+                        if (currentAgentGatewaySessions.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Existing Gateway sessions',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final session in currentAgentGatewaySessions)
+                                ActionChip(
+                                  avatar: const Icon(Icons.history, size: 18),
+                                  label: Text(session.label ?? session.key),
+                                  onPressed: () =>
+                                      unawaited(onOpenGatewaySession(session)),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _SessionInfoCard(
                   identity: assistantIdentity,
                   sessionInfo: sessionInfo,
                   models: models,
                   onSelectModel: onSelectModel,
+                  onSelectThinking: onSelectThinking,
+                  onSelectVerbose: onSelectVerbose,
+                  onToggleFastMode: onToggleFastMode,
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -1213,11 +1520,40 @@ class _ChatShell extends StatelessWidget {
                               separatorBuilder: (_, __) => const Divider(),
                               itemBuilder: (context, index) {
                                 final item = timeline[index];
+                                final title = item.title;
+                                final subtitleParts = <String>[
+                                  if (item.status != null && item.status!.isNotEmpty)
+                                    item.status!,
+                                  item.createdAt.toIso8601String(),
+                                ];
                                 return ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   leading: Icon(iconForRole(item.role)),
-                                  title: Text(item.text),
-                                  subtitle: Text(item.createdAt.toIso8601String()),
+                                  title: Text(title == null || title.isEmpty
+                                      ? item.text
+                                      : title),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (title != null && title.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(item.text),
+                                        ),
+                                      const SizedBox(height: 4),
+                                      Text(subtitleParts.join(' · ')),
+                                      if (item.details != null &&
+                                          item.details!.isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        SelectableText(
+                                          item.details!,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 );
                               },
                             ),
@@ -1234,6 +1570,8 @@ class _ChatShell extends StatelessWidget {
                           border: OutlineInputBorder(),
                           hintText: 'Send a message',
                         ),
+                        minLines: 1,
+                        maxLines: 4,
                         onSubmitted: (_) => unawaited(onSendMessage()),
                       ),
                     ),
@@ -1299,15 +1637,35 @@ class _SessionInfoCard extends StatelessWidget {
     required this.sessionInfo,
     required this.models,
     required this.onSelectModel,
+    required this.onSelectThinking,
+    required this.onSelectVerbose,
+    required this.onToggleFastMode,
   });
 
   final AgentIdentity? identity;
   final SessionInfo? sessionInfo;
   final List<ModelInfo> models;
   final Future<void> Function(String modelId) onSelectModel;
+  final Future<void> Function(String? thinkingLevel) onSelectThinking;
+  final Future<void> Function(String? verboseLevel) onSelectVerbose;
+  final Future<void> Function(bool enabled) onToggleFastMode;
 
   @override
   Widget build(BuildContext context) {
+    const thinkingChoices = <String>['off', 'minimal', 'low', 'medium', 'high'];
+    const verboseChoices = <String>['off', 'low', 'medium', 'high'];
+    final modelIds = models.map((model) => model.id).toSet();
+    final currentModel = modelIds.contains(sessionInfo?.model)
+        ? sessionInfo?.model
+        : null;
+    final currentThinking = thinkingChoices.contains(sessionInfo?.thinkingLevel)
+        ? sessionInfo?.thinkingLevel
+        : 'off';
+    final currentVerbose = verboseChoices.contains(sessionInfo?.verboseLevel)
+        ? sessionInfo?.verboseLevel
+        : 'off';
+    final fastMode = sessionInfo?.fastMode ?? false;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1318,25 +1676,79 @@ class _SessionInfoCard extends StatelessWidget {
               identity?.name ?? 'Assistant',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
-            Text('Model: ${sessionInfo?.model ?? 'default'}'),
-            Text('Thinking: ${sessionInfo?.thinkingLevel ?? 'off'}'),
-            Text('Fast mode: ${sessionInfo?.fastMode == true ? 'on' : 'off'}'),
-            Text('Verbose: ${sessionInfo?.verboseLevel ?? 'off'}'),
-            if (models.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final model in models.take(4))
-                    ActionChip(
-                      label: Text(model.id),
-                      onPressed: () => unawaited(onSelectModel(model.id)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: 280,
+                  child: DropdownButtonFormField<String>(
+                    value: currentModel,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Model',
                     ),
-                ],
-              ),
-            ],
+                    items: [
+                      for (final model in models)
+                        DropdownMenuItem<String>(
+                          value: model.id,
+                          child: Text(model.id),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        unawaited(onSelectModel(value));
+                      }
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 180,
+                  child: DropdownButtonFormField<String>(
+                    value: currentThinking,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Thinking',
+                    ),
+                    items: [
+                      for (final value in thinkingChoices)
+                        DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        ),
+                    ],
+                    onChanged: (value) => unawaited(onSelectThinking(value)),
+                  ),
+                ),
+                SizedBox(
+                  width: 180,
+                  child: DropdownButtonFormField<String>(
+                    value: currentVerbose,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Verbose',
+                    ),
+                    items: [
+                      for (final value in verboseChoices)
+                        DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        ),
+                    ],
+                    onChanged: (value) => unawaited(onSelectVerbose(value)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Fast mode'),
+              subtitle: const Text('Maps to sessions.patch fastMode'),
+              value: fastMode,
+              onChanged: (value) => unawaited(onToggleFastMode(value)),
+            ),
           ],
         ),
       ),

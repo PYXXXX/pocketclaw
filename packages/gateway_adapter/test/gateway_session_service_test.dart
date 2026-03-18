@@ -40,6 +40,7 @@ void main() {
         TestGatewayClient(
           onRequest: (request) async {
             expect(request.method, GatewayMethodNames.sessionsPatch);
+            expect(request.params?['label'], 'Pocket main');
             expect(request.params?['model'], 'codex-lb/gpt-5.4');
             expect(request.params?['fastMode'], true);
             return GatewayResponse(
@@ -53,6 +54,7 @@ void main() {
 
       final response = await service.patch(const SessionPatchParams(
         key: 'agent:main:pc-home',
+        label: 'Pocket main',
         model: 'codex-lb/gpt-5.4',
         fastMode: true,
       ));

@@ -15,18 +15,22 @@ final class ChatSendParams {
     required this.sessionKey,
     required this.message,
     this.deliver = false,
+    this.attachments,
     this.idempotencyKey,
   });
 
   final String sessionKey;
   final String message;
   final bool deliver;
+  final List<Object?>? attachments;
   final String? idempotencyKey;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'sessionKey': sessionKey,
         'message': message,
         'deliver': deliver,
+        if (attachments != null && attachments!.isNotEmpty)
+          'attachments': attachments,
         if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
       };
 }
