@@ -15,8 +15,9 @@ It does not rely on:
 
 PocketClaw expects the Gateway to already support the behaviors used by current Control UI / WebChat flows, including:
 
-- WebSocket `connect` handshake
+- WebSocket `connect.challenge` followed by `connect`
 - chat operations scoped by `sessionKey`
+- `chat.send` with `deliver: false` and `idempotencyKey`
 - chat and agent event streams
 - session listing and patching
 - model listing
@@ -31,6 +32,17 @@ The client should prefer runtime capability checks and tolerant parsing over bri
 ### Adapter isolation
 
 All raw Gateway payload handling should be isolated inside a compatibility adapter layer.
+
+### Request and event alignment
+
+When Control UI behavior is known, PocketClaw should align to that behavior instead of inventing alternate semantics.
+
+Examples already reflected in the codebase:
+
+- `connect.challenge` is treated as a prerequisite to `connect`
+- `chat.send` uses `deliver: false`
+- `chat.abort` prefers `{ sessionKey, runId }` when a run is active
+- `sessions.patch` carries session-scoped overrides
 
 ### Regression checklist
 
@@ -69,4 +81,5 @@ PocketClaw 的兼容策略是：
 - 只兼容现有 Gateway 能力
 - 不依赖新增接口
 - 通过适配层隔离 Gateway payload 变化
+- 优先对齐当前 Control UI / WebChat 已使用的实际行为
 - 用回归清单而不是“想当然”来做版本兼容

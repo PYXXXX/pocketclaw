@@ -11,6 +11,7 @@ resolution: workspace
 dependencies:
   gateway_transport:
     path: ../gateway_transport
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
   lints: ^4.0.0
