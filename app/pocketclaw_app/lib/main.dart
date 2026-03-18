@@ -35,19 +35,24 @@ class PocketClawHome extends StatefulWidget {
 class _PocketClawHomeState extends State<PocketClawHome> {
   final SessionKeyFactory _sessionKeyFactory = const SessionKeyFactory();
   final FakeGatewayClient _gatewayClient = FakeGatewayClient();
-  final List<ChatTimelineItem> _timeline = <ChatTimelineItem>[];
+  final TextEditingController _messageController = TextEditingController();
 
+  late final GatewayChatService _chatService;
   late final LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
   StreamSubscription<GatewayConnectionState>? _connectionSubscription;
   StreamSubscription<GatewayEvent>? _eventSubscription;
+  StreamSubscription<ChatStreamEvent>? _chatSubscription;
   GatewayConnectionState _connectionState = const GatewayConnectionState(
     phase: GatewayConnectionPhase.disconnected,
   );
+  List<ChatTimelineItem> _timeline = <ChatTimelineItem>[];
+  String? _activeRunId;
 
   @override
   void initState() {
     super.initState();
+    _chatService = GatewayChatService(_gatewayClient);
     _registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
@@ -66,24 +71,89 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     _eventSubscription = _gatewayClient.events.listen((event) {
       if (event.event == 'connect.challenge') {
-        setState(() {
-          _timeline.add(
-            ChatTimelineItem(
-              role: ChatTimelineRole.system,
-              text: 'Received connect.challenge (${event.payload['nonce']})',
-              createdAt: DateTime.now().toUtc(),
-            ),
-          );
-        });
+        _appendTimeline(
+          ChatTimelineRole.system,
+          'Received connect.challenge (${event.payload['nonce']})',
+        );
       }
     });
+
+    _chatSubscription = _chatService.stream.listen(_handleChatStreamEvent);
+    unawaited(_loadHistoryForCurrentSession());
   }
 
   @override
   void dispose() {
     _connectionSubscription?.cancel();
     _eventSubscription?.cancel();
+    _chatSubscription?.cancel();
+    _messageController.dispose();
     super.dispose();
+  }
+
+  void _handleChatStreamEvent(ChatStreamEvent event) {
+    if (event.sessionKey != _currentSession.sessionKey.value) {
+      return;
+    }
+
+    if (event.runId != null) {
+      _activeRunId = event.runId;
+    }
+
+    switch (event.state) {
+      case ChatStreamState.delta:
+        if (event.message != null) {
+          _appendTimeline(ChatTimelineRole.assistant, '[streaming] ${event.message!.text}');
+        }
+      case ChatStreamState.finalMessage:
+        if (event.message != null) {
+          _appendTimeline(ChatTimelineRole.assistant, event.message!.text);
+        }
+        _activeRunId = null;
+      case ChatStreamState.aborted:
+        if (event.message != null) {
+          _appendTimeline(ChatTimelineRole.system, event.message!.text);
+        }
+        _activeRunId = null;
+      case ChatStreamState.error:
+        _appendTimeline(ChatTimelineRole.system, event.errorMessage ?? 'Chat error');
+        _activeRunId = null;
+    }
+  }
+
+  Future<void> _loadHistoryForCurrentSession() async {
+    final history = await _chatService.loadHistory(
+      sessionKey: _currentSession.sessionKey.value,
+    );
+
+    final items = history.messages.map((message) {
+      return ChatTimelineItem(
+        role: switch (message.role) {
+          ChatMessageRole.system => ChatTimelineRole.system,
+          ChatMessageRole.user => ChatTimelineRole.user,
+          ChatMessageRole.assistant => ChatTimelineRole.assistant,
+        },
+        text: message.text,
+        createdAt: message.timestamp ?? DateTime.now().toUtc(),
+      );
+    }).toList();
+
+    setState(() {
+      _timeline = items;
+    });
+  }
+
+  void _appendTimeline(ChatTimelineRole role, String text) {
+    setState(() {
+      _timeline = <ChatTimelineItem>[
+        ..._timeline,
+        ChatTimelineItem(
+          role: role,
+          text: text,
+          createdAt: DateTime.now().toUtc(),
+        ),
+      ];
+    });
   }
 
   void _createSession() {
@@ -96,22 +166,49 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _registry.remember(entry);
       _currentSession = entry;
-      _timeline.add(
+      _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
           text: 'Created local session ${entry.sessionKey.value}',
           createdAt: DateTime.now().toUtc(),
         ),
-      );
+      ];
     });
   }
 
   Future<void> _connect() async {
     await _gatewayClient.connect();
+    await _loadHistoryForCurrentSession();
   }
 
   Future<void> _disconnect() async {
     await _gatewayClient.disconnect();
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+
+    _appendTimeline(ChatTimelineRole.user, text);
+    _messageController.clear();
+
+    final response = await _chatService.send(
+      sessionKey: _currentSession.sessionKey.value,
+      message: text,
+    );
+
+    setState(() {
+      _activeRunId = response.payload?['runId'] as String?;
+    });
+  }
+
+  Future<void> _abortRun() async {
+    await _chatService.abort(
+      sessionKey: _currentSession.sessionKey.value,
+      runId: _activeRunId,
+    );
   }
 
   @override
@@ -137,6 +234,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
               setState(() {
                 _currentSession = sessions[index];
               });
+              unawaited(_loadHistoryForCurrentSession());
             },
             labelType: NavigationRailLabelType.all,
             destinations: [
@@ -178,7 +276,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                             ? const Align(
                                 alignment: Alignment.topLeft,
                                 child: Text(
-                                  'Timeline is empty. Create a session or connect to the fake Gateway client.',
+                                  'Timeline is empty. Connect and send a message to the fake Gateway client.',
                                 ),
                               )
                             : ListView.separated(
@@ -196,6 +294,31 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                               ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Send a message',
+                          ),
+                          onSubmitted: (_) => unawaited(_sendMessage()),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: _sendMessage,
+                        child: const Text('Send'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: _activeRunId != null ? _abortRun : null,
+                        child: const Text('Stop'),
+                      ),
+                    ],
                   ),
                 ],
               ),
