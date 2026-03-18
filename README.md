@@ -1,22 +1,74 @@
 # PocketClaw
 
-PocketClaw 是一个兼容现有 OpenClaw Gateway 的原生移动客户端项目。
+PocketClaw is a native mobile client for existing OpenClaw Gateway deployments.
 
-当前阶段原则：
+It is designed around one constraint: **compatibility with the Gateway as it exists today**.
+The project does **not** require Gateway modifications, private patches, or new server-side APIs.
+
+## Project status
+
+Early scaffold.
+
+## Principles
+
+- **Gateway-compatible first** — work with current OpenClaw Gateway behavior.
+- **No custom backend** — connect directly to the Gateway transport surface.
+- **Mobile-first** — optimize for phone use before expanding into broader control surfaces.
+- **Multi-session by client-controlled session keys** — create and switch sessions without changing Gateway semantics.
+- **Wearable-aware** — keep architecture adaptable for future watch-focused clients such as `WristClaw`.
+- **Fully vibe coded** — the project intentionally embraces an AI-first, rapid-iteration development workflow.
+
+## Scope
+
+PocketClaw starts as a chat-focused client with a pragmatic control surface.
+
+Initial priorities:
+
+1. Connection, authentication, and pairing
+2. Chat history and sending
+3. Streaming assistant output
+4. Tool call rendering
+5. Session switching and client-created sessions
+6. Image sending
+7. Basic session overrides (`model`, `thinking`, `fast`, `verbose`)
+
+## Non-goals
+
+For the current phase, PocketClaw does not assume:
+
+- Gateway-side feature development
+- Private Gateway storage hacks
+- Archive restore APIs
+- A browser wrapper / WebView-first product strategy
+
+## Repository layout
+
+- `docs/` — product, architecture, compatibility, and planning documents
+- `app/` — future mobile application code
+- `packages/` — future reusable protocol, state, and adapter modules
+
+## Key documents
+
+- `docs/architecture.md`
+- `docs/mvp-scope.md`
+- `docs/compatibility.md`
+- `docs/session-key-strategy.md`
+
+## Language policy
+
+English is the primary language for repository content.
+Chinese versions may be added alongside English where useful.
+
+---
+
+## 中文摘要
+
+PocketClaw 是一个兼容现有 OpenClaw Gateway 的原生移动客户端。
+
+当前原则：
 
 - 不修改 Gateway
 - 不依赖私有补丁或新增 Gateway API
-- 优先复用现有 Gateway WebSocket / Control UI 已有能力
-- 先做手机端体验，再评估手表特化版本 `WristClaw`
-
-## 当前目录
-
-- `docs/`：产品、架构、兼容性与开发记录
-- `app/`：未来移动端应用代码
-- `packages/`：未来可复用核心模块（协议、状态管理、适配层）
-
-## 当前已确认方向
-
-- 项目名：PocketClaw
-- 多会话思路：通过自定义 `sessionKey` 切换/新建会话，不改 Gateway
-- 目标兼容设备：手机优先，同时为不同 DPI 设备与安卓手表保留适配空间
+- 直接兼容现有 Gateway / Control UI / WebChat 行为
+- 先做手机端，再为未来手表端保留架构空间
+- 项目采用 AI-first、fully vibe coded 的开发方式

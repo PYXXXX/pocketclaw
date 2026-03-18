@@ -1,38 +1,44 @@
-# Session Key 策略（草案）
+# Session Key Strategy
 
-PocketClaw 不依赖 Gateway 新增会话接口，当前采用“客户端控制 sessionKey”的方式实现多会话。
+PocketClaw implements multi-session behavior without requiring new Gateway APIs.
 
-## 基本原则
+The client treats `sessionKey` as the core session identity and manages session creation and switching entirely on the client side.
 
-- 复用现有 Gateway 的 `sessionKey` 语义
-- 新建会话时生成新的自定义 key
-- 不影响已有会话
-- 不依赖 `/new` / `/reset` 才能获得多会话体验
+## Goals
 
-## 推荐格式
+- support multiple concurrent conversations
+- avoid interfering with an existing active session
+- avoid reliance on `/new`, `/reset`, or archive restore semantics
+- stay compatible with current Gateway routing behavior
+
+## Core model
+
+PocketClaw creates and switches sessions by selecting a different `sessionKey`.
+
+Recommended format:
 
 ```text
 agent:<agentId>:<clientKey>
 ```
 
-例如：
+Examples:
 
 - `agent:main:pc-home`
 - `agent:main:pc-20260318-a1b2`
 - `agent:gowithclaw:pc-test`
 
-## 避免使用
+## Reserved patterns to avoid
 
-避免直接占用这些已有语义：
+Client-generated keys should avoid names that already carry Gateway semantics:
 
 - `main`
 - `global`
 - `cron:*`
 - `subagent:*`
 
-## 客户端本地状态
+## Local client state
 
-建议客户端本地维护：
+PocketClaw should maintain at least the following local state:
 
 - `currentSessionKey`
 - `recentSessionKeys`
@@ -40,4 +46,28 @@ agent:<agentId>:<clientKey>
 - `draftBySessionKey`
 - `displayTitleBySessionKey`
 
-其中标题建议只保存在客户端本地，不直接写进 `sessionKey`。
+Display titles should remain client-side metadata rather than being encoded into the session key.
+
+## Why this approach
+
+This strategy provides a practical multi-session UX today because the current Gateway surface already supports session-scoped chat operations such as:
+
+- `chat.history(sessionKey)`
+- `chat.send(sessionKey)`
+- `chat.abort(sessionKey)`
+
+As a result, PocketClaw can create a new conversation by choosing a new `sessionKey`, without changing Gateway behavior.
+
+---
+
+## 中文摘要
+
+PocketClaw 的多会话方案基于客户端直接控制 `sessionKey`，不依赖新增 Gateway 接口。
+
+推荐格式：`agent:<agentId>:<clientKey>`。
+
+核心目标：
+
+- 不影响已有会话
+- 不依赖 `/new`、`/reset` 或归档恢复
+- 直接兼容现有 Gateway 行为
