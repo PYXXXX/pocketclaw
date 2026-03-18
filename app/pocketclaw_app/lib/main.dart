@@ -38,6 +38,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _messageController = TextEditingController();
 
   late final GatewayChatService _chatService;
+  late final GatewaySessionService _sessionService;
+  late final GatewayAgentService _agentService;
   late final LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
   StreamSubscription<GatewayConnectionState>? _connectionSubscription;
@@ -47,12 +49,17 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     phase: GatewayConnectionPhase.disconnected,
   );
   List<ChatTimelineItem> _timeline = <ChatTimelineItem>[];
+  List<ModelInfo> _models = const <ModelInfo>[];
+  AgentIdentity? _assistantIdentity;
+  SessionInfo? _currentSessionInfo;
   String? _activeRunId;
 
   @override
   void initState() {
     super.initState();
     _chatService = GatewayChatService(_gatewayClient);
+    _sessionService = GatewaySessionService(_gatewayClient);
+    _agentService = GatewayAgentService(_gatewayClient);
     _registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
@@ -79,7 +86,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     });
 
     _chatSubscription = _chatService.stream.listen(_handleChatStreamEvent);
-    unawaited(_loadHistoryForCurrentSession());
+    unawaited(_loadCurrentViewData());
   }
 
   @override
@@ -121,6 +128,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
+  Future<void> _loadCurrentViewData() async {
+    await Future.wait<void>([
+      _loadHistoryForCurrentSession(),
+      _loadAssistantAndModels(),
+      _loadSessionInfo(),
+    ]);
+  }
+
   Future<void> _loadHistoryForCurrentSession() async {
     final history = await _chatService.loadHistory(
       sessionKey: _currentSession.sessionKey.value,
@@ -140,6 +155,33 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     setState(() {
       _timeline = items;
+    });
+  }
+
+  Future<void> _loadAssistantAndModels() async {
+    final results = await Future.wait<Object?>([
+      _agentService.getIdentity(sessionKey: _currentSession.sessionKey.value),
+      _agentService.listModels(),
+    ]);
+
+    setState(() {
+      _assistantIdentity = results[0] as AgentIdentity;
+      _models = results[1] as List<ModelInfo>;
+    });
+  }
+
+  Future<void> _loadSessionInfo() async {
+    final result = await _sessionService.list();
+    final targetKey = _currentSession.sessionKey.value;
+    SessionInfo? info;
+    for (final session in result.sessions) {
+      if (session.key == targetKey) {
+        info = session;
+        break;
+      }
+    }
+    setState(() {
+      _currentSessionInfo = info;
     });
   }
 
@@ -173,12 +215,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           createdAt: DateTime.now().toUtc(),
         ),
       ];
+      _currentSessionInfo = null;
     });
   }
 
   Future<void> _connect() async {
     await _gatewayClient.connect();
-    await _loadHistoryForCurrentSession();
+    await _loadCurrentViewData();
   }
 
   Future<void> _disconnect() async {
@@ -202,6 +245,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _activeRunId = response.payload?['runId'] as String?;
     });
+
+    await _loadSessionInfo();
   }
 
   Future<void> _abortRun() async {
@@ -209,6 +254,16 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       sessionKey: _currentSession.sessionKey.value,
       runId: _activeRunId,
     );
+  }
+
+  Future<void> _applyModel(String modelId) async {
+    await _sessionService.patch(
+      SessionPatchParams(
+        key: _currentSession.sessionKey.value,
+        model: modelId,
+      ),
+    );
+    await _loadSessionInfo();
   }
 
   @override
@@ -234,7 +289,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
               setState(() {
                 _currentSession = sessions[index];
               });
-              unawaited(_loadHistoryForCurrentSession());
+              unawaited(_loadCurrentViewData());
             },
             labelType: NavigationRailLabelType.all,
             destinations: [
@@ -266,6 +321,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                     state: _connectionState,
                     onConnect: _connect,
                     onDisconnect: _disconnect,
+                  ),
+                  const SizedBox(height: 12),
+                  _SessionInfoCard(
+                    identity: _assistantIdentity,
+                    sessionInfo: _currentSessionInfo,
+                    models: _models,
+                    onSelectModel: _applyModel,
                   ),
                   const SizedBox(height: 16),
                   Expanded(
@@ -388,6 +450,57 @@ class _ConnectionStatusCard extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionInfoCard extends StatelessWidget {
+  const _SessionInfoCard({
+    required this.identity,
+    required this.sessionInfo,
+    required this.models,
+    required this.onSelectModel,
+  });
+
+  final AgentIdentity? identity;
+  final SessionInfo? sessionInfo;
+  final List<ModelInfo> models;
+  final Future<void> Function(String modelId) onSelectModel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              identity?.name ?? 'Assistant',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text('Model: ${sessionInfo?.model ?? 'default'}'),
+            Text('Thinking: ${sessionInfo?.thinkingLevel ?? 'off'}'),
+            Text('Fast mode: ${sessionInfo?.fastMode == true ? 'on' : 'off'}'),
+            Text('Verbose: ${sessionInfo?.verboseLevel ?? 'off'}'),
+            if (models.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final model in models.take(4))
+                    ActionChip(
+                      label: Text(model.id),
+                      onPressed: () => unawaited(onSelectModel(model.id)),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

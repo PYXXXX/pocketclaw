@@ -14,6 +14,16 @@ final class FakeGatewayClient implements ConnectableGatewayClient {
               text: 'PocketClaw scaffold is ready. Connect and start chatting.',
             ),
           ],
+        },
+        _sessionStateByKey = <String, Map<String, Object?>>{
+          'agent:main:pc-home': <String, Object?>{
+            'key': 'agent:main:pc-home',
+            'label': 'Home',
+            'model': 'codex-lb-responses/gpt-5.4',
+            'thinkingLevel': 'off',
+            'fastMode': false,
+            'verboseLevel': 'off',
+          },
         };
 
   final StreamController<GatewayEvent> _eventController =
@@ -21,6 +31,7 @@ final class FakeGatewayClient implements ConnectableGatewayClient {
   final StreamController<GatewayConnectionState> _connectionController =
       StreamController<GatewayConnectionState>.broadcast();
   final Map<String, List<Map<String, Object?>>> _messagesBySession;
+  final Map<String, Map<String, Object?>> _sessionStateByKey;
 
   GatewayConnectionState _state = const GatewayConnectionState(
     phase: GatewayConnectionPhase.disconnected,
@@ -100,13 +111,34 @@ final class FakeGatewayClient implements ConnectableGatewayClient {
       case GatewayMethodNames.chatAbort:
         return _chatAbort(request);
       case GatewayMethodNames.sessionsList:
+        return _sessionsList(request);
+      case GatewayMethodNames.sessionsPatch:
+        return _sessionsPatch(request);
+      case GatewayMethodNames.agentIdentityGet:
         return GatewayResponse(
           id: request.id,
           ok: true,
-          payload: <String, Object?>{
-            'sessions': _messagesBySession.keys
-                .map((key) => <String, Object?>{'key': key})
-                .toList(),
+          payload: const <String, Object?>{
+            'agentId': 'main',
+            'name': 'Qingzhou Bot',
+            'avatar': null,
+          },
+        );
+      case GatewayMethodNames.modelsList:
+        return GatewayResponse(
+          id: request.id,
+          ok: true,
+          payload: const <String, Object?>{
+            'models': <Map<String, Object?>>[
+              <String, Object?>{
+                'id': 'codex-lb-responses/gpt-5.4',
+                'provider': 'codex-lb-responses',
+              },
+              <String, Object?>{
+                'id': 'codex-lb/gpt-5.4',
+                'provider': 'codex-lb',
+              },
+            ],
           },
         );
       default:
@@ -121,12 +153,13 @@ final class FakeGatewayClient implements ConnectableGatewayClient {
   GatewayResponse _chatHistory(GatewayRequest request) {
     final sessionKey = request.params?['sessionKey'] as String? ?? 'unknown';
     final messages = _messagesBySession[sessionKey] ?? const <Map<String, Object?>>[];
+    final sessionState = _sessionStateByKey[sessionKey] ?? const <String, Object?>{};
     return GatewayResponse(
       id: request.id,
       ok: true,
       payload: <String, Object?>{
         'messages': messages,
-        'thinkingLevel': 'off',
+        'thinkingLevel': sessionState['thinkingLevel'] ?? 'off',
       },
     );
   }
@@ -137,6 +170,17 @@ final class FakeGatewayClient implements ConnectableGatewayClient {
     final runId = request.params?['idempotencyKey'] as String? ?? request.id;
 
     final messages = _messagesBySession.putIfAbsent(sessionKey, () => <Map<String, Object?>>[]);
+    _sessionStateByKey.putIfAbsent(
+      sessionKey,
+      () => <String, Object?>{
+        'key': sessionKey,
+        'label': sessionKey.split(':').last,
+        'model': 'codex-lb-responses/gpt-5.4',
+        'thinkingLevel': 'off',
+        'fastMode': false,
+        'verboseLevel': 'off',
+      },
+    );
     messages.add(_message(role: 'user', text: message));
 
     _activeRunId = runId;
@@ -212,6 +256,40 @@ final class FakeGatewayClient implements ConnectableGatewayClient {
       id: request.id,
       ok: true,
       payload: const <String, Object?>{'aborted': true},
+    );
+  }
+
+  GatewayResponse _sessionsList(GatewayRequest request) {
+    return GatewayResponse(
+      id: request.id,
+      ok: true,
+      payload: <String, Object?>{
+        'sessions': _sessionStateByKey.values.toList(),
+        'defaults': const <String, Object?>{
+          'model': 'codex-lb-responses/gpt-5.4',
+        },
+      },
+    );
+  }
+
+  GatewayResponse _sessionsPatch(GatewayRequest request) {
+    final key = request.params?['key'] as String? ?? 'unknown';
+    final state = _sessionStateByKey.putIfAbsent(
+      key,
+      () => <String, Object?>{'key': key},
+    );
+
+    for (final entry in request.params?.entries ?? const Iterable<MapEntry<String, Object?>>.empty()) {
+      if (entry.key == 'key') {
+        continue;
+      }
+      state[entry.key] = entry.value;
+    }
+
+    return GatewayResponse(
+      id: request.id,
+      ok: true,
+      payload: state,
     );
   }
 
