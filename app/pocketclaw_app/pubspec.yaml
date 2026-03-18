@@ -1,0 +1,27 @@
+name: pocketclaw_app
+description: Phone-first PocketClaw client application.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.4.0
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  gateway_transport:
+    path: ../../packages/gateway_transport
+  gateway_adapter:
+    path: ../../packages/gateway_adapter
+  pocketclaw_core:
+    path: ../../packages/pocketclaw_core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

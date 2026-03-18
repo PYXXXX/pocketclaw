@@ -1,0 +1,33 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Show tool versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap workspace
+        run: ~/.pub-cache/bin/melos bootstrap
+
+      - name: Analyze workspace
+        run: ~/.pub-cache/bin/melos run analyze

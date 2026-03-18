@@ -1,0 +1,19 @@
+name: pocketclaw
+
+packages:
+  - app/**
+  - packages/**
+
+scripts:
+  format:
+    run: melos exec -- "dart format ."
+    description: Format all Dart and Flutter packages.
+  analyze:
+    run: melos exec -- "dart analyze ."
+    description: Run static analysis across the workspace.
+  test:
+    run: melos exec --dir-exists=test -- "dart test"
+    description: Run package tests where present.
+  bootstrap:ci:
+    run: melos bootstrap
+    description: Install workspace dependencies in CI.

@@ -1,0 +1,17 @@
+name: pocketclaw_core
+description: Core PocketClaw domain primitives shared across clients.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.4.0
+
+resolution: workspace
+
+dependencies:
+  gateway_adapter:
+    path: ../gateway_adapter
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.2
