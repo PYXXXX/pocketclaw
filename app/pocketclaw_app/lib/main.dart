@@ -66,6 +66,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   SessionInfo? _currentSessionInfo;
   String? _activeRunId;
   String? _lastError;
+  GatewayErrorGuidance? _lastGuidance;
 
   @override
   void initState() {
@@ -182,6 +183,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _gatewayProfile = profile;
       _lastError = null;
+      _lastGuidance = null;
       _assistantIdentity = null;
       _models = const <ModelInfo>[];
       _currentSessionInfo = null;
@@ -243,15 +245,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
       setState(() {
         _lastError = null;
+        _lastGuidance = null;
       });
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastError = error.toString();
-      });
-      _appendTimeline(ChatTimelineRole.system, 'Load failed: $error');
+      _recordError(error, prefix: 'Load failed');
     }
   }
 
@@ -313,6 +310,21 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     });
   }
 
+  void _recordError(Object error, {String? prefix}) {
+    if (!mounted) {
+      return;
+    }
+    final guidance = gatewayErrorGuidanceFor(error);
+    setState(() {
+      _lastError = prefix == null ? error.toString() : '$prefix: $error';
+      _lastGuidance = guidance;
+    });
+    _appendTimeline(
+      ChatTimelineRole.system,
+      prefix == null ? guidance.summary : '$prefix: ${guidance.summary}',
+    );
+  }
+
   void _appendTimeline(ChatTimelineRole role, String text) {
     if (!mounted) {
       return;
@@ -356,13 +368,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _appendTimeline(ChatTimelineRole.system, 'Connected to ${_gatewayProfile.url}');
       await _loadCurrentViewData();
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastError = error.toString();
-      });
-      _appendTimeline(ChatTimelineRole.system, 'Connect failed: $error');
+      _recordError(error, prefix: 'Connect failed');
     }
   }
 
@@ -392,17 +398,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       setState(() {
         _activeRunId = response.payload?['runId'] as String?;
         _lastError = null;
+        _lastGuidance = null;
       });
 
       await _loadSessionInfo();
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastError = error.toString();
-      });
-      _appendTimeline(ChatTimelineRole.system, 'Send failed: $error');
+      _recordError(error, prefix: 'Send failed');
     }
   }
 
@@ -417,13 +418,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         runId: _activeRunId,
       );
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastError = error.toString();
-      });
-      _appendTimeline(ChatTimelineRole.system, 'Abort failed: $error');
+      _recordError(error, prefix: 'Abort failed');
     }
   }
 
@@ -441,13 +436,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastError = error.toString();
-      });
-      _appendTimeline(ChatTimelineRole.system, 'Model update failed: $error');
+      _recordError(error, prefix: 'Model update failed');
     }
   }
 
@@ -521,6 +510,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                     models: _models,
                     onSelectModel: _applyModel,
                   ),
+                  if (_lastGuidance != null) ...[
+                    const SizedBox(height: 12),
+                    _GuidanceCard(guidance: _lastGuidance!),
+                  ],
                   if (_lastError != null) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -633,7 +626,7 @@ class _GatewayConfigCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Token and password are optional. PocketClaw will also reuse device tokens issued by the Gateway after pairing or approved device auth.',
+              'Token and password are optional. PocketClaw also reuses device tokens issued by the Gateway after pairing or approved device auth.',
             ),
             const SizedBox(height: 12),
             TextField(
@@ -779,6 +772,39 @@ class _SessionInfoCard extends StatelessWidget {
             ],
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _GuidanceCard extends StatelessWidget {
+  const _GuidanceCard({required this.guidance});
+
+  final GatewayErrorGuidance guidance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              guidance.summary,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            if (guidance.action != null) ...[
+              const SizedBox(height: 8),
+              Text(guidance.action!),
+            ],
+            if (guidance.code != null) ...[
+              const SizedBox(height: 8),
+              Text('Code: ${guidance.code}'),
+            ],
+          ],
+        ),
       ),
     );
   }

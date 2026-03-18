@@ -17,6 +17,8 @@ export 'src/gateway_device_identity.dart';
 export 'src/gateway_device_identity_store.dart';
 export 'src/gateway_device_token.dart';
 export 'src/gateway_device_token_store.dart';
+export 'src/gateway_error_codes.dart';
+export 'src/gateway_error_guidance.dart';
 export 'src/gateway_method_names.dart';
 export 'src/gateway_request_error.dart';
 export 'src/gateway_session_service.dart';
