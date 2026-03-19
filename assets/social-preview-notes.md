@@ -1,18 +1,19 @@
 # PocketClaw social preview notes
 
-Suggested repository social preview asset:
+Suggested repository social preview assets:
 
 - `assets/pocketclaw-social-preview.svg`
+- `assets/pocketclaw-social-preview.png`
 
 Recommended next step on GitHub:
 
 1. Open repository **Settings**
 2. Go to **General**
 3. Scroll to **Social preview**
-4. Upload an exported PNG version of this artwork if GitHub rejects SVG
+4. Upload `assets/pocketclaw-social-preview.png`
 
-Suggested export target:
+Export target already prepared:
 
 - 1280×640 PNG
 
-This file is kept in-repo so the artwork source stays versioned.
+The SVG source stays in-repo so the artwork remains versioned and editable.
