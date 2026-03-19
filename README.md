@@ -2,6 +2,8 @@
 
 # PocketClaw
 
+<img src="./assets/pocketclaw-logo.svg" alt="PocketClaw logo" width="120" />
+
 **Connect to your OpenClaw lobster 🦞 from your phone.**
 
 *A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.*

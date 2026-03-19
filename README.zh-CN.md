@@ -2,6 +2,8 @@
 
 # PocketClaw
 
+<img src="./assets/pocketclaw-logo.svg" alt="PocketClaw logo" width="120" />
+
 **用手机便捷连接您的 OpenClaw 龙虾 🦞**
 
 *一个使用 Flutter 开发、以手机为优先的 OpenClaw 客户端 —— 纯前端实现，无须额外后端依赖。*
