@@ -1,39 +1,43 @@
+<div align="center">
+
 # PocketClaw
 
-[English](./README.md) | [简体中文](./README.zh-CN.md)
+**Connect to your OpenClaw lobster 🦞 from your phone.**
 
-> Connect to your OpenClaw lobster 🦞 from your phone.
-> A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.
+*A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.*
+
+[English](./README.md) · [简体中文](./README.zh-CN.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md)
 
 ![Status](https://img.shields.io/badge/status-active%20prototype-7c3aed)
 ![Frontend](https://img.shields.io/badge/architecture-pure%20frontend-0f766e)
 ![Stack](https://img.shields.io/badge/built%20with-Flutter-02569B?logo=flutter&logoColor=white)
 ![Gateway](https://img.shields.io/badge/OpenClaw-compatible-black)
 
-## At a glance
+</div>
 
-- **Phone-first** — built for a native mobile experience, not a browser wrapper.
-- **Gateway-compatible** — works with the Gateway as it exists today.
-- **Pure frontend** — no custom backend, no private patches, no extra service layer.
-- **Multi-session aware** — create and switch sessions with client-controlled `sessionKey` values.
-- **Future-friendly** — designed so the core can later extend toward compact and wearable surfaces.
+## Highlights
 
-## Why PocketClaw
+- **Native mobile first** — built for a real phone experience, not a browser wrapper.
+- **Works with today’s Gateway** — no Gateway modifications, no private patches.
+- **Pure frontend** — no custom backend, no extra service layer.
+- **Multi-session aware** — switch or create sessions with client-controlled `sessionKey` values.
+- **Future-friendly** — the core architecture can later extend toward compact and wearable surfaces.
+
+## Why PocketClaw exists
 
 OpenClaw already has a capable Gateway, but the existing surfaces are not designed first for a native mobile experience.
-PocketClaw exists to close that gap without changing server-side behavior.
+PocketClaw exists to make OpenClaw feel natural on a phone **without changing server-side behavior**.
 
-The goal is simple:
+The idea is deliberately simple:
 
 - keep the deployment model unchanged
-- keep the client experience mobile-native
-- keep the architecture clean enough to grow beyond a one-off app shell
+- keep the client truly mobile-native
+- keep the architecture clean enough to scale beyond a one-off app shell
 
-## Status
+## Current status
 
-**Active prototype.**
+> **Active prototype** — architecture and compatibility boundaries are in place.
 
-Architecture and compatibility boundaries are in place.
 The current focus is the **chat MVP**:
 
 - connection, authentication, and pairing
@@ -44,15 +48,15 @@ The current focus is the **chat MVP**:
 - image sending
 - basic session overrides (`model`, `thinking`, `fast`, `verbose`)
 
-## Core principles
+## Design principles
 
 - **Gateway-compatible first** — work with current OpenClaw Gateway behavior.
 - **No custom backend** — connect directly to the Gateway transport surface.
-- **Mobile-first** — optimize for phone use before expanding into broader control surfaces.
-- **Encrypted local credentials** — keep connection profiles and device-issued auth material in OS-backed secure storage.
-- **Multi-session by client-controlled session keys** — create and switch sessions without changing Gateway semantics.
-- **Wearable-aware** — keep architecture adaptable for future watch-focused clients such as `WristClaw`.
-- **Fully vibe coded** — intentionally built with an AI-first, rapid-iteration workflow.
+- **Mobile-first** — optimize for phones before expanding into broader control surfaces.
+- **Encrypted local credentials** — keep profiles and device auth material in OS-backed secure storage.
+- **Client-controlled multi-session** — support multiple conversations without changing Gateway semantics.
+- **Wearable-aware** — keep the core reusable for future watch-focused clients such as `WristClaw`.
+- **Vibe coded, but disciplined** — move fast, keep compatibility strict.
 
 ## What PocketClaw is not
 
@@ -65,7 +69,7 @@ For the current phase, PocketClaw does **not** assume:
 
 ## Architecture direction
 
-PocketClaw keeps protocol, state, and UI concerns separate so the client can evolve without turning into Gateway-specific UI glue.
+PocketClaw keeps **protocol**, **state**, and **UI** concerns separate so the app does not collapse into Gateway-specific payload glue.
 
 Suggested module direction:
 
