@@ -96,13 +96,15 @@ PocketClaw is a mobile-first companion surface, not a claim that every OpenClaw 
 
 | Area | Purpose |
 | --- | --- |
-| [`docs/architecture.md`](./docs/architecture.md) | overall client layering and module direction |
+| [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md) | overall client layering and module direction |
+| [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md) | near-term and medium-term direction |
 | [`docs/mvp-scope.md`](./docs/mvp-scope.md) | current chat MVP scope |
 | [`docs/compatibility.md`](./docs/compatibility.md) | compatibility boundaries with today’s Gateway |
 | [`docs/session-key-strategy.md`](./docs/session-key-strategy.md) | multi-session model via client-controlled keys |
 | [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | current Gateway methods and surface assumptions |
 | [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | connection and pairing UX planning |
-| [`docs/roadmap.md`](./docs/roadmap.md) | near-term and medium-term direction |
+| [`docs/development-workflow.md`](./docs/development-workflow.md) | development principles and iteration style |
+| [`docs/official-android-reference.md`](./docs/official-android-reference.md) | Android-side UX reference notes |
 
 ## Architecture direction
 
@@ -130,6 +132,10 @@ For the current phase, PocketClaw does **not** assume:
 - private storage hacks
 - archive restore APIs
 - a WebView-first product strategy
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=PYXXXX/pocketclaw&type=Date)](https://star-history.com/#PYXXXX/pocketclaw&Date)
 
 ## Repository layout
 

@@ -96,13 +96,15 @@ PocketClaw 更像一个面向移动端的 companion surface，而不是说所有
 
 | 区域 | 说明 |
 | --- | --- |
-| [`docs/architecture.md`](./docs/architecture.md) | 客户端分层和模块方向 |
+| [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md) | 客户端分层和模块方向 |
+| [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md) | 近期与中期路线 |
 | [`docs/mvp-scope.md`](./docs/mvp-scope.md) | 当前 chat MVP 范围 |
 | [`docs/compatibility.md`](./docs/compatibility.md) | 与现有 Gateway 的兼容边界 |
 | [`docs/session-key-strategy.md`](./docs/session-key-strategy.md) | 基于客户端 sessionKey 的多会话策略 |
 | [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | 当前 Gateway 方法与能力映射 |
 | [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | 连接与 pairing 交互规划 |
-| [`docs/roadmap.md`](./docs/roadmap.md) | 近期与中期路线 |
+| [`docs/development-workflow.md`](./docs/development-workflow.md) | 开发方式与迭代原则 |
+| [`docs/official-android-reference.md`](./docs/official-android-reference.md) | Android 侧交互参考 |
 
 ## 架构方向
 
@@ -130,6 +132,10 @@ packages/
 - 私有存储层 hack
 - archive restore API
 - 通过 WebView 套壳来实现产品
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=PYXXXX/pocketclaw&type=Date)](https://star-history.com/#PYXXXX/pocketclaw&Date)
 
 ## 仓库结构
 
