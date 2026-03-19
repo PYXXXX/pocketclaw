@@ -11,6 +11,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  file_picker: ^8.1.2
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.2
   gateway_transport:

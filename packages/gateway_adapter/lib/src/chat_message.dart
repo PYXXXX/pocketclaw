@@ -28,11 +28,19 @@ final class ChatMessage {
     if (content is List<Object?>) {
       final buffer = <String>[];
       for (final item in content) {
-        if (item is Map<String, Object?> && item['type'] == 'text') {
+        if (item is! Map<String, Object?>) {
+          continue;
+        }
+        final type = item['type'];
+        if (type == 'text') {
           final value = item['text'];
           if (value is String) {
             buffer.add(value);
           }
+          continue;
+        }
+        if (type == 'image') {
+          buffer.add('[Image]');
         }
       }
       text = buffer.join('\n');

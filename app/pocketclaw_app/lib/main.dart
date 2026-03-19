@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'src/chat/pending_image_attachment.dart';
 import 'src/storage/connect_flow_preferences_store.dart';
 import 'src/storage/local_session_registry_store.dart';
 import 'src/storage/secure_gateway_device_identity_store.dart';
@@ -110,6 +113,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   List<ModelInfo> _models = const <ModelInfo>[];
   List<AgentSummary> _agents = const <AgentSummary>[];
   List<SessionInfo> _gatewaySessions = const <SessionInfo>[];
+  List<PendingImageAttachment> _pendingAttachments =
+      const <PendingImageAttachment>[];
+  final Map<String, List<PendingImageAttachment>> _attachmentDraftsBySession =
+      <String, List<PendingImageAttachment>>{};
   AgentIdentity? _assistantIdentity;
   SessionInfo? _currentSessionInfo;
   String? _activeRunId;
@@ -228,6 +235,25 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       text: title,
       selection: TextSelection.collapsed(offset: title.length),
     );
+  }
+
+  void _storeCurrentAttachmentDraft() {
+    _attachmentDraftsBySession[_currentSession.sessionKey.value] =
+        List<PendingImageAttachment>.from(_pendingAttachments);
+  }
+
+  void _restoreAttachmentDraftForCurrentSession() {
+    _pendingAttachments = List<PendingImageAttachment>.from(
+      _attachmentDraftsBySession[_currentSession.sessionKey.value] ??
+          const <PendingImageAttachment>[],
+    );
+  }
+
+  void _setPendingAttachments(List<PendingImageAttachment> attachments) {
+    setState(() {
+      _pendingAttachments = List<PendingImageAttachment>.from(attachments);
+    });
+    _storeCurrentAttachmentDraft();
   }
 
   String _displayNameForAgent(String agentId) {
@@ -370,9 +396,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   Future<void> _selectCurrentSession(LocalSessionEntry session) async {
     _syncCurrentSessionDraft(schedulePersist: false);
+    _storeCurrentAttachmentDraft();
     setState(() {
       _currentSession = session;
       _selectedAgentId = _agentIdForSession(session.sessionKey.value);
+      _restoreAttachmentDraftForCurrentSession();
     });
     _applyComposerDraft(session.draftText);
     _applySessionTitle(session.title);
@@ -833,6 +861,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   void _createSession() {
+    _storeCurrentAttachmentDraft();
     final sessionKey = _sessionKeyFactory.createTimestamped(
       agentId: _selectedAgentId,
     );
@@ -844,6 +873,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _registry.remember(entry);
       _currentSession = entry;
+      _pendingAttachments = const <PendingImageAttachment>[];
       _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
@@ -854,8 +884,83 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _currentSessionInfo = null;
     });
 
+    _attachmentDraftsBySession[entry.sessionKey.value] =
+        const <PendingImageAttachment>[];
     _applySessionTitle(entry.title);
     unawaited(_persistSessionRegistry());
+  }
+
+  String? _mimeTypeForImageName(String name) {
+    final normalized = name.toLowerCase();
+    if (normalized.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (normalized.endsWith('.jpg') || normalized.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (normalized.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    if (normalized.endsWith('.gif')) {
+      return 'image/gif';
+    }
+    if (normalized.endsWith('.bmp')) {
+      return 'image/bmp';
+    }
+    if (normalized.endsWith('.heic')) {
+      return 'image/heic';
+    }
+    if (normalized.endsWith('.heif')) {
+      return 'image/heif';
+    }
+    return null;
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+
+      final next = <PendingImageAttachment>[..._pendingAttachments];
+      for (final file in result.files) {
+        final bytes = file.bytes;
+        final name = file.name;
+        final mimeType = _mimeTypeForImageName(name);
+        if (bytes == null || mimeType == null) {
+          continue;
+        }
+        next.add(
+          PendingImageAttachment(
+            id: '${DateTime.now().microsecondsSinceEpoch}-${next.length}',
+            name: name,
+            mimeType: mimeType,
+            base64Content: base64Encode(bytes),
+          ),
+        );
+      }
+
+      if (next.length == _pendingAttachments.length) {
+        _appendTimeline(
+          ChatTimelineRole.system,
+          'No supported image files were added.',
+        );
+        return;
+      }
+      _setPendingAttachments(next);
+    } catch (error) {
+      _recordError(error, prefix: 'Image pick failed');
+    }
+  }
+
+  void _removePendingAttachment(String id) {
+    final next = _pendingAttachments.where((item) => item.id != id).toList();
+    _setPendingAttachments(next);
   }
 
   Future<void> _connect() async {
@@ -903,18 +1008,33 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _sendMessage() async {
-    final text = _messageController.text.trim();
-    if (text.isEmpty || _connectionState.phase != GatewayConnectionPhase.connected) {
+    final previousDraft = _messageController.text;
+    final text = previousDraft.trim();
+    final attachments = List<PendingImageAttachment>.from(_pendingAttachments);
+    if ((text.isEmpty && attachments.isEmpty) ||
+        _connectionState.phase != GatewayConnectionPhase.connected) {
       return;
     }
 
-    _appendTimeline(ChatTimelineRole.user, text);
+    final optimisticText = <String>[
+      if (text.isNotEmpty) text,
+      if (attachments.isNotEmpty)
+        attachments.length == 1
+            ? '[Image]'
+            : '[Images × ${attachments.length}]',
+    ].join('\n');
+
+    _appendTimeline(ChatTimelineRole.user, optimisticText);
     _messageController.clear();
+    _setPendingAttachments(const <PendingImageAttachment>[]);
 
     try {
       final response = await _chatService.send(
         sessionKey: _currentSession.sessionKey.value,
         message: text,
+        attachments: attachments
+            .map((attachment) => attachment.toGatewayAttachment())
+            .toList(),
       );
 
       if (!mounted) {
@@ -928,6 +1048,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
       await _loadSessionInfo();
     } catch (error) {
+      _applyComposerDraft(previousDraft);
+      _setPendingAttachments(attachments);
       _recordError(error, prefix: 'Send failed');
     }
   }
@@ -1096,6 +1218,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                   models: _models,
                   connectionState: _connectionState,
                   activeRunId: _activeRunId,
+                  pendingAttachments: _pendingAttachments,
                   sessionTitleController: _sessionTitleController,
                   messageController: _messageController,
                   onDestinationSelected: (index) {
@@ -1110,6 +1233,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                   onSelectThinking: _applyThinkingLevel,
                   onSelectVerbose: _applyVerboseLevel,
                   onToggleFastMode: _toggleFastMode,
+                  onPickImages: _pickImages,
+                  onRemoveAttachment: _removePendingAttachment,
                   onSendMessage: _sendMessage,
                   onAbortRun: _abortRun,
                   iconForRole: _iconForRole,
@@ -1358,6 +1483,7 @@ class _ChatShell extends StatelessWidget {
     required this.models,
     required this.connectionState,
     required this.activeRunId,
+    required this.pendingAttachments,
     required this.sessionTitleController,
     required this.messageController,
     required this.onDestinationSelected,
@@ -1384,6 +1510,7 @@ class _ChatShell extends StatelessWidget {
   final List<ModelInfo> models;
   final GatewayConnectionState connectionState;
   final String? activeRunId;
+  final List<PendingImageAttachment> pendingAttachments;
   final TextEditingController sessionTitleController;
   final TextEditingController messageController;
   final ValueChanged<int> onDestinationSelected;
@@ -1394,6 +1521,8 @@ class _ChatShell extends StatelessWidget {
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
   final Future<void> Function(bool enabled) onToggleFastMode;
+  final Future<void> Function() onPickImages;
+  final void Function(String id) onRemoveAttachment;
   final Future<void> Function() onSendMessage;
   final Future<void> Function() onAbortRun;
   final IconData Function(ChatTimelineRole role) iconForRole;
@@ -1561,14 +1690,71 @@ class _ChatShell extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+                if (pendingAttachments.isNotEmpty) ...[
+                  SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: pendingAttachments.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final attachment = pendingAttachments[index];
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(
+                                base64Decode(attachment.base64Content),
+                                width: 92,
+                                height: 92,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Material(
+                                color: Colors.black54,
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () => onRemoveAttachment(attachment.id),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Row(
                   children: [
+                    IconButton(
+                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
+                          ? () => unawaited(onPickImages())
+                          : null,
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      tooltip: 'Add image',
+                    ),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: TextField(
                         controller: messageController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Send a message',
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          hintText: pendingAttachments.isEmpty
+                              ? 'Send a message'
+                              : 'Add a caption or send images directly',
                         ),
                         minLines: 1,
                         maxLines: 4,
