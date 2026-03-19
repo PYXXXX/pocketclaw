@@ -7,6 +7,9 @@ import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'src/app_shell/chat_shell.dart';
+import 'src/app_shell/connect_flow_models.dart';
+import 'src/app_shell/connect_surface.dart';
 import 'src/chat/pending_image_attachment.dart';
 import 'src/storage/connect_flow_preferences_store.dart';
 import 'src/storage/local_session_registry_store.dart';
@@ -33,40 +36,6 @@ class PocketClawApp extends StatelessWidget {
       home: const PocketClawHome(),
     );
   }
-}
-
-enum ConnectMethod {
-  manual,
-  setupCode,
-}
-
-enum ConnectFlowStage {
-  welcome,
-  chooseMethod,
-  manualConfig,
-  authPending,
-  pairingPending,
-  ready,
-  error,
-}
-
-enum AppDestination {
-  chat,
-  connect,
-}
-
-class _ConnectFlowSnapshot {
-  const _ConnectFlowSnapshot({
-    required this.stage,
-    required this.title,
-    required this.description,
-    this.requiresAttention = false,
-  });
-
-  final ConnectFlowStage stage;
-  final String title;
-  final String description;
-  final bool requiresAttention;
 }
 
 class PocketClawHome extends StatefulWidget {
@@ -607,31 +576,31 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
-  _ConnectFlowSnapshot _snapshotForConnectFlow() {
+  ConnectFlowSnapshot _snapshotForConnectFlow() {
     switch (_connectFlowStage) {
       case ConnectFlowStage.welcome:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.welcome,
           title: 'Welcome',
           description:
               'PocketClaw connects to an existing OpenClaw Gateway. Finish the quick onboarding, then choose how this phone should connect.',
         );
       case ConnectFlowStage.chooseMethod:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.chooseMethod,
           title: 'Choose connection method',
           description:
               'Manual connect is the baseline flow and should always work. Setup code can be added later when the client path is ready.',
         );
       case ConnectFlowStage.manualConfig:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.manualConfig,
           title: 'Manual connection',
           description:
               'Enter the Gateway URL and optional bootstrap credentials. PocketClaw will store reusable auth locally so reconnect can work next time.',
         );
       case ConnectFlowStage.authPending:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.authPending,
           title: 'Authenticating',
           description:
@@ -639,7 +608,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           requiresAttention: true,
         );
       case ConnectFlowStage.pairingPending:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.pairingPending,
           title: 'Pairing pending',
           description:
@@ -647,14 +616,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           requiresAttention: true,
         );
       case ConnectFlowStage.ready:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.ready,
           title: 'Ready to chat',
           description:
               'Connection setup is usable. You can enter the chat shell now, and reconnect should be much lighter next time.',
         );
       case ConnectFlowStage.error:
-        return const _ConnectFlowSnapshot(
+        return const ConnectFlowSnapshot(
           stage: ConnectFlowStage.error,
           title: 'Needs attention',
           description:
@@ -1177,7 +1146,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ConnectFlowCard(
+              ConnectFlowCard(
                 snapshot: connectSnapshot,
                 onboardingCompleted: _onboardingCompleted,
                 connectMethod: _connectMethod,
@@ -1185,14 +1154,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 onSelectMethod: _selectConnectMethod,
               ),
               const SizedBox(height: 12),
-              _GatewayConfigCard(
+              GatewayConfigCard(
                 gatewayUrlController: _gatewayUrlController,
                 tokenController: _tokenController,
                 passwordController: _passwordController,
                 onApply: _applyGatewayConfiguration,
               ),
               const SizedBox(height: 12),
-              _ConnectionStatusCard(
+              ConnectionStatusCard(
                 state: _connectionState,
                 connectFlowStage: _connectFlowStage,
                 onConnect: _connect,
@@ -1200,7 +1169,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
               ),
               if (_lastGuidance != null) ...[
                 const SizedBox(height: 12),
-                _GuidanceCard(guidance: _lastGuidance!),
+                GuidanceCard(guidance: _lastGuidance!),
               ],
               if (_lastError != null) ...[
                 const SizedBox(height: 12),
@@ -1215,7 +1184,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           ),
         );
 
-        final chatPane = _ChatShell(
+        final chatPane = ChatShell(
           sessions: sessions,
           currentSession: _currentSession,
           timeline: _timeline,
@@ -1251,7 +1220,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: _AppStatusBanner(
+              child: AppStatusBanner(
                 snapshot: connectSnapshot,
                 connectionState: _connectionState,
                 gatewayUrl: _gatewayProfile.url,
@@ -1272,7 +1241,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                     ),
                   AppDestination.chat => KeyedSubtree(
                       key: const ValueKey<String>('chat-locked'),
-                      child: _ChatLockedPlaceholder(
+                      child: ChatLockedPlaceholder(
                         onOpenConnect: () =>
                             _selectDestination(AppDestination.connect),
                       ),
@@ -1305,7 +1274,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                         Expanded(
                           child: showChatShell
                               ? chatPane
-                              : const _ChatLockedPlaceholder(),
+                              : const ChatLockedPlaceholder(),
                         ),
                       ],
                     ),
@@ -1347,984 +1316,3 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 }
-
-class _AppStatusBanner extends StatelessWidget {
-  const _AppStatusBanner({
-    required this.snapshot,
-    required this.connectionState,
-    required this.gatewayUrl,
-  });
-
-  final _ConnectFlowSnapshot snapshot;
-  final GatewayConnectionState connectionState;
-  final String gatewayUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
-    final gatewayLabel = hasGatewayUrl ? gatewayUrl.trim() : 'No Gateway configured yet';
-
-    return Card(
-      color: snapshot.requiresAttention
-          ? colorScheme.errorContainer
-          : colorScheme.surfaceContainerHigh,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  snapshot.stage == ConnectFlowStage.ready
-                      ? Icons.check_circle_outline
-                      : Icons.hub_outlined,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    snapshot.title,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(snapshot.description, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(
-                  avatar: const Icon(Icons.hub_outlined, size: 18),
-                  label: Text(gatewayLabel),
-                ),
-                Chip(
-                  avatar: const Icon(Icons.sync_outlined, size: 18),
-                  label: Text('State: ${connectionState.phase.name}'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConnectFlowCard extends StatelessWidget {
-  const _ConnectFlowCard({
-    required this.snapshot,
-    required this.onboardingCompleted,
-    required this.connectMethod,
-    required this.onCompleteWelcome,
-    required this.onSelectMethod,
-  });
-
-  final _ConnectFlowSnapshot snapshot;
-  final bool onboardingCompleted;
-  final ConnectMethod connectMethod;
-  final Future<void> Function() onCompleteWelcome;
-  final Future<void> Function(ConnectMethod method) onSelectMethod;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      color: snapshot.requiresAttention ? colorScheme.surfaceContainerHighest : null,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(snapshot.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(snapshot.description),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton(
-                  onPressed: onboardingCompleted ? null : onCompleteWelcome,
-                  child: Text(onboardingCompleted ? 'Onboarding complete' : 'Start setup'),
-                ),
-                ChoiceChip(
-                  label: const Text('Manual connect'),
-                  selected: connectMethod == ConnectMethod.manual,
-                  onSelected: (_) => unawaited(onSelectMethod(ConnectMethod.manual)),
-                ),
-                ChoiceChip(
-                  label: const Text('Setup code (later)'),
-                  selected: connectMethod == ConnectMethod.setupCode,
-                  onSelected: (_) => unawaited(onSelectMethod(ConnectMethod.setupCode)),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GatewayConfigCard extends StatelessWidget {
-  const _GatewayConfigCard({
-    required this.gatewayUrlController,
-    required this.tokenController,
-    required this.passwordController,
-    required this.onApply,
-  });
-
-  final TextEditingController gatewayUrlController;
-  final TextEditingController tokenController;
-  final TextEditingController passwordController;
-  final Future<void> Function() onApply;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Gateway configuration',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Manual connect is the baseline path. Token and password are optional bootstrap credentials. Reusable device auth should stay local after the first successful approval.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: gatewayUrlController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Gateway WebSocket URL',
-                hintText: 'ws://127.0.0.1:18789',
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: tokenController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Token',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Password',
-                    ),
-                    obscureText: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: onApply,
-              child: const Text('Save connection settings'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConnectionStatusCard extends StatelessWidget {
-  const _ConnectionStatusCard({
-    required this.state,
-    required this.connectFlowStage,
-    required this.onConnect,
-    required this.onDisconnect,
-  });
-
-  final GatewayConnectionState state;
-  final ConnectFlowStage connectFlowStage;
-  final Future<void> Function() onConnect;
-  final Future<void> Function() onDisconnect;
-
-  @override
-  Widget build(BuildContext context) {
-    final canConnect = state.phase == GatewayConnectionPhase.disconnected ||
-        state.phase == GatewayConnectionPhase.error;
-    final canDisconnect = state.phase != GatewayConnectionPhase.disconnected;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Gateway state: ${state.phase.name}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text('Flow stage: ${connectFlowStage.name}'),
-            if (state.message != null) ...[
-              const SizedBox(height: 8),
-              Text(state.message!),
-            ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                FilledButton(
-                  onPressed: canConnect ? onConnect : null,
-                  child: const Text('Connect'),
-                ),
-                OutlinedButton(
-                  onPressed: canDisconnect ? onDisconnect : null,
-                  child: const Text('Disconnect'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ChatShell extends StatelessWidget {
-  const _ChatShell({
-    required this.sessions,
-    required this.currentSession,
-    required this.timeline,
-    required this.assistantIdentity,
-    required this.sessionInfo,
-    required this.agents,
-    required this.selectedAgentId,
-    required this.gatewaySessions,
-    required this.models,
-    required this.connectionState,
-    required this.activeRunId,
-    required this.pendingAttachments,
-    required this.sessionTitleController,
-    required this.messageController,
-    required this.onDestinationSelected,
-    required this.onSessionTitleSubmitted,
-    required this.onSelectAgent,
-    required this.onOpenGatewaySession,
-    required this.onSelectModel,
-    required this.onSelectThinking,
-    required this.onSelectVerbose,
-    required this.onToggleFastMode,
-    required this.onPickImages,
-    required this.onRemoveAttachment,
-    required this.onSendMessage,
-    required this.onAbortRun,
-    required this.iconForRole,
-  });
-
-  final List<LocalSessionEntry> sessions;
-  final LocalSessionEntry currentSession;
-  final List<ChatTimelineItem> timeline;
-  final AgentIdentity? assistantIdentity;
-  final SessionInfo? sessionInfo;
-  final List<AgentSummary> agents;
-  final String selectedAgentId;
-  final List<SessionInfo> gatewaySessions;
-  final List<ModelInfo> models;
-  final GatewayConnectionState connectionState;
-  final String? activeRunId;
-  final List<PendingImageAttachment> pendingAttachments;
-  final TextEditingController sessionTitleController;
-  final TextEditingController messageController;
-  final ValueChanged<int> onDestinationSelected;
-  final ValueChanged<String> onSessionTitleSubmitted;
-  final Future<void> Function(String agentId) onSelectAgent;
-  final Future<void> Function(SessionInfo session) onOpenGatewaySession;
-  final Future<void> Function(String modelId) onSelectModel;
-  final Future<void> Function(String? thinkingLevel) onSelectThinking;
-  final Future<void> Function(String? verboseLevel) onSelectVerbose;
-  final Future<void> Function(bool enabled) onToggleFastMode;
-  final Future<void> Function() onPickImages;
-  final void Function(String id) onRemoveAttachment;
-  final Future<void> Function() onSendMessage;
-  final Future<void> Function() onAbortRun;
-  final IconData Function(ChatTimelineRole role) iconForRole;
-
-  @override
-  Widget build(BuildContext context) {
-    final currentAgentGatewaySessions = gatewaySessions
-        .where((session) => session.key.startsWith('agent:$selectedAgentId:'))
-        .take(8)
-        .toList();
-    final selectedSessionIndex = sessions.indexWhere(
-      (session) => session.sessionKey.value == currentSession.sessionKey.value,
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 900;
-
-        final content = Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (compact) ...[
-                DropdownButtonFormField<int>(
-                  value: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Session',
-                  ),
-                  items: [
-                    for (var index = 0; index < sessions.length; index += 1)
-                      DropdownMenuItem<int>(
-                        value: index,
-                        child: Text(sessions[index].title),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      onDestinationSelected(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-              ],
-              TextField(
-                controller: sessionTitleController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Session title',
-                ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: onSessionTitleSubmitted,
-              ),
-              const SizedBox(height: 12),
-              SelectableText('Session key: ${currentSession.sessionKey.value}'),
-              const SizedBox(height: 12),
-              _AgentSessionCard(
-                agents: agents,
-                selectedAgentId: selectedAgentId,
-                gatewaySessions: currentAgentGatewaySessions,
-                onSelectAgent: onSelectAgent,
-                onOpenGatewaySession: onOpenGatewaySession,
-              ),
-              const SizedBox(height: 12),
-              _SessionInfoCard(
-                identity: assistantIdentity,
-                sessionInfo: sessionInfo,
-                models: models,
-                onSelectModel: onSelectModel,
-                onSelectThinking: onSelectThinking,
-                onSelectVerbose: onSelectVerbose,
-                onToggleFastMode: onToggleFastMode,
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: timeline.isEmpty
-                        ? const Align(
-                            alignment: Alignment.topLeft,
-                            child: Text('Timeline is empty.'),
-                          )
-                        : ListView.separated(
-                            itemCount: timeline.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final item = timeline[index];
-                              return _TimelineEntryCard(
-                                item: item,
-                                icon: iconForRole(item.role),
-                                compact: compact,
-                              );
-                            },
-                          ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (pendingAttachments.isNotEmpty) ...[
-                SizedBox(
-                  height: 92,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: pendingAttachments.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final attachment = pendingAttachments[index];
-                      return Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.memory(
-                              base64Decode(attachment.base64Content),
-                              width: 92,
-                              height: 92,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Material(
-                              color: Colors.black54,
-                              shape: const CircleBorder(),
-                              child: InkWell(
-                                customBorder: const CircleBorder(),
-                                onTap: () => onRemoveAttachment(attachment.id),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(6),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (compact) ...[
-                TextField(
-                  controller: messageController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    hintText: pendingAttachments.isEmpty
-                        ? 'Send a message'
-                        : 'Add a caption or send images directly',
-                  ),
-                  minLines: 1,
-                  maxLines: 6,
-                  onSubmitted: (_) => unawaited(onSendMessage()),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
-                          ? () => unawaited(onPickImages())
-                          : null,
-                      icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: const Text('Image'),
-                    ),
-                    FilledButton(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
-                          ? onSendMessage
-                          : null,
-                      child: const Text('Send'),
-                    ),
-                    OutlinedButton(
-                      onPressed: activeRunId != null ? onAbortRun : null,
-                      child: const Text('Stop'),
-                    ),
-                  ],
-                ),
-              ] else
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
-                          ? () => unawaited(onPickImages())
-                          : null,
-                      icon: const Icon(Icons.add_photo_alternate_outlined),
-                      tooltip: 'Add image',
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: TextField(
-                        controller: messageController,
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
-                          hintText: pendingAttachments.isEmpty
-                              ? 'Send a message'
-                              : 'Add a caption or send images directly',
-                        ),
-                        minLines: 1,
-                        maxLines: 4,
-                        onSubmitted: (_) => unawaited(onSendMessage()),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
-                          ? onSendMessage
-                          : null,
-                      child: const Text('Send'),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      onPressed: activeRunId != null ? onAbortRun : null,
-                      child: const Text('Stop'),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        );
-
-        if (compact) {
-          return content;
-        }
-
-        return Row(
-          children: [
-            NavigationRail(
-              selectedIndex: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
-              onDestinationSelected: onDestinationSelected,
-              labelType: NavigationRailLabelType.all,
-              destinations: [
-                for (final session in sessions)
-                  NavigationRailDestination(
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    selectedIcon: const Icon(Icons.chat_bubble),
-                    label: Text(session.title),
-                  ),
-              ],
-            ),
-            const VerticalDivider(width: 1),
-            Expanded(child: content),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _AgentSessionCard extends StatelessWidget {
-  const _AgentSessionCard({
-    required this.agents,
-    required this.selectedAgentId,
-    required this.gatewaySessions,
-    required this.onSelectAgent,
-    required this.onOpenGatewaySession,
-  });
-
-  final List<AgentSummary> agents;
-  final String selectedAgentId;
-  final List<SessionInfo> gatewaySessions;
-  final Future<void> Function(String agentId) onSelectAgent;
-  final Future<void> Function(SessionInfo session) onOpenGatewaySession;
-
-  @override
-  Widget build(BuildContext context) {
-    final effectiveAgents = agents.isEmpty
-        ? const <AgentSummary>[AgentSummary(id: 'main', name: 'Main')]
-        : agents;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Agent & session source',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final agent in effectiveAgents)
-                  ChoiceChip(
-                    label: Text(
-                      agent.emoji == null
-                          ? agent.displayName
-                          : '${agent.emoji} ${agent.displayName}',
-                    ),
-                    selected: agent.id == selectedAgentId,
-                    onSelected: (_) => unawaited(onSelectAgent(agent.id)),
-                  ),
-              ],
-            ),
-            if (gatewaySessions.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Existing Gateway sessions',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final session in gatewaySessions)
-                    ActionChip(
-                      avatar: const Icon(Icons.history, size: 18),
-                      label: Text(session.label ?? session.key),
-                      onPressed: () => unawaited(onOpenGatewaySession(session)),
-                    ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TimelineEntryCard extends StatelessWidget {
-  const _TimelineEntryCard({
-    required this.item,
-    required this.icon,
-    required this.compact,
-  });
-
-  final ChatTimelineItem item;
-  final IconData icon;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isUser = item.role == ChatTimelineRole.user;
-    final isTool = item.role == ChatTimelineRole.tool;
-    final isSystem = item.role == ChatTimelineRole.system;
-
-    final backgroundColor = isUser
-        ? colorScheme.primaryContainer
-        : isTool
-            ? colorScheme.tertiaryContainer
-            : isSystem
-                ? colorScheme.surfaceContainerHighest
-                : colorScheme.surfaceContainerLow;
-    final foregroundColor = isUser
-        ? colorScheme.onPrimaryContainer
-        : isTool
-            ? colorScheme.onTertiaryContainer
-            : isSystem
-                ? colorScheme.onSurfaceVariant
-                : colorScheme.onSurface;
-    final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
-    final maxWidth = compact ? double.infinity : 560.0;
-    final title = item.title ??
-        switch (item.role) {
-          ChatTimelineRole.system => 'System',
-          ChatTimelineRole.user => 'You',
-          ChatTimelineRole.assistant => 'Assistant',
-          ChatTimelineRole.tool => 'Tool',
-        };
-    final badgeLabel = item.status ?? (item.isStreaming ? 'streaming' : null);
-
-    return Align(
-      alignment: alignment,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 18, color: foregroundColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: foregroundColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (badgeLabel != null && badgeLabel.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        badgeLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: foregroundColor,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SelectableText(
-                item.text,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: foregroundColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item.createdAt.toIso8601String(),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: foregroundColor.withValues(alpha: 0.8),
-                ),
-              ),
-              if (item.details != null && item.details!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  childrenPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: Text(
-                    'Details',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: foregroundColor,
-                    ),
-                  ),
-                  iconColor: foregroundColor,
-                  collapsedIconColor: foregroundColor,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: SelectableText(
-                        item.details!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: foregroundColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-class _ChatLockedPlaceholder extends StatelessWidget {
-  const _ChatLockedPlaceholder({this.onOpenConnect});
-
-  final VoidCallback? onOpenConnect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_outline,
-              size: 42,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Finish the connection flow first',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'PocketClaw keeps the chat shell behind a usable Gateway setup so the app does not feel like a debug screen before it can reconnect cleanly.',
-              textAlign: TextAlign.center,
-            ),
-            if (onOpenConnect != null) ...[
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: onOpenConnect,
-                icon: const Icon(Icons.hub_outlined),
-                label: const Text('Open connect'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SessionInfoCard extends StatelessWidget {
-  const _SessionInfoCard({
-    required this.identity,
-    required this.sessionInfo,
-    required this.models,
-    required this.onSelectModel,
-    required this.onSelectThinking,
-    required this.onSelectVerbose,
-    required this.onToggleFastMode,
-  });
-
-  final AgentIdentity? identity;
-  final SessionInfo? sessionInfo;
-  final List<ModelInfo> models;
-  final Future<void> Function(String modelId) onSelectModel;
-  final Future<void> Function(String? thinkingLevel) onSelectThinking;
-  final Future<void> Function(String? verboseLevel) onSelectVerbose;
-  final Future<void> Function(bool enabled) onToggleFastMode;
-
-  @override
-  Widget build(BuildContext context) {
-    const thinkingChoices = <String>['off', 'minimal', 'low', 'medium', 'high'];
-    const verboseChoices = <String>['off', 'low', 'medium', 'high'];
-    final modelIds = models.map((model) => model.id).toSet();
-    final currentModel = modelIds.contains(sessionInfo?.model)
-        ? sessionInfo?.model
-        : null;
-    final currentThinking = thinkingChoices.contains(sessionInfo?.thinkingLevel)
-        ? sessionInfo?.thinkingLevel
-        : 'off';
-    final currentVerbose = verboseChoices.contains(sessionInfo?.verboseLevel)
-        ? sessionInfo?.verboseLevel
-        : 'off';
-    final fastMode = sessionInfo?.fastMode ?? false;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              identity?.name ?? 'Assistant',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: 280,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: currentModel,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Model',
-                    ),
-                    items: [
-                      for (final model in models)
-                        DropdownMenuItem<String>(
-                          value: model.id,
-                          child: Text(model.id),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        unawaited(onSelectModel(value));
-                      }
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: currentThinking,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Thinking',
-                    ),
-                    items: [
-                      for (final value in thinkingChoices)
-                        DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        ),
-                    ],
-                    onChanged: (value) => unawaited(onSelectThinking(value)),
-                  ),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: currentVerbose,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Verbose',
-                    ),
-                    items: [
-                      for (final value in verboseChoices)
-                        DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        ),
-                    ],
-                    onChanged: (value) => unawaited(onSelectVerbose(value)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Fast mode'),
-              subtitle: const Text('Maps to sessions.patch fastMode'),
-              value: fastMode,
-              onChanged: (value) => unawaited(onToggleFastMode(value)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GuidanceCard extends StatelessWidget {
-  const _GuidanceCard({required this.guidance});
-
-  final GatewayErrorGuidance guidance;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.errorContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              guidance.summary,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (guidance.action != null) ...[
-              const SizedBox(height: 8),
-              Text(guidance.action!),
-            ],
-            if (guidance.code != null) ...[
-              const SizedBox(height: 8),
-              Text('Code: ${guidance.code}'),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
