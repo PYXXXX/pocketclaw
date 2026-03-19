@@ -34,18 +34,21 @@ jobs:
         run: dart pub global activate melos
 
       - name: Bootstrap workspace
+        working-directory: pocketclaw
         run: ~/.pub-cache/bin/melos bootstrap
 
       - name: Analyze workspace
+        working-directory: pocketclaw
         run: ~/.pub-cache/bin/melos run analyze
 
       - name: Run package tests
+        working-directory: pocketclaw
         run: ~/.pub-cache/bin/melos run test
 
       - name: Prepare Flutter app scaffolding
-        working-directory: app/pocketclaw_app
+        working-directory: pocketclaw/app/pocketclaw_app
         run: flutter create . --project-name pocketclaw_app --platforms=android,ios
 
       - name: Smoke build Android APK
-        working-directory: app/pocketclaw_app
+        working-directory: pocketclaw/app/pocketclaw_app
         run: flutter build apk --debug

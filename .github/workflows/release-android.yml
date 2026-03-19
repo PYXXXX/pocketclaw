@@ -33,14 +33,15 @@ jobs:
         run: dart pub global activate melos
 
       - name: Bootstrap workspace
+        working-directory: pocketclaw
         run: ~/.pub-cache/bin/melos bootstrap
 
       - name: Prepare Flutter app scaffolding
-        working-directory: app/pocketclaw_app
+        working-directory: pocketclaw/app/pocketclaw_app
         run: flutter create . --project-name pocketclaw_app --platforms=android
 
       - name: Build release APK
-        working-directory: app/pocketclaw_app
+        working-directory: pocketclaw/app/pocketclaw_app
         run: flutter build apk --release
 
       - name: Determine release metadata
