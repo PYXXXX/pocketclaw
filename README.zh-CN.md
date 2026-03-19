@@ -71,15 +71,6 @@ PocketClaw 的目标，是在**不改变服务端语义**的前提下，让 Open
 - **可扩展到穿戴设备** —— 为未来 `WristClaw` 之类的手表客户端保留架构空间。
 - **Vibe coded，但有纪律** —— 保持快速迭代，同时严格守住兼容性边界。
 
-## PocketClaw 当前不做什么
-
-在当前阶段，PocketClaw **不假设** 以下能力：
-
-- Gateway 侧新功能开发
-- 私有存储层 hack
-- archive restore API
-- 通过 WebView 套壳来实现产品
-
 ## FAQ
 
 ### 为什么不直接套 Web UI？
@@ -101,6 +92,18 @@ Flutter 很适合做跨平台但仍然精致的移动 UI，同时能保持应用
 不是。
 PocketClaw 更像一个面向移动端的 companion surface，而不是说所有 OpenClaw 交互都应该搬到手机上。
 
+## 项目地图
+
+| 区域 | 说明 |
+| --- | --- |
+| [`docs/architecture.md`](./docs/architecture.md) | 客户端分层和模块方向 |
+| [`docs/mvp-scope.md`](./docs/mvp-scope.md) | 当前 chat MVP 范围 |
+| [`docs/compatibility.md`](./docs/compatibility.md) | 与现有 Gateway 的兼容边界 |
+| [`docs/session-key-strategy.md`](./docs/session-key-strategy.md) | 基于客户端 sessionKey 的多会话策略 |
+| [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | 当前 Gateway 方法与能力映射 |
+| [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | 连接与 pairing 交互规划 |
+| [`docs/roadmap.md`](./docs/roadmap.md) | 近期与中期路线 |
+
 ## 架构方向
 
 PocketClaw 会继续把 **协议层**、**状态层**、**UI 层** 拆开，避免客户端逐渐变成和 Gateway payload 强耦合的界面胶水。
@@ -119,23 +122,20 @@ packages/
 
 详情见 [`docs/architecture.md`](./docs/architecture.md)。
 
+## PocketClaw 当前不做什么
+
+在当前阶段，PocketClaw **不假设** 以下能力：
+
+- Gateway 侧新功能开发
+- 私有存储层 hack
+- archive restore API
+- 通过 WebView 套壳来实现产品
+
 ## 仓库结构
 
 - `docs/` —— 产品、架构、兼容性与规划文档
 - `app/` —— 移动端应用代码
 - `packages/` —— 可复用的协议、状态和适配层模块
-
-## 关键文档
-
-- [`docs/architecture.md`](./docs/architecture.md)
-- [`docs/mvp-scope.md`](./docs/mvp-scope.md)
-- [`docs/compatibility.md`](./docs/compatibility.md)
-- [`docs/session-key-strategy.md`](./docs/session-key-strategy.md)
-- [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md)
-- [`docs/development-workflow.md`](./docs/development-workflow.md)
-- [`docs/official-android-reference.md`](./docs/official-android-reference.md)
-- [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md)
-- [`docs/roadmap.md`](./docs/roadmap.md)
 
 ## 语言策略
 

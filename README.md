@@ -71,15 +71,6 @@ The current focus is the **chat MVP**:
 - **Wearable-aware** — keep the core reusable for future watch-focused clients such as `WristClaw`.
 - **Vibe coded, but disciplined** — move fast, keep compatibility strict.
 
-## What PocketClaw is not
-
-For the current phase, PocketClaw does **not** assume:
-
-- Gateway-side feature development
-- private storage hacks
-- archive restore APIs
-- a WebView-first product strategy
-
 ## FAQ
 
 ### Why not just wrap the web UI?
@@ -101,6 +92,18 @@ Flutter is a pragmatic fit for shipping a polished mobile UI across platforms wh
 No.
 PocketClaw is a mobile-first companion surface, not a claim that every OpenClaw interaction should move to a phone app.
 
+## Project map
+
+| Area | Purpose |
+| --- | --- |
+| [`docs/architecture.md`](./docs/architecture.md) | overall client layering and module direction |
+| [`docs/mvp-scope.md`](./docs/mvp-scope.md) | current chat MVP scope |
+| [`docs/compatibility.md`](./docs/compatibility.md) | compatibility boundaries with today’s Gateway |
+| [`docs/session-key-strategy.md`](./docs/session-key-strategy.md) | multi-session model via client-controlled keys |
+| [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | current Gateway methods and surface assumptions |
+| [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | connection and pairing UX planning |
+| [`docs/roadmap.md`](./docs/roadmap.md) | near-term and medium-term direction |
+
 ## Architecture direction
 
 PocketClaw keeps **protocol**, **state**, and **UI** concerns separate so the app does not collapse into Gateway-specific payload glue.
@@ -119,23 +122,20 @@ packages/
 
 Read more in [`docs/architecture.md`](./docs/architecture.md).
 
+## What PocketClaw is not
+
+For the current phase, PocketClaw does **not** assume:
+
+- Gateway-side feature development
+- private storage hacks
+- archive restore APIs
+- a WebView-first product strategy
+
 ## Repository layout
 
 - `docs/` — product, architecture, compatibility, and planning documents
 - `app/` — mobile application code
 - `packages/` — reusable protocol, state, and adapter modules
-
-## Key documents
-
-- [`docs/architecture.md`](./docs/architecture.md)
-- [`docs/mvp-scope.md`](./docs/mvp-scope.md)
-- [`docs/compatibility.md`](./docs/compatibility.md)
-- [`docs/session-key-strategy.md`](./docs/session-key-strategy.md)
-- [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md)
-- [`docs/development-workflow.md`](./docs/development-workflow.md)
-- [`docs/official-android-reference.md`](./docs/official-android-reference.md)
-- [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md)
-- [`docs/roadmap.md`](./docs/roadmap.md)
 
 ## Language policy
 
