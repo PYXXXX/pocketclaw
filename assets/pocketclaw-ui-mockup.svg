@@ -1,0 +1,65 @@
+<svg width="1280" height="820" viewBox="0 0 1280 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">PocketClaw UI mockup</title>
+  <desc id="desc">Concept mockup of PocketClaw mobile interface.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="phoneGlow" x1="356" y1="112" x2="946" y2="696" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset="0.5" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <filter id="soft" x="0" y="0" width="1280" height="820" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="820" rx="32" fill="url(#bg)"/>
+  <g filter="url(#soft)" opacity="0.24">
+    <circle cx="220" cy="190" r="120" fill="#2563EB"/>
+    <circle cx="1030" cy="160" r="150" fill="#7C3AED"/>
+    <circle cx="1060" cy="670" r="150" fill="#0891B2"/>
+  </g>
+
+  <text x="640" y="86" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800">PocketClaw UI Direction</text>
+  <text x="640" y="124" text-anchor="middle" fill="#94A3B8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22">A compact, readable, mobile-native OpenClaw chat surface</text>
+
+  <g transform="translate(390 170)">
+    <rect x="0" y="0" width="500" height="560" rx="54" fill="#020617" stroke="url(#phoneGlow)" stroke-width="3"/>
+    <rect x="18" y="18" width="464" height="524" rx="40" fill="#0F172A"/>
+    <rect x="184" y="8" width="132" height="10" rx="5" fill="#334155"/>
+
+    <text x="38" y="58" fill="#FFFFFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" font-weight="800">PocketClaw</text>
+    <rect x="350" y="34" width="92" height="28" rx="14" fill="#111827" stroke="#334155"/>
+    <circle cx="370" cy="48" r="5" fill="#22C55E"/>
+    <text x="384" y="53" fill="#E2E8F0" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700">gateway</text>
+
+    <rect x="28" y="88" width="172" height="64" rx="18" fill="#1E293B"/>
+    <text x="46" y="116" fill="#FFFFFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700">Sessions</text>
+    <text x="46" y="138" fill="#94A3B8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">main · dev · test</text>
+
+    <rect x="272" y="88" width="200" height="64" rx="18" fill="#1E293B"/>
+    <text x="290" y="116" fill="#FFFFFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700">Overrides</text>
+    <text x="290" y="138" fill="#94A3B8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">model · thinking · fast</text>
+
+    <rect x="28" y="180" width="230" height="74" rx="22" fill="#1E293B"/>
+    <text x="48" y="210" fill="#CBD5E1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15">Connected to Gateway</text>
+    <text x="48" y="234" fill="#64748B" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">chat.history ready</text>
+
+    <rect x="192" y="274" width="280" height="96" rx="24" fill="#2563EB" fill-opacity="0.18" stroke="#60A5FA"/>
+    <text x="216" y="308" fill="#E0E7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">Assistant</text>
+    <text x="216" y="334" fill="#BFDBFE" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15">Streaming reply, tool events, and</text>
+    <text x="216" y="356" fill="#BFDBFE" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15">session-aware chat on mobile.</text>
+
+    <rect x="28" y="388" width="274" height="88" rx="22" fill="#111827" stroke="#334155"/>
+    <text x="48" y="418" fill="#E5E7EB" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="700">Tool Event</text>
+    <text x="48" y="444" fill="#94A3B8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15">sessions.patch applied</text>
+    <text x="48" y="466" fill="#64748B" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">model: gpt-5.4 · thinking: low</text>
+
+    <rect x="28" y="494" width="444" height="34" rx="17" fill="#111827" stroke="#334155"/>
+    <circle cx="52" cy="511" r="5" fill="#60A5FA"/>
+    <text x="68" y="516" fill="#94A3B8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14">Message input · image send · compact controls</text>
+  </g>
+</svg>

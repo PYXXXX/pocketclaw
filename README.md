@@ -36,7 +36,9 @@ The intended UX direction is:
 - quick session switching
 - compact controls that still feel native on small screens
 
-> UI preview assets are coming as the app surface stabilizes.
+![PocketClaw UI mockup](./assets/pocketclaw-ui-mockup.svg)
+
+> UI preview assets are evolving as the app surface stabilizes.
 
 ## Why PocketClaw exists
 

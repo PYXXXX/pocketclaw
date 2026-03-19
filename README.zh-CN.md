@@ -36,7 +36,9 @@ PocketClaw 正在被打磨成一个 **干净、紧凑、适合手机使用的 Op
 - 更顺手的会话切换
 - 在小屏上依然自然的紧凑控制设计
 
-> 等应用界面进一步稳定后，会补上 UI 预览图。
+![PocketClaw UI mockup](./assets/pocketclaw-ui-mockup.svg)
+
+> UI 预览素材会随着应用界面逐步稳定而继续迭代。
 
 ## 为什么要做 PocketClaw
 
