@@ -12,7 +12,9 @@ scripts:
     run: melos exec -- "dart analyze ."
     description: Run static analysis across the workspace.
   test:
-    run: melos exec --dir-exists=test -- "dart test"
+    run: |
+      melos exec --dir-exists=test --ignore="pocketclaw_app" -- "dart test"
+      melos exec --dir-exists=test --scope="pocketclaw_app" -- "flutter test"
     description: Run package tests where present.
   bootstrap:ci:
     run: flutter pub get
