@@ -11,11 +11,17 @@ class AppStatusBanner extends StatelessWidget {
     required this.snapshot,
     required this.connectionState,
     required this.gatewayUrl,
+    required this.hasBootstrapCredentials,
+    required this.hasStoredDeviceIdentity,
+    required this.hasStoredDeviceToken,
   });
 
   final ConnectFlowSnapshot snapshot;
   final GatewayConnectionState connectionState;
   final String gatewayUrl;
+  final bool hasBootstrapCredentials;
+  final bool hasStoredDeviceIdentity;
+  final bool hasStoredDeviceToken;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +29,14 @@ class AppStatusBanner extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
     final gatewayLabel = hasGatewayUrl ? gatewayUrl.trim() : 'No Gateway configured yet';
+    final bootstrapLabel = hasBootstrapCredentials
+        ? 'Bootstrap credentials saved'
+        : 'No bootstrap credentials';
+    final reconnectLabel = hasStoredDeviceToken
+        ? 'Reconnect token available'
+        : hasStoredDeviceIdentity
+            ? 'Device identity saved'
+            : 'First pairing likely needed';
 
     return Card(
       color: snapshot.requiresAttention
@@ -63,6 +77,19 @@ class AppStatusBanner extends StatelessWidget {
                 Chip(
                   avatar: const Icon(Icons.sync_outlined, size: 18),
                   label: Text('State: ${connectionState.phase.name}'),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.key_outlined, size: 18),
+                  label: Text(bootstrapLabel),
+                ),
+                Chip(
+                  avatar: Icon(
+                    hasStoredDeviceToken
+                        ? Icons.verified_user_outlined
+                        : Icons.phonelink_lock_outlined,
+                    size: 18,
+                  ),
+                  label: Text(reconnectLabel),
                 ),
               ],
             ),

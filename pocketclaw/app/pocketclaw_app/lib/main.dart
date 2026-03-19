@@ -99,6 +99,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   GatewayErrorGuidance? _lastGuidance;
   bool _applyingComposerDraft = false;
   bool _onboardingCompleted = false;
+  bool _hasStoredDeviceIdentity = false;
+  bool _hasStoredDeviceToken = false;
   bool _isBootstrapping = true;
   ConnectMethod _connectMethod = ConnectMethod.manual;
   ConnectFlowStage _connectFlowStage = ConnectFlowStage.welcome;
@@ -180,6 +182,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _restorePersistedGatewayProfile(),
         _restorePersistedSessionRegistry(),
         _restoreConnectFlowPreferences(),
+        _refreshStoredDeviceAuthState(),
       ]);
     } finally {
       if (!mounted) {
@@ -327,6 +330,31 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       });
     } catch (error) {
       _recordError(error, prefix: 'Connect flow restore failed');
+    }
+  }
+
+  Future<void> _refreshStoredDeviceAuthState() async {
+    try {
+      final identity = await _deviceIdentityStore.read();
+      final hasIdentity = identity != null;
+      var hasToken = false;
+      if (identity != null) {
+        final token = await _deviceTokenStore.read(
+          deviceId: identity.deviceId,
+          role: _connectRequestFactory.role,
+        );
+        hasToken = token != null && token.token.trim().isNotEmpty;
+      }
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _hasStoredDeviceIdentity = hasIdentity;
+        _hasStoredDeviceToken = hasToken;
+      });
+    } catch (error) {
+      _recordError(error, prefix: 'Stored device auth refresh failed');
     }
   }
 
@@ -968,6 +996,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _selectedDestination = AppDestination.chat;
       });
       _appendTimeline(ChatTimelineRole.system, 'Connected to ${_gatewayProfile.url}');
+      await _refreshStoredDeviceAuthState();
       await _loadCurrentViewData();
     } catch (error) {
       _recordError(error, prefix: 'Connect failed');
@@ -1224,6 +1253,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 snapshot: connectSnapshot,
                 connectionState: _connectionState,
                 gatewayUrl: _gatewayProfile.url,
+                hasBootstrapCredentials:
+                    _gatewayProfile.token.trim().isNotEmpty ||
+                    _gatewayProfile.password.trim().isNotEmpty,
+                hasStoredDeviceIdentity: _hasStoredDeviceIdentity,
+                hasStoredDeviceToken: _hasStoredDeviceToken,
               ),
             ),
             const SizedBox(height: 12),
