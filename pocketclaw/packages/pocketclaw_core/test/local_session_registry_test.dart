@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('LocalSessionEntry round-trips through json', () {
-    const entry = LocalSessionEntry(
+    final entry = LocalSessionEntry(
       sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
       title: 'Home',
     );
@@ -16,7 +16,7 @@ void main() {
 
   test('LocalSessionRegistry round-trips through json list', () {
     final registry = LocalSessionRegistry(
-      initialSessions: const <LocalSessionEntry>[
+      initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
           sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
           title: 'Home',
@@ -41,7 +41,7 @@ void main() {
 
   test('replace updates an existing session entry', () {
     final registry = LocalSessionRegistry(
-      initialSessions: const <LocalSessionEntry>[
+      initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
           sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
           title: 'Home',

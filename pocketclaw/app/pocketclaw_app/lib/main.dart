@@ -94,6 +94,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       <String, List<PendingImageAttachment>>{};
   AgentIdentity? _assistantIdentity;
   SessionInfo? _currentSessionInfo;
+  SessionDefaults? _sessionDefaults;
   String? _activeRunId;
   String? _lastError;
   GatewayErrorGuidance? _lastGuidance;
@@ -695,6 +696,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _assistantIdentity = null;
       _models = const <ModelInfo>[];
       _currentSessionInfo = null;
+      _sessionDefaults = null;
       _connectMethod = ConnectMethod.manual;
       _connectFlowStage = ConnectFlowStage.manualConfig;
       _selectedDestination = AppDestination.connect;
@@ -806,6 +808,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _gatewaySessions = result.sessions;
       _currentSessionInfo = info;
+      _sessionDefaults = result.defaults;
     });
   }
 
@@ -887,6 +890,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         ),
       ]);
       _currentSessionInfo = null;
+      _sessionDefaults = null;
     });
 
     _attachmentDraftsBySession[entry.sessionKey.value] =
@@ -1372,19 +1376,4 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         return Icons.handyman_outlined;
     }
   }
-}
-}
-nData _iconForRole(ChatTimelineRole role) {
-    switch (role) {
-      case ChatTimelineRole.system:
-        return Icons.settings_ethernet;
-      case ChatTimelineRole.user:
-        return Icons.person_outline;
-      case ChatTimelineRole.assistant:
-        return Icons.smart_toy_outlined;
-      case ChatTimelineRole.tool:
-        return Icons.handyman_outlined;
-    }
-  }
-}
 }

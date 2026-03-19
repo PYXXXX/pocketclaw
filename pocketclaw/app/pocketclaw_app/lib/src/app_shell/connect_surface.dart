@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
+import 'package:gateway_transport/gateway_transport.dart';
 
 import 'connect_flow_models.dart';
 

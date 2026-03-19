@@ -1,3 +1,3 @@
-sealed class GatewayMessage {
+abstract base class GatewayMessage {
   const GatewayMessage();
 }

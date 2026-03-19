@@ -28,10 +28,12 @@ final class SessionPatchParams {
     this.thinkingLevel,
     this.clearThinkingLevel = false,
     this.fastMode,
+    this.clearFastMode = false,
     this.verboseLevel,
     this.clearVerboseLevel = false,
   }) : assert(!(clearModel && model != null)),
        assert(!(clearThinkingLevel && thinkingLevel != null)),
+       assert(!(clearFastMode && fastMode != null)),
        assert(!(clearVerboseLevel && verboseLevel != null));
 
   final String key;
@@ -41,6 +43,7 @@ final class SessionPatchParams {
   final String? thinkingLevel;
   final bool clearThinkingLevel;
   final bool? fastMode;
+  final bool clearFastMode;
   final String? verboseLevel;
   final bool clearVerboseLevel;
 
@@ -52,12 +55,6 @@ final class SessionPatchParams {
           'thinkingLevel': thinkingLevel,
         if (clearFastMode || fastMode != null) 'fastMode': fastMode,
         if (clearVerboseLevel || verboseLevel != null)
-          'verboseLevel': verboseLevel,
-      };
-}
-      };
-}
-null)
           'verboseLevel': verboseLevel,
       };
 }

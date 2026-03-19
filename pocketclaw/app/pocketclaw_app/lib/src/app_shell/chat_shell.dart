@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
+import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import '../chat/pending_image_attachment.dart';
@@ -35,6 +36,7 @@ class ChatShell extends StatelessWidget {
     required this.onSelectThinking,
     required this.onSelectVerbose,
     required this.onToggleFastMode,
+    required this.onClearFastModeOverride,
     required this.onPickImages,
     required this.onRemoveAttachment,
     required this.onSendMessage,
@@ -65,6 +67,7 @@ class ChatShell extends StatelessWidget {
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
   final Future<void> Function(bool enabled) onToggleFastMode;
+  final Future<void> Function() onClearFastModeOverride;
   final Future<void> Function() onPickImages;
   final void Function(String id) onRemoveAttachment;
   final Future<void> Function() onSendMessage;
@@ -92,7 +95,7 @@ class ChatShell extends StatelessWidget {
             children: [
               if (compact) ...[
                 DropdownButtonFormField<int>(
-                  value: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
+                  initialValue: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Session',
@@ -141,6 +144,7 @@ class ChatShell extends StatelessWidget {
                 onSelectThinking: onSelectThinking,
                 onSelectVerbose: onSelectVerbose,
                 onToggleFastMode: onToggleFastMode,
+                onClearFastModeOverride: onClearFastModeOverride,
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -574,6 +578,7 @@ class SessionInfoCard extends StatelessWidget {
     required this.onSelectThinking,
     required this.onSelectVerbose,
     required this.onToggleFastMode,
+    required this.onClearFastModeOverride,
   });
 
   final AgentIdentity? identity;

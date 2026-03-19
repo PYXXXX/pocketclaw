@@ -75,6 +75,7 @@ void main() {
             expect(request.method, GatewayMethodNames.sessionsPatch);
             expect(request.params, containsPair('model', isNull));
             expect(request.params, containsPair('thinkingLevel', isNull));
+            expect(request.params, containsPair('fastMode', isNull));
             expect(request.params, containsPair('verboseLevel', isNull));
             return GatewayResponse(
               id: request.id,
@@ -94,10 +95,6 @@ void main() {
       ));
 
       expect(response.ok, isTrue);
-    });
-  });
-}
-ct(response.ok, isTrue);
     });
   });
 }
