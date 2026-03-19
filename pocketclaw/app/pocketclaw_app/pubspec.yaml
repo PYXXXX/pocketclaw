@@ -14,12 +14,9 @@ dependencies:
   file_picker: ^8.1.2
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.2
-  gateway_transport:
-    path: ../../packages/gateway_transport
-  gateway_adapter:
-    path: ../../packages/gateway_adapter
-  pocketclaw_core:
-    path: ../../packages/pocketclaw_core
+  gateway_transport: any
+  gateway_adapter: any
+  pocketclaw_core: any
 
 dev_dependencies:
   flutter_test:

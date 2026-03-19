@@ -9,8 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  gateway_adapter:
-    path: ../gateway_adapter
+  gateway_adapter: any
 
 dev_dependencies:
   lints: ^4.0.0

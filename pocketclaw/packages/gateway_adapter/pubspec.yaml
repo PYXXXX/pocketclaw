@@ -10,8 +10,7 @@ resolution: workspace
 
 dependencies:
   cryptography: ^2.7.0
-  gateway_transport:
-    path: ../gateway_transport
+  gateway_transport: any
   web_socket_channel: ^3.0.1
 
 dev_dependencies:
