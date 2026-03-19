@@ -2,17 +2,32 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-> 一个面向 OpenClaw Gateway 部署的原生移动客户端 —— 在**不改 Gateway**的前提下提供真正适合手机的使用体验。
+> 用手机便捷连接您的 OpenClaw 龙虾 🦞。
+> 一个使用 Flutter 开发、以手机为优先的 OpenClaw 客户端 —— 纯前端实现，无须额外后端依赖。
 
-PocketClaw 是一个以手机为优先的 OpenClaw 客户端，聚焦聊天、会话控制与轻量移动操作。
-项目围绕一个硬约束设计：**不修改 Gateway、不依赖私有补丁、不新增自定义后端**。
+![状态](https://img.shields.io/badge/status-active%20prototype-7c3aed)
+![架构](https://img.shields.io/badge/architecture-pure%20frontend-0f766e)
+![技术栈](https://img.shields.io/badge/built%20with-Flutter-02569B?logo=flutter&logoColor=white)
+![兼容性](https://img.shields.io/badge/OpenClaw-compatible-black)
+
+## 一眼看懂 PocketClaw
+
+- **手机优先** —— 为原生移动体验而做，不是浏览器套壳。
+- **兼容现有 Gateway** —— 基于今天已经存在的 OpenClaw Gateway 能力构建。
+- **纯前端实现** —— 不加 custom backend，不依赖私有补丁，不增加中间服务层。
+- **支持多会话** —— 通过客户端控制 `sessionKey` 创建和切换会话。
+- **为未来留空间** —— 核心架构保留向紧凑设备和穿戴端扩展的可能性。
 
 ## 为什么是 PocketClaw
 
 OpenClaw 已经有能力不错的 Gateway，但现有交互面并不是为原生移动体验优先设计的。
 PocketClaw 的目标，就是在**不改变服务端语义**的前提下，把这一块补上。
 
-它想做的是一个真正的移动客户端，而不是浏览器套壳，也不是另起一套后端产品。
+这个项目想同时做到三件事：
+
+- 保持现有部署模型不变
+- 提供真正适合手机的原生体验
+- 保持架构清晰，而不是做成一次性的 app 壳子
 
 ## 当前状态
 

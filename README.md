@@ -2,23 +2,38 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-> A native mobile client for OpenClaw Gateway deployments — built to work with the Gateway as it exists today.
+> Connect to your OpenClaw lobster 🦞 from your phone.
+> A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.
 
-PocketClaw is a phone-first OpenClaw client focused on chat, session control, and lightweight mobile operations.
-It is built around one hard constraint: **no Gateway modifications, no private patches, and no custom backend**.
+![Status](https://img.shields.io/badge/status-active%20prototype-7c3aed)
+![Frontend](https://img.shields.io/badge/architecture-pure%20frontend-0f766e)
+![Stack](https://img.shields.io/badge/built%20with-Flutter-02569B?logo=flutter&logoColor=white)
+![Gateway](https://img.shields.io/badge/OpenClaw-compatible-black)
+
+## At a glance
+
+- **Phone-first** — built for a native mobile experience, not a browser wrapper.
+- **Gateway-compatible** — works with the Gateway as it exists today.
+- **Pure frontend** — no custom backend, no private patches, no extra service layer.
+- **Multi-session aware** — create and switch sessions with client-controlled `sessionKey` values.
+- **Future-friendly** — designed so the core can later extend toward compact and wearable surfaces.
 
 ## Why PocketClaw
 
 OpenClaw already has a capable Gateway, but the existing surfaces are not designed first for a native mobile experience.
 PocketClaw exists to close that gap without changing server-side behavior.
 
-It aims to feel like a real mobile client, not a browser wrapper and not a separate backend product.
+The goal is simple:
+
+- keep the deployment model unchanged
+- keep the client experience mobile-native
+- keep the architecture clean enough to grow beyond a one-off app shell
 
 ## Status
 
 **Active prototype.**
 
-Architecture and compatibility direction are in place.
+Architecture and compatibility boundaries are in place.
 The current focus is the **chat MVP**:
 
 - connection, authentication, and pairing
