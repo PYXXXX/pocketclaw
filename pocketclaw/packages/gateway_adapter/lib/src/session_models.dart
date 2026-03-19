@@ -24,24 +24,34 @@ final class SessionPatchParams {
     required this.key,
     this.label,
     this.model,
+    this.clearModel = false,
     this.thinkingLevel,
+    this.clearThinkingLevel = false,
     this.fastMode,
     this.verboseLevel,
-  });
+    this.clearVerboseLevel = false,
+  }) : assert(!(clearModel && model != null)),
+       assert(!(clearThinkingLevel && thinkingLevel != null)),
+       assert(!(clearVerboseLevel && verboseLevel != null));
 
   final String key;
   final String? label;
   final String? model;
+  final bool clearModel;
   final String? thinkingLevel;
+  final bool clearThinkingLevel;
   final bool? fastMode;
   final String? verboseLevel;
+  final bool clearVerboseLevel;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'key': key,
         if (label != null) 'label': label,
-        if (model != null) 'model': model,
-        if (thinkingLevel != null) 'thinkingLevel': thinkingLevel,
+        if (clearModel || model != null) 'model': model,
+        if (clearThinkingLevel || thinkingLevel != null)
+          'thinkingLevel': thinkingLevel,
         if (fastMode != null) 'fastMode': fastMode,
-        if (verboseLevel != null) 'verboseLevel': verboseLevel,
+        if (clearVerboseLevel || verboseLevel != null)
+          'verboseLevel': verboseLevel,
       };
 }

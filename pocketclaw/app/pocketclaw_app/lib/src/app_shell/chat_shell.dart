@@ -59,7 +59,7 @@ class ChatShell extends StatelessWidget {
   final ValueChanged<String> onSessionTitleSubmitted;
   final Future<void> Function(String agentId) onSelectAgent;
   final Future<void> Function(SessionInfo session) onOpenGatewaySession;
-  final Future<void> Function(String modelId) onSelectModel;
+  final Future<void> Function(String? modelId) onSelectModel;
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
   final Future<void> Function(bool enabled) onToggleFastMode;
@@ -552,25 +552,34 @@ class SessionInfoCard extends StatelessWidget {
   final AgentIdentity? identity;
   final SessionInfo? sessionInfo;
   final List<ModelInfo> models;
-  final Future<void> Function(String modelId) onSelectModel;
+  final Future<void> Function(String? modelId) onSelectModel;
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
   final Future<void> Function(bool enabled) onToggleFastMode;
 
   @override
   Widget build(BuildContext context) {
+    const defaultModelValue = '__default_model__';
+    const defaultThinkingValue = '__default_thinking__';
+    const defaultVerboseValue = '__default_verbose__';
     const thinkingChoices = <String>['off', 'minimal', 'low', 'medium', 'high'];
     const verboseChoices = <String>['off', 'low', 'medium', 'high'];
+
+    final currentModelOverride = sessionInfo?.model;
+    final currentThinkingOverride = sessionInfo?.thinkingLevel;
+    final currentVerboseOverride = sessionInfo?.verboseLevel;
     final modelIds = models.map((model) => model.id).toSet();
-    final currentModel = modelIds.contains(sessionInfo?.model)
-        ? sessionInfo?.model
-        : null;
-    final currentThinking = thinkingChoices.contains(sessionInfo?.thinkingLevel)
-        ? sessionInfo?.thinkingLevel
-        : 'off';
-    final currentVerbose = verboseChoices.contains(sessionInfo?.verboseLevel)
-        ? sessionInfo?.verboseLevel
-        : 'off';
+    final currentModelValue = currentModelOverride == null
+        ? defaultModelValue
+        : currentModelOverride;
+    final currentThinkingValue = currentThinkingOverride != null &&
+            thinkingChoices.contains(currentThinkingOverride)
+        ? currentThinkingOverride
+        : defaultThinkingValue;
+    final currentVerboseValue = currentVerboseOverride != null &&
+            verboseChoices.contains(currentVerboseOverride)
+        ? currentVerboseOverride
+        : defaultVerboseValue;
     final fastMode = sessionInfo?.fastMode ?? false;
 
     return Card(
@@ -591,12 +600,22 @@ class SessionInfoCard extends StatelessWidget {
                 SizedBox(
                   width: 280,
                   child: DropdownButtonFormField<String>(
-                    initialValue: currentModel,
+                    initialValue: currentModelValue,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Model',
                     ),
                     items: [
+                      const DropdownMenuItem<String>(
+                        value: defaultModelValue,
+                        child: Text('Default (inherit)'),
+                      ),
+                      if (currentModelOverride != null &&
+                          !modelIds.contains(currentModelOverride))
+                        DropdownMenuItem<String>(
+                          value: currentModelOverride,
+                          child: Text('$currentModelOverride (current)'),
+                        ),
                       for (final model in models)
                         DropdownMenuItem<String>(
                           value: model.id,
@@ -604,46 +623,67 @@ class SessionInfoCard extends StatelessWidget {
                         ),
                     ],
                     onChanged: (value) {
-                      if (value != null) {
-                        unawaited(onSelectModel(value));
+                      if (value == null) {
+                        return;
                       }
+                      unawaited(
+                        onSelectModel(
+                          value == defaultModelValue ? null : value,
+                        ),
+                      );
                     },
                   ),
                 ),
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    initialValue: currentThinking,
+                    initialValue: currentThinkingValue,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Thinking',
                     ),
                     items: [
+                      const DropdownMenuItem<String>(
+                        value: defaultThinkingValue,
+                        child: Text('Default'),
+                      ),
                       for (final value in thinkingChoices)
                         DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
                         ),
                     ],
-                    onChanged: (value) => unawaited(onSelectThinking(value)),
+                    onChanged: (value) => unawaited(
+                      onSelectThinking(
+                        value == defaultThinkingValue ? null : value,
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    initialValue: currentVerbose,
+                    initialValue: currentVerboseValue,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Verbose',
                     ),
                     items: [
+                      const DropdownMenuItem<String>(
+                        value: defaultVerboseValue,
+                        child: Text('Default'),
+                      ),
                       for (final value in verboseChoices)
                         DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
                         ),
                     ],
-                    onChanged: (value) => unawaited(onSelectVerbose(value)),
+                    onChanged: (value) => unawaited(
+                      onSelectVerbose(
+                        value == defaultVerboseValue ? null : value,
+                      ),
+                    ),
                   ),
                 ),
               ],

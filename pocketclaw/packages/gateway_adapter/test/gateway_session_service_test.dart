@@ -61,5 +61,32 @@ void main() {
 
       expect(response.ok, isTrue);
     });
+
+    test('patch can clear explicit overrides with null payloads', () async {
+      final service = GatewaySessionService(
+        TestGatewayClient(
+          onRequest: (request) async {
+            expect(request.method, GatewayMethodNames.sessionsPatch);
+            expect(request.params, containsPair('model', isNull));
+            expect(request.params, containsPair('thinkingLevel', isNull));
+            expect(request.params, containsPair('verboseLevel', isNull));
+            return GatewayResponse(
+              id: request.id,
+              ok: true,
+              payload: const <String, Object?>{},
+            );
+          },
+        ),
+      );
+
+      final response = await service.patch(const SessionPatchParams(
+        key: 'agent:main:pc-home',
+        clearModel: true,
+        clearThinkingLevel: true,
+        clearVerboseLevel: true,
+      ));
+
+      expect(response.ok, isTrue);
+    });
   });
 }

@@ -1080,7 +1080,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
-  Future<void> _applyModel(String modelId) async {
+  Future<void> _applyModel(String? modelId) async {
     if (_connectionState.phase != GatewayConnectionPhase.connected) {
       return;
     }
@@ -1090,6 +1090,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         SessionPatchParams(
           key: _currentSession.sessionKey.value,
           model: modelId,
+          clearModel: modelId == null,
         ),
       );
       await _loadSessionInfo();
@@ -1108,6 +1109,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         SessionPatchParams(
           key: _currentSession.sessionKey.value,
           thinkingLevel: thinkingLevel,
+          clearThinkingLevel: thinkingLevel == null,
         ),
       );
       await _loadSessionInfo();
@@ -1126,6 +1128,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         SessionPatchParams(
           key: _currentSession.sessionKey.value,
           verboseLevel: verboseLevel,
+          clearVerboseLevel: verboseLevel == null,
         ),
       );
       await _loadSessionInfo();
@@ -1349,4 +1352,5 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         return Icons.handyman_outlined;
     }
   }
+}
 }
