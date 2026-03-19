@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:gateway_adapter/gateway_adapter.dart';
+import 'package:gateway_transport/gateway_transport.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:test/test.dart';
 
@@ -108,6 +109,9 @@ class _TestWebSocketChannel implements WebSocketChannel {
     required this.stream,
     required void Function(Object? data) onAdd,
   }) : sink = _TestWebSocketSink(onAdd);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
   @override
   final Stream<Object?> stream;

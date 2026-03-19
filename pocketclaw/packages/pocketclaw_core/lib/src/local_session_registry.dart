@@ -9,7 +9,7 @@ final class LocalSessionEntry {
 
   factory LocalSessionEntry.fromJson(Map<String, Object?> json) {
     return LocalSessionEntry(
-      sessionKey: SessionKey.value(json['sessionKey'] as String),
+      sessionKey: SessionKey.fromValue(json['sessionKey'] as String),
       title: json['title'] as String? ?? 'Untitled',
       draftText: json['draftText'] as String? ?? '',
     );

@@ -1,5 +1,6 @@
 import 'connect_models.dart';
 import 'gateway_event.dart';
+import 'gateway_message.dart';
 import 'gateway_protocol_exception.dart';
 import 'gateway_request.dart';
 import 'gateway_response.dart';

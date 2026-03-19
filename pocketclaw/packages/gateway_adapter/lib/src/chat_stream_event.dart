@@ -1,3 +1,5 @@
+import 'chat_message.dart';
+
 enum ChatStreamState {
   delta,
   finalMessage,

@@ -50,7 +50,7 @@ void main() {
     );
 
     registry.replace(
-      const LocalSessionEntry(
+      LocalSessionEntry(
         sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
         title: 'Home',
         draftText: 'updated draft',

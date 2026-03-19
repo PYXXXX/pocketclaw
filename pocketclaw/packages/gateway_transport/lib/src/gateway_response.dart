@@ -1,3 +1,5 @@
+import 'gateway_message.dart';
+
 final class GatewayResponse extends GatewayMessage {
   const GatewayResponse({
     required this.id,

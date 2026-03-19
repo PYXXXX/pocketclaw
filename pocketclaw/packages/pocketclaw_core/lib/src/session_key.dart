@@ -10,7 +10,7 @@ class SessionKey {
     return SessionKey._('agent:$agentId:$clientKey');
   }
 
-  static SessionKey value(String value) {
+  static SessionKey fromValue(String value) {
     return SessionKey._(value);
   }
 }

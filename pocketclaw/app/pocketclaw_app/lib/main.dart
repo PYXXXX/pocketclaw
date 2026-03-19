@@ -470,7 +470,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   Future<void> _openGatewaySession(SessionInfo session) async {
     final entry = LocalSessionEntry(
-      sessionKey: SessionKey.value(session.key),
+      sessionKey: SessionKey.fromValue(session.key),
       title: _titleForGatewaySession(session),
     );
     _registry.replace(entry);
@@ -1260,9 +1260,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
             unawaited(_selectCurrentSession(sessions[index]));
           },
           onSessionTitleSubmitted: _renameCurrentSession,
-          onSelectAgent: (agentId) {
-            unawaited(_openOrCreateAgentHomeSession(agentId));
-          },
+          onSelectAgent: _openOrCreateAgentHomeSession,
           onOpenGatewaySession: _openGatewaySession,
           onSelectModel: _applyModel,
           onSelectThinking: _applyThinkingLevel,
@@ -2093,7 +2091,7 @@ class _TimelineEntryCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface.withOpacity(0.55),
+                        color: colorScheme.surface.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -2116,7 +2114,7 @@ class _TimelineEntryCard extends StatelessWidget {
               Text(
                 item.createdAt.toIso8601String(),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: foregroundColor.withOpacity(0.8),
+                  color: foregroundColor.withValues(alpha: 0.8),
                 ),
               ),
               if (item.details != null && item.details!.isNotEmpty) ...[
@@ -2249,7 +2247,7 @@ class _SessionInfoCard extends StatelessWidget {
                 SizedBox(
                   width: 280,
                   child: DropdownButtonFormField<String>(
-                    value: currentModel,
+                    initialValue: currentModel,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Model',
@@ -2271,7 +2269,7 @@ class _SessionInfoCard extends StatelessWidget {
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    value: currentThinking,
+                    initialValue: currentThinking,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Thinking',
@@ -2289,7 +2287,7 @@ class _SessionInfoCard extends StatelessWidget {
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    value: currentVerbose,
+                    initialValue: currentVerbose,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Verbose',
@@ -2353,3 +2351,5 @@ class _GuidanceCard extends StatelessWidget {
     );
   }
 }
+
+
