@@ -7,7 +7,7 @@ Primary logo asset:
 Design intent:
 
 - rounded frame suggests a phone / compact device
-- inner mark suggests a stylized claw
+- inner mark more clearly emphasizes a stylized claw and pincer silhouette
 - gradient accent stays aligned with the repository banner and mockup visuals
 
 Possible future uses:
