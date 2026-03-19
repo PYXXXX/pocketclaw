@@ -143,6 +143,7 @@ For the current phase, PocketClaw does **not** assume:
 
 ## Repository layout
 
+- `assets/` — repository banner, UI mockups, and social preview artwork
 - `docs/` — product, architecture, compatibility, and planning documents
 - `app/` — mobile application code
 - `packages/` — reusable protocol, state, and adapter modules

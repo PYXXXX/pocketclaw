@@ -1,0 +1,74 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">PocketClaw social preview</title>
+  <desc id="desc">Social preview card for PocketClaw, a mobile-first OpenClaw client.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B1020"/>
+      <stop offset="0.55" stop-color="#111827"/>
+      <stop offset="1" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="720" y1="120" x2="1110" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset="0.5" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <filter id="glow" x="0" y="0" width="1280" height="640" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="42"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" rx="32" fill="url(#bg)"/>
+
+  <g filter="url(#glow)" opacity="0.24">
+    <circle cx="184" cy="126" r="120" fill="#2563EB"/>
+    <circle cx="1030" cy="132" r="146" fill="#7C3AED"/>
+    <circle cx="1110" cy="528" r="148" fill="#0891B2"/>
+  </g>
+
+  <rect x="58" y="58" width="1164" height="524" rx="30" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.10)"/>
+
+  <g transform="translate(100 108)" font-family="Inter, Segoe UI, Arial, sans-serif">
+    <rect x="0" y="0" width="176" height="38" rx="19" fill="#111827" stroke="#334155"/>
+    <text x="22" y="25" fill="#93C5FD" font-size="16" font-weight="700" letter-spacing="1.4">POCKETCLAW</text>
+    <circle cx="152" cy="19" r="5" fill="#22C55E"/>
+
+    <text x="0" y="128" fill="#FFFFFF" font-size="76" font-weight="800">PocketClaw</text>
+    <text x="0" y="182" fill="#C7D2FE" font-size="31" font-weight="600">A mobile-first OpenClaw client built with Flutter.</text>
+    <text x="0" y="230" fill="#CBD5E1" font-size="24">Connect to your OpenClaw from your phone.</text>
+    <text x="0" y="266" fill="#CBD5E1" font-size="24">Pure frontend. No extra backend. Compatible with today’s Gateway.</text>
+
+    <g transform="translate(0 338)">
+      <rect x="0" y="0" width="154" height="44" rx="22" fill="#111827" stroke="#334155"/>
+      <text x="24" y="28" fill="#E2E8F0" font-size="18" font-weight="700">Flutter</text>
+
+      <rect x="170" y="0" width="202" height="44" rx="22" fill="#111827" stroke="#334155"/>
+      <text x="194" y="28" fill="#E2E8F0" font-size="18" font-weight="700">Mobile First</text>
+
+      <rect x="388" y="0" width="208" height="44" rx="22" fill="#111827" stroke="#334155"/>
+      <text x="412" y="28" fill="#E2E8F0" font-size="18" font-weight="700">OpenClaw Ready</text>
+    </g>
+  </g>
+
+  <g transform="translate(820 118)">
+    <rect x="0" y="0" width="314" height="404" rx="38" fill="#0F172A" stroke="url(#accent)" stroke-width="2.5"/>
+    <rect x="20" y="18" width="274" height="368" rx="30" fill="#020617"/>
+    <rect x="104" y="8" width="108" height="8" rx="4" fill="#334155"/>
+
+    <rect x="40" y="48" width="112" height="28" rx="14" fill="#111827" stroke="#334155"/>
+    <circle cx="60" cy="62" r="5" fill="#22C55E"/>
+    <text x="74" y="68" fill="#E2E8F0" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700">CONNECTED</text>
+
+    <rect x="40" y="98" width="164" height="62" rx="18" fill="#1E293B"/>
+    <rect x="56" y="118" width="84" height="8" rx="4" fill="#94A3B8"/>
+    <rect x="56" y="134" width="120" height="8" rx="4" fill="#475569"/>
+
+    <rect x="118" y="182" width="154" height="84" rx="22" fill="#2563EB" fill-opacity="0.18" stroke="#60A5FA"/>
+    <rect x="136" y="206" width="94" height="10" rx="5" fill="#E0E7FF"/>
+    <rect x="136" y="226" width="116" height="10" rx="5" fill="#BFDBFE"/>
+    <rect x="136" y="246" width="102" height="10" rx="5" fill="#BFDBFE" fill-opacity="0.85"/>
+
+    <rect x="40" y="292" width="232" height="74" rx="18" fill="#111827" stroke="#334155"/>
+    <rect x="58" y="316" width="96" height="10" rx="5" fill="#94A3B8"/>
+    <rect x="58" y="336" width="152" height="10" rx="5" fill="#475569"/>
+  </g>
+</svg>

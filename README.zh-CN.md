@@ -143,6 +143,7 @@ packages/
 
 ## 仓库结构
 
+- `assets/` —— 仓库 banner、UI mockup 与社交分享图素材
 - `docs/` —— 产品、架构、兼容性与规划文档
 - `app/` —— 移动端应用代码
 - `packages/` —— 可复用的协议、状态和适配层模块
