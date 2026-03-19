@@ -20,6 +20,7 @@ final class AgentRuntimeEvent {
     required this.summary,
     required this.rawData,
     this.toolName,
+    this.callId,
     this.status,
     this.details,
   });
@@ -33,8 +34,20 @@ final class AgentRuntimeEvent {
   final String summary;
   final Map<String, Object?> rawData;
   final String? toolName;
+  final String? callId;
   final String? status;
   final String? details;
+
+  String? get timelineKey {
+    if (kind != AgentRuntimeEventKind.tool) {
+      return null;
+    }
+    final stableCallId = callId;
+    if (stableCallId == null || stableCallId.isEmpty) {
+      return null;
+    }
+    return 'tool:$runId:$stableCallId';
+  }
 
   static AgentRuntimeEvent? tryParse(GatewayEvent event) {
     final payload = event.payload;
@@ -65,6 +78,7 @@ final class AgentRuntimeEvent {
       'displayName',
       'label',
     ]);
+    final callId = _firstString(data, <String>['callId', 'toolCallId']);
     final status = _firstString(data, <String>[
       'status',
       'state',
@@ -122,6 +136,7 @@ final class AgentRuntimeEvent {
       summary: summary,
       rawData: data,
       toolName: toolName,
+      callId: callId,
       status: status,
       details: details,
     );

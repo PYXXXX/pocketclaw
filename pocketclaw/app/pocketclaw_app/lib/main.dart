@@ -86,6 +86,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final GatewayConnectRequestFactory _connectRequestFactory =
       const GatewayConnectRequestFactory();
   final SecureKeyValueStore _secureStore = FlutterSecureKeyValueStore();
+  final ChatTimelineController _timelineController = ChatTimelineController();
 
   late final GatewayProfileStore _profileStore =
       SecureGatewayProfileStore(_secureStore);
@@ -159,14 +160,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _agentService = GatewayAgentService(_gatewayClient);
     _attachClientSubscriptions();
 
-    _timeline = <ChatTimelineItem>[
+    _setTimelineItems(<ChatTimelineItem>[
       ChatTimelineItem(
         role: ChatTimelineRole.system,
         text:
             'PocketClaw is ready for a real Gateway. Start with the connect flow, then enter chat when the app is ready to reconnect.',
         createdAt: DateTime.now().toUtc(),
       ),
-    ];
+    ]);
 
     _messageController.addListener(_handleComposerChanged);
 
@@ -245,6 +246,16 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       text: title,
       selection: TextSelection.collapsed(offset: title.length),
     );
+  }
+
+  void _setTimelineItems(Iterable<ChatTimelineItem> items) {
+    _timelineController.replaceAll(items);
+    _timeline = _timelineController.items;
+  }
+
+  void _appendTimelineItem(ChatTimelineItem item) {
+    _timelineController.append(item);
+    _timeline = _timelineController.items;
   }
 
   void _storeCurrentAttachmentDraft() {
@@ -507,14 +518,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           (_activeRunId == null || runtimeEvent.runId == _activeRunId)) {
         if (runtimeEvent.kind == AgentRuntimeEventKind.tool ||
             runtimeEvent.kind == AgentRuntimeEventKind.internal) {
-          _appendTimeline(
-            ChatTimelineRole.tool,
-            runtimeEvent.summary,
-            title: runtimeEvent.title,
-            status: runtimeEvent.status,
-            details: runtimeEvent.details,
-            createdAt: runtimeEvent.timestamp,
-          );
+          setState(() {
+            _timelineController.applyRuntimeEvent(runtimeEvent);
+            _timeline = _timelineController.items;
+          });
         }
         return;
       }
@@ -694,14 +701,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _connectMethod = ConnectMethod.manual;
       _connectFlowStage = ConnectFlowStage.manualConfig;
       _selectedDestination = AppDestination.connect;
-      _timeline = <ChatTimelineItem>[
+      _setTimelineItems(<ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
           text:
               'Applied Gateway configuration for ${profile.url}. Token and password remain optional. Device identity and device token reuse stay local on the phone when available.',
           createdAt: DateTime.now().toUtc(),
         ),
-      ];
+      ]);
     });
 
     try {
@@ -715,43 +722,22 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   void _handleChatStreamEvent(ChatStreamEvent event) {
-    if (event.sessionKey != _currentSession.sessionKey.value) {
+    if (event.sessionKey != _currentSession.sessionKey.value || !mounted) {
       return;
     }
 
-    if (event.runId != null) {
-      _activeRunId = event.runId;
-    }
-
-    switch (event.state) {
-      case ChatStreamState.delta:
-        if (event.message != null) {
-          _appendTimeline(
-            ChatTimelineRole.assistant,
-            '[streaming] ${event.message!.text}',
-          );
-        }
-        break;
-      case ChatStreamState.finalMessage:
-        if (event.message != null) {
-          _appendTimeline(ChatTimelineRole.assistant, event.message!.text);
-        }
+    setState(() {
+      if (event.runId != null) {
+        _activeRunId = event.runId;
+      }
+      _timelineController.applyChatStreamEvent(event);
+      _timeline = _timelineController.items;
+      if (event.state == ChatStreamState.finalMessage ||
+          event.state == ChatStreamState.aborted ||
+          event.state == ChatStreamState.error) {
         _activeRunId = null;
-        break;
-      case ChatStreamState.aborted:
-        if (event.message != null) {
-          _appendTimeline(ChatTimelineRole.system, event.message!.text);
-        }
-        _activeRunId = null;
-        break;
-      case ChatStreamState.error:
-        _appendTimeline(
-          ChatTimelineRole.system,
-          event.errorMessage ?? 'Chat error',
-        );
-        _activeRunId = null;
-        break;
-    }
+      }
+    });
   }
 
   Future<void> _loadCurrentViewData() async {
@@ -783,23 +769,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       sessionKey: _currentSession.sessionKey.value,
     );
 
-    final items = history.messages.map((message) {
-      return ChatTimelineItem(
-        role: switch (message.role) {
-          ChatMessageRole.system => ChatTimelineRole.system,
-          ChatMessageRole.user => ChatTimelineRole.user,
-          ChatMessageRole.assistant => ChatTimelineRole.assistant,
-        },
-        text: message.text,
-        createdAt: message.timestamp ?? DateTime.now().toUtc(),
-      );
-    }).toList();
-
     if (!mounted) {
       return;
     }
     setState(() {
-      _timeline = items;
+      _timelineController.replaceHistory(history.messages);
+      _timeline = _timelineController.items;
     });
   }
 
@@ -879,8 +854,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       return;
     }
     setState(() {
-      _timeline = <ChatTimelineItem>[
-        ..._timeline,
+      _appendTimelineItem(
         ChatTimelineItem(
           role: role,
           text: text,
@@ -889,7 +863,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           status: status,
           details: details,
         ),
-      ];
+      );
     });
   }
 
@@ -908,13 +882,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _currentSession = entry;
       _selectedDestination = AppDestination.chat;
       _pendingAttachments = const <PendingImageAttachment>[];
-      _timeline = <ChatTimelineItem>[
+      _setTimelineItems(<ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
           text: 'Created local session ${entry.sessionKey.value}',
           createdAt: DateTime.now().toUtc(),
         ),
-      ];
+      ]);
       _currentSessionInfo = null;
     });
 
@@ -2056,6 +2030,7 @@ class _TimelineEntryCard extends StatelessWidget {
           ChatTimelineRole.assistant => 'Assistant',
           ChatTimelineRole.tool => 'Tool',
         };
+    final badgeLabel = item.status ?? (item.isStreaming ? 'streaming' : null);
 
     return Align(
       alignment: alignment,
@@ -2084,7 +2059,7 @@ class _TimelineEntryCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (item.status != null && item.status!.isNotEmpty)
+                  if (badgeLabel != null && badgeLabel.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -2095,7 +2070,7 @@ class _TimelineEntryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        item.status!,
+                        badgeLabel,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: foregroundColor,
                         ),

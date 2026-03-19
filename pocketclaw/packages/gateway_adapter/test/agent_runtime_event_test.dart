@@ -13,6 +13,7 @@ void main() {
           'stream': 'tool.lifecycle',
           'ts': 1710000000000,
           'data': <String, Object?>{
+            'callId': 'call-1',
             'toolName': 'web_fetch',
             'status': 'running',
             'summary': 'Fetching docs',
@@ -26,6 +27,8 @@ void main() {
       expect(parsed, isNotNull);
       expect(parsed!.kind, AgentRuntimeEventKind.tool);
       expect(parsed.toolName, 'web_fetch');
+      expect(parsed.callId, 'call-1');
+      expect(parsed.timelineKey, 'tool:run-1:call-1');
       expect(parsed.status, 'running');
       expect(parsed.summary, 'Fetching docs');
       expect(parsed.details, contains('arguments'));
