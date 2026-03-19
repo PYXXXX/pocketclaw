@@ -50,6 +50,11 @@ enum ConnectFlowStage {
   error,
 }
 
+enum AppDestination {
+  chat,
+  connect,
+}
+
 class _ConnectFlowSnapshot {
   const _ConnectFlowSnapshot({
     required this.stage,
@@ -127,6 +132,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   bool _isBootstrapping = true;
   ConnectMethod _connectMethod = ConnectMethod.manual;
   ConnectFlowStage _connectFlowStage = ConnectFlowStage.welcome;
+  AppDestination _selectedDestination = AppDestination.connect;
   String _selectedAgentId = 'main';
 
   @override
@@ -209,9 +215,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       if (!mounted) {
         return;
       }
+      final nextStage = _deriveConnectFlowStage();
       setState(() {
         _isBootstrapping = false;
-        _connectFlowStage = _deriveConnectFlowStage();
+        _connectFlowStage = nextStage;
+        _selectedDestination = nextStage == ConnectFlowStage.ready
+            ? AppDestination.chat
+            : AppDestination.connect;
       });
     }
   }
@@ -400,6 +410,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _currentSession = session;
       _selectedAgentId = _agentIdForSession(session.sessionKey.value);
+      _selectedDestination = AppDestination.chat;
       _restoreAttachmentDraftForCurrentSession();
     });
     _applyComposerDraft(session.draftText);
@@ -472,9 +483,17 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       if (!mounted) {
         return;
       }
+      final nextStage = _deriveConnectFlowStageFor(state);
       setState(() {
         _connectionState = state;
-        _connectFlowStage = _deriveConnectFlowStage();
+        _connectFlowStage = nextStage;
+        if (nextStage == ConnectFlowStage.ready) {
+          if (_selectedDestination == AppDestination.connect) {
+            _selectedDestination = AppDestination.chat;
+          }
+        } else {
+          _selectedDestination = AppDestination.connect;
+        }
       });
     });
 
@@ -507,12 +526,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         );
         setState(() {
           _connectFlowStage = ConnectFlowStage.authPending;
+          _selectedDestination = AppDestination.connect;
         });
         return;
       }
       if (event.event.contains('pair') || event.event.contains('device')) {
         setState(() {
           _connectFlowStage = ConnectFlowStage.pairingPending;
+          _selectedDestination = AppDestination.connect;
         });
       }
     });
@@ -540,12 +561,20 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     if (!mounted) {
       return;
     }
+    final nextStage = _deriveConnectFlowStage();
     setState(() {
-      _connectFlowStage = _deriveConnectFlowStage();
+      _connectFlowStage = nextStage;
+      if (nextStage != ConnectFlowStage.ready) {
+        _selectedDestination = AppDestination.connect;
+      }
     });
   }
 
   ConnectFlowStage _deriveConnectFlowStage() {
+    return _deriveConnectFlowStageFor(_connectionState);
+  }
+
+  ConnectFlowStage _deriveConnectFlowStageFor(GatewayConnectionState state) {
     if (_lastError != null) {
       return ConnectFlowStage.error;
     }
@@ -556,7 +585,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     if (_connectMethod == ConnectMethod.setupCode) {
       return ConnectFlowStage.chooseMethod;
     }
-    switch (_connectionState.phase) {
+    switch (state.phase) {
       case GatewayConnectionPhase.connected:
         return ConnectFlowStage.ready;
       case GatewayConnectionPhase.connecting:
@@ -632,6 +661,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _onboardingCompleted = true;
       _connectFlowStage = ConnectFlowStage.chooseMethod;
+      _selectedDestination = AppDestination.connect;
     });
     await _persistConnectFlowPreferences();
   }
@@ -642,6 +672,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _connectFlowStage = method == ConnectMethod.manual
           ? ConnectFlowStage.manualConfig
           : ConnectFlowStage.chooseMethod;
+      _selectedDestination = AppDestination.connect;
     });
     await _persistConnectFlowPreferences();
   }
@@ -662,6 +693,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _currentSessionInfo = null;
       _connectMethod = ConnectMethod.manual;
       _connectFlowStage = ConnectFlowStage.manualConfig;
+      _selectedDestination = AppDestination.connect;
       _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
@@ -827,6 +859,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _lastError = prefix == null ? error.toString() : '$prefix: $error';
       _lastGuidance = guidance;
       _connectFlowStage = ConnectFlowStage.error;
+      _selectedDestination = AppDestination.connect;
     });
     _appendTimeline(
       ChatTimelineRole.system,
@@ -873,6 +906,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     setState(() {
       _registry.remember(entry);
       _currentSession = entry;
+      _selectedDestination = AppDestination.chat;
       _pendingAttachments = const <PendingImageAttachment>[];
       _timeline = <ChatTimelineItem>[
         ChatTimelineItem(
@@ -988,6 +1022,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
       setState(() {
         _connectFlowStage = ConnectFlowStage.ready;
+        _selectedDestination = AppDestination.chat;
       });
       _appendTimeline(ChatTimelineRole.system, 'Connected to ${_gatewayProfile.url}');
       await _loadCurrentViewData();
@@ -1001,8 +1036,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     if (!mounted) {
       return;
     }
+    final nextStage = _deriveConnectFlowStage();
     setState(() {
-      _connectFlowStage = _deriveConnectFlowStage();
+      _connectFlowStage = nextStage;
+      if (nextStage != ConnectFlowStage.ready) {
+        _selectedDestination = AppDestination.connect;
+      }
     });
     _appendTimeline(ChatTimelineRole.system, 'Disconnected from ${_gatewayProfile.url}');
   }
@@ -1141,131 +1180,185 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
+  void _selectDestination(AppDestination destination) {
+    if (_selectedDestination == destination) {
+      return;
+    }
+    setState(() {
+      _selectedDestination = destination;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final connectSnapshot = _snapshotForConnectFlow();
     final sessions = _registry.sessions;
     final showChatShell = _connectFlowStage == ConnectFlowStage.ready;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('PocketClaw'),
-        actions: [
-          IconButton(
-            onPressed: showChatShell ? _createSession : null,
-            icon: const Icon(Icons.add_comment_outlined),
-            tooltip: 'Create session',
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 980;
+        final connectPane = SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ConnectFlowCard(
+                snapshot: connectSnapshot,
+                onboardingCompleted: _onboardingCompleted,
+                connectMethod: _connectMethod,
+                onCompleteWelcome: _completeWelcome,
+                onSelectMethod: _selectConnectMethod,
+              ),
+              const SizedBox(height: 12),
+              _GatewayConfigCard(
+                gatewayUrlController: _gatewayUrlController,
+                tokenController: _tokenController,
+                passwordController: _passwordController,
+                onApply: _applyGatewayConfiguration,
+              ),
+              const SizedBox(height: 12),
+              _ConnectionStatusCard(
+                state: _connectionState,
+                connectFlowStage: _connectFlowStage,
+                onConnect: _connect,
+                onDisconnect: _disconnect,
+              ),
+              if (_lastGuidance != null) ...[
+                const SizedBox(height: 12),
+                _GuidanceCard(guidance: _lastGuidance!),
+              ],
+              if (_lastError != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _lastError!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
-      ),
-      body: _isBootstrapping
-          ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 980;
-                final connectPane = SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _ConnectFlowCard(
-                        snapshot: connectSnapshot,
-                        onboardingCompleted: _onboardingCompleted,
-                        connectMethod: _connectMethod,
-                        onCompleteWelcome: _completeWelcome,
-                        onSelectMethod: _selectConnectMethod,
+        );
+
+        final chatPane = _ChatShell(
+          sessions: sessions,
+          currentSession: _currentSession,
+          timeline: _timeline,
+          assistantIdentity: _assistantIdentity,
+          sessionInfo: _currentSessionInfo,
+          agents: _agents,
+          selectedAgentId: _selectedAgentId,
+          gatewaySessions: _gatewaySessions,
+          models: _models,
+          connectionState: _connectionState,
+          activeRunId: _activeRunId,
+          pendingAttachments: _pendingAttachments,
+          sessionTitleController: _sessionTitleController,
+          messageController: _messageController,
+          onDestinationSelected: (index) {
+            unawaited(_selectCurrentSession(sessions[index]));
+          },
+          onSessionTitleSubmitted: _renameCurrentSession,
+          onSelectAgent: (agentId) {
+            unawaited(_openOrCreateAgentHomeSession(agentId));
+          },
+          onOpenGatewaySession: _openGatewaySession,
+          onSelectModel: _applyModel,
+          onSelectThinking: _applyThinkingLevel,
+          onSelectVerbose: _applyVerboseLevel,
+          onToggleFastMode: _toggleFastMode,
+          onPickImages: _pickImages,
+          onRemoveAttachment: _removePendingAttachment,
+          onSendMessage: _sendMessage,
+          onAbortRun: _abortRun,
+          iconForRole: _iconForRole,
+        );
+
+        final mobileBody = Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _AppStatusBanner(
+                snapshot: connectSnapshot,
+                connectionState: _connectionState,
+                gatewayUrl: _gatewayProfile.url,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: switch (_selectedDestination) {
+                  AppDestination.connect => KeyedSubtree(
+                      key: const ValueKey<String>('connect-pane'),
+                      child: connectPane,
+                    ),
+                  AppDestination.chat when showChatShell => KeyedSubtree(
+                      key: const ValueKey<String>('chat-pane'),
+                      child: chatPane,
+                    ),
+                  AppDestination.chat => KeyedSubtree(
+                      key: const ValueKey<String>('chat-locked'),
+                      child: _ChatLockedPlaceholder(
+                        onOpenConnect: () =>
+                            _selectDestination(AppDestination.connect),
                       ),
-                      const SizedBox(height: 12),
-                      _GatewayConfigCard(
-                        gatewayUrlController: _gatewayUrlController,
-                        tokenController: _tokenController,
-                        passwordController: _passwordController,
-                        onApply: _applyGatewayConfiguration,
-                      ),
-                      const SizedBox(height: 12),
-                      _ConnectionStatusCard(
-                        state: _connectionState,
-                        connectFlowStage: _connectFlowStage,
-                        onConnect: _connect,
-                        onDisconnect: _disconnect,
-                      ),
-                      if (_lastGuidance != null) ...[
-                        const SizedBox(height: 12),
-                        _GuidanceCard(guidance: _lastGuidance!),
-                      ],
-                      if (_lastError != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          _lastError!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                    ),
+                },
+              ),
+            ),
+          ],
+        );
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('PocketClaw'),
+            actions: [
+              IconButton(
+                onPressed: showChatShell ? _createSession : null,
+                icon: const Icon(Icons.add_comment_outlined),
+                tooltip: 'Create session',
+              ),
+            ],
+          ),
+          body: _isBootstrapping
+              ? const Center(child: CircularProgressIndicator())
+              : compact
+                  ? mobileBody
+                  : Row(
+                      children: [
+                        SizedBox(width: 420, child: connectPane),
+                        const VerticalDivider(width: 1),
+                        Expanded(
+                          child: showChatShell
+                              ? chatPane
+                              : const _ChatLockedPlaceholder(),
                         ),
                       ],
-                    ],
-                  ),
-                );
-
-                final chatPane = _ChatShell(
-                  sessions: sessions,
-                  currentSession: _currentSession,
-                  timeline: _timeline,
-                  assistantIdentity: _assistantIdentity,
-                  sessionInfo: _currentSessionInfo,
-                  agents: _agents,
-                  selectedAgentId: _selectedAgentId,
-                  gatewaySessions: _gatewaySessions,
-                  models: _models,
-                  connectionState: _connectionState,
-                  activeRunId: _activeRunId,
-                  pendingAttachments: _pendingAttachments,
-                  sessionTitleController: _sessionTitleController,
-                  messageController: _messageController,
+                    ),
+          bottomNavigationBar: _isBootstrapping || !compact
+              ? null
+              : NavigationBar(
+                  selectedIndex: _selectedDestination.index,
                   onDestinationSelected: (index) {
-                    unawaited(_selectCurrentSession(sessions[index]));
+                    _selectDestination(AppDestination.values[index]);
                   },
-                  onSessionTitleSubmitted: _renameCurrentSession,
-                  onSelectAgent: (agentId) {
-                    unawaited(_openOrCreateAgentHomeSession(agentId));
-                  },
-                  onOpenGatewaySession: _openGatewaySession,
-                  onSelectModel: _applyModel,
-                  onSelectThinking: _applyThinkingLevel,
-                  onSelectVerbose: _applyVerboseLevel,
-                  onToggleFastMode: _toggleFastMode,
-                  onPickImages: _pickImages,
-                  onRemoveAttachment: _removePendingAttachment,
-                  onSendMessage: _sendMessage,
-                  onAbortRun: _abortRun,
-                  iconForRole: _iconForRole,
-                );
-
-                if (compact) {
-                  return ListView(
-                    children: [
-                      connectPane,
-                      const Divider(height: 1),
-                      if (showChatShell)
-                        SizedBox(height: 720, child: chatPane)
-                      else
-                        const _ChatLockedPlaceholder(),
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    SizedBox(width: 420, child: connectPane),
-                    const VerticalDivider(width: 1),
-                    Expanded(
-                      child: showChatShell
-                          ? chatPane
-                          : const _ChatLockedPlaceholder(),
+                  destinations: const [
+                    NavigationDestination(
+                      icon: Icon(Icons.chat_bubble_outline),
+                      selectedIcon: Icon(Icons.chat_bubble),
+                      label: 'Chat',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.hub_outlined),
+                      selectedIcon: Icon(Icons.hub),
+                      label: 'Connect',
                     ),
                   ],
-                );
-              },
-            ),
+                ),
+        );
+      },
     );
   }
 
@@ -1280,6 +1373,73 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       case ChatTimelineRole.tool:
         return Icons.handyman_outlined;
     }
+  }
+}
+
+class _AppStatusBanner extends StatelessWidget {
+  const _AppStatusBanner({
+    required this.snapshot,
+    required this.connectionState,
+    required this.gatewayUrl,
+  });
+
+  final _ConnectFlowSnapshot snapshot;
+  final GatewayConnectionState connectionState;
+  final String gatewayUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
+    final gatewayLabel = hasGatewayUrl ? gatewayUrl.trim() : 'No Gateway configured yet';
+
+    return Card(
+      color: snapshot.requiresAttention
+          ? colorScheme.errorContainer
+          : colorScheme.surfaceContainerHigh,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  snapshot.stage == ConnectFlowStage.ready
+                      ? Icons.check_circle_outline
+                      : Icons.hub_outlined,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    snapshot.title,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(snapshot.description, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.hub_outlined, size: 18),
+                  label: Text(gatewayLabel),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.sync_outlined, size: 18),
+                  label: Text('State: ${connectionState.phase.name}'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1994,7 +2154,9 @@ class _TimelineEntryCard extends StatelessWidget {
   }
 }
 class _ChatLockedPlaceholder extends StatelessWidget {
-  const _ChatLockedPlaceholder();
+  const _ChatLockedPlaceholder({this.onOpenConnect});
+
+  final VoidCallback? onOpenConnect;
 
   @override
   Widget build(BuildContext context) {
@@ -2019,6 +2181,14 @@ class _ChatLockedPlaceholder extends StatelessWidget {
               'PocketClaw keeps the chat shell behind a usable Gateway setup so the app does not feel like a debug screen before it can reconnect cleanly.',
               textAlign: TextAlign.center,
             ),
+            if (onOpenConnect != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onOpenConnect,
+                icon: const Icon(Icons.hub_outlined),
+                label: const Text('Open connect'),
+              ),
+            ],
           ],
         ),
       ),

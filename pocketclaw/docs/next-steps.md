@@ -5,7 +5,7 @@
 1. Define local connect-flow state and onboarding completion state
 2. Shape a real onboarding and connect flow
 3. Tighten Gateway compatibility against the official Android reference
-4. Replace the placeholder app home with a real app shell
+4. Polish the mobile app shell and destination handoff
 5. Add session title editing and other chat-first polish
 
 ## Suggested implementation order
@@ -30,7 +30,8 @@
 - home scaffold
 - session switcher entry
 - connection status surface
-- placeholder chat timeline view
+- compact destination navigation
+- chat timeline surface
 
 ## Release operations
 
