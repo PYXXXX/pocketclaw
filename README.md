@@ -8,6 +8,8 @@
 
 [English](./README.md) · [简体中文](./README.zh-CN.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md)
 
+![PocketClaw banner](./assets/pocketclaw-banner.svg)
+
 ![Status](https://img.shields.io/badge/status-active%20prototype-7c3aed)
 ![Frontend](https://img.shields.io/badge/architecture-pure%20frontend-0f766e)
 ![Stack](https://img.shields.io/badge/built%20with-Flutter-02569B?logo=flutter&logoColor=white)
