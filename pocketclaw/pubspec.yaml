@@ -6,6 +6,12 @@ version: 0.1.0
 environment:
   sdk: ^3.5.0
 
+workspace:
+  - app/pocketclaw_app
+  - packages/gateway_adapter
+  - packages/gateway_transport
+  - packages/pocketclaw_core
+
 dev_dependencies:
   lints: ^4.0.0
   melos: ^6.3.2
