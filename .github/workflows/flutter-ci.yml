@@ -35,7 +35,7 @@ jobs:
 
       - name: Bootstrap workspace
         working-directory: pocketclaw
-        run: ~/.pub-cache/bin/melos bootstrap
+        run: flutter pub get
 
       - name: Analyze workspace
         working-directory: pocketclaw

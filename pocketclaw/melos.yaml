@@ -15,5 +15,5 @@ scripts:
     run: melos exec --dir-exists=test -- "dart test"
     description: Run package tests where present.
   bootstrap:ci:
-    run: melos bootstrap
-    description: Install workspace dependencies in CI.
+    run: flutter pub get
+    description: Install workspace dependencies via pub workspace resolution.

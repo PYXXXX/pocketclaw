@@ -20,7 +20,7 @@ dart --version
 flutter config --enable-android
 cd pocketclaw
 dart pub global activate melos
-melos bootstrap
+flutter pub get
 ```
 
 ## Notes
