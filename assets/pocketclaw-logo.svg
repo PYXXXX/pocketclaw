@@ -11,7 +11,7 @@
       <stop offset="0.5" stop-color="#A78BFA"/>
       <stop offset="1" stop-color="#22D3EE"/>
     </linearGradient>
-    <linearGradient id="claw" x1="164" y1="150" x2="348" y2="360" gradientUnits="userSpaceOnUse">
+    <linearGradient id="claw" x1="180" y1="164" x2="340" y2="352" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#BFDBFE"/>
       <stop offset="0.55" stop-color="#C4B5FD"/>
       <stop offset="1" stop-color="#67E8F9"/>
@@ -34,20 +34,13 @@
   <rect x="206" y="86" width="100" height="10" rx="5" fill="#334155"/>
 
   <g fill="none" stroke="url(#claw)" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 218V154" stroke-width="22"/>
-    <path d="M218 208L184 166" stroke-width="22"/>
-    <path d="M294 208L328 166" stroke-width="22"/>
-    <path d="M200 256C200 228 224 206 256 206C288 206 312 228 312 256" stroke-width="24"/>
-    <path d="M199 270C177 270 158 287 158 310C158 333 177 350 199 350" stroke-width="22"/>
-    <path d="M313 270C335 270 354 287 354 310C354 333 335 350 313 350" stroke-width="22"/>
+    <path d="M175 314C175 267 207 232 250 232C281 232 307 248 321 273" stroke-width="24"/>
+    <path d="M210 205L176 166" stroke-width="22"/>
+    <path d="M255 188V142" stroke-width="22"/>
+    <path d="M300 205L336 166" stroke-width="22"/>
+    <path d="M313 277C334 277 351 294 351 315C351 336 334 353 313 353" stroke-width="22"/>
+    <path d="M191 277C170 277 153 294 153 315C153 336 170 353 191 353" stroke-width="22"/>
   </g>
 
-  <g fill="none" stroke="url(#claw)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M175 286L135 244"/>
-    <path d="M175 286L141 322"/>
-    <path d="M337 286L377 244"/>
-    <path d="M337 286L371 322"/>
-  </g>
-
-  <circle cx="256" cy="312" r="16" fill="url(#claw)"/>
+  <circle cx="256" cy="318" r="16" fill="url(#claw)"/>
 </svg>
