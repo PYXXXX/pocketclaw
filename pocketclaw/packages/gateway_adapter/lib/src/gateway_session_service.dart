@@ -34,7 +34,9 @@ final class GatewaySessionService {
     final defaults = payload['defaults'];
     return SessionsListResult(
       sessions: sessions,
-      defaults: defaults is Map<String, Object?> ? defaults : null,
+      defaults: defaults is Map<String, Object?>
+          ? SessionDefaults.fromJson(defaults)
+          : null,
     );
   }
 

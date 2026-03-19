@@ -1222,6 +1222,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           timeline: _timeline,
           assistantIdentity: _assistantIdentity,
           sessionInfo: _currentSessionInfo,
+          sessionDefaults: _sessionDefaults,
           agents: _agents,
           selectedAgentId: _selectedAgentId,
           gatewaySessions: _gatewaySessions,

@@ -17,6 +17,7 @@ class ChatShell extends StatelessWidget {
     required this.timeline,
     required this.assistantIdentity,
     required this.sessionInfo,
+    required this.sessionDefaults,
     required this.agents,
     required this.selectedAgentId,
     required this.gatewaySessions,
@@ -46,6 +47,7 @@ class ChatShell extends StatelessWidget {
   final List<ChatTimelineItem> timeline;
   final AgentIdentity? assistantIdentity;
   final SessionInfo? sessionInfo;
+  final SessionDefaults? sessionDefaults;
   final List<AgentSummary> agents;
   final String selectedAgentId;
   final List<SessionInfo> gatewaySessions;
@@ -133,6 +135,7 @@ class ChatShell extends StatelessWidget {
               SessionInfoCard(
                 identity: assistantIdentity,
                 sessionInfo: sessionInfo,
+                sessionDefaults: sessionDefaults,
                 models: models,
                 onSelectModel: onSelectModel,
                 onSelectThinking: onSelectThinking,
@@ -537,11 +540,35 @@ class TimelineEntryCard extends StatelessWidget {
   }
 }
 
+class _SessionSettingChip extends StatelessWidget {
+  const _SessionSettingChip({
+    required this.label,
+    required this.value,
+    required this.inherited,
+  });
+
+  final String label;
+  final String value;
+  final bool inherited;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: Icon(
+        inherited ? Icons.keyboard_return : Icons.tune,
+        size: 18,
+      ),
+      label: Text('$label: $value'),
+    );
+  }
+}
+
 class SessionInfoCard extends StatelessWidget {
   const SessionInfoCard({
     super.key,
     required this.identity,
     required this.sessionInfo,
+    required this.sessionDefaults,
     required this.models,
     required this.onSelectModel,
     required this.onSelectThinking,
@@ -551,6 +578,7 @@ class SessionInfoCard extends StatelessWidget {
 
   final AgentIdentity? identity;
   final SessionInfo? sessionInfo;
+  final SessionDefaults? sessionDefaults;
   final List<ModelInfo> models;
   final Future<void> Function(String? modelId) onSelectModel;
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
@@ -568,7 +596,12 @@ class SessionInfoCard extends StatelessWidget {
     final currentModelOverride = sessionInfo?.model;
     final currentThinkingOverride = sessionInfo?.thinkingLevel;
     final currentVerboseOverride = sessionInfo?.verboseLevel;
+    final inheritedModel = sessionDefaults?.model;
+    final inheritedThinking = sessionDefaults?.thinkingLevel;
+    final inheritedVerbose = sessionDefaults?.verboseLevel;
+    final inheritedFastMode = sessionDefaults?.fastMode;
     final modelIds = models.map((model) => model.id).toSet();
+
     final currentModelValue = currentModelOverride == null
         ? defaultModelValue
         : currentModelOverride;
@@ -580,7 +613,14 @@ class SessionInfoCard extends StatelessWidget {
             verboseChoices.contains(currentVerboseOverride)
         ? currentVerboseOverride
         : defaultVerboseValue;
-    final fastMode = sessionInfo?.fastMode ?? false;
+    final fastMode = sessionInfo?.fastMode ?? inheritedFastMode ?? false;
+
+    final modelDefaultLabel = inheritedModel ?? 'gateway default';
+    final thinkingDefaultLabel = inheritedThinking ?? 'gateway default';
+    final verboseDefaultLabel = inheritedVerbose ?? 'gateway default';
+    final fastModeSummary = sessionInfo?.fastMode == null
+        ? 'Inheriting default · ${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'}'
+        : 'Override active · ${fastMode ? 'on' : 'off'}';
 
     return Card(
       child: Padding(
@@ -591,6 +631,28 @@ class SessionInfoCard extends StatelessWidget {
             Text(
               identity?.name ?? 'Assistant',
               style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _SessionSettingChip(
+                  label: 'Model',
+                  value: currentModelOverride ?? modelDefaultLabel,
+                  inherited: currentModelOverride == null,
+                ),
+                _SessionSettingChip(
+                  label: 'Thinking',
+                  value: currentThinkingOverride ?? thinkingDefaultLabel,
+                  inherited: currentThinkingOverride == null,
+                ),
+                _SessionSettingChip(
+                  label: 'Verbose',
+                  value: currentVerboseOverride ?? verboseDefaultLabel,
+                  inherited: currentVerboseOverride == null,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -606,9 +668,9 @@ class SessionInfoCard extends StatelessWidget {
                       labelText: 'Model',
                     ),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: defaultModelValue,
-                        child: Text('Default (inherit)'),
+                        child: Text('Default (inherit: $modelDefaultLabel)'),
                       ),
                       if (currentModelOverride != null &&
                           !modelIds.contains(currentModelOverride))
@@ -643,9 +705,9 @@ class SessionInfoCard extends StatelessWidget {
                       labelText: 'Thinking',
                     ),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: defaultThinkingValue,
-                        child: Text('Default'),
+                        child: Text('Default ($thinkingDefaultLabel)'),
                       ),
                       for (final value in thinkingChoices)
                         DropdownMenuItem<String>(
@@ -669,9 +731,9 @@ class SessionInfoCard extends StatelessWidget {
                       labelText: 'Verbose',
                     ),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: defaultVerboseValue,
-                        child: Text('Default'),
+                        child: Text('Default ($verboseDefaultLabel)'),
                       ),
                       for (final value in verboseChoices)
                         DropdownMenuItem<String>(
@@ -692,7 +754,7 @@ class SessionInfoCard extends StatelessWidget {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Fast mode'),
-              subtitle: const Text('Maps to sessions.patch fastMode'),
+              subtitle: Text('Maps to sessions.patch fastMode · $fastModeSummary'),
               value: fastMode,
               onChanged: (value) => unawaited(onToggleFastMode(value)),
             ),

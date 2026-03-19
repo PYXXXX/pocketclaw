@@ -23,6 +23,9 @@ void main() {
                 ],
                 'defaults': <String, Object?>{
                   'model': 'codex-lb-responses/gpt-5.4',
+                  'thinkingLevel': 'medium',
+                  'fastMode': false,
+                  'verboseLevel': 'low',
                 },
               },
             );
@@ -32,7 +35,10 @@ void main() {
 
       final result = await service.list();
       expect(result.sessions, hasLength(1));
-      expect(result.defaults?['model'], 'codex-lb-responses/gpt-5.4');
+      expect(result.defaults?.model, 'codex-lb-responses/gpt-5.4');
+      expect(result.defaults?.thinkingLevel, 'medium');
+      expect(result.defaults?.fastMode, isFalse);
+      expect(result.defaults?.verboseLevel, 'low');
     });
 
     test('patches session state', () async {
