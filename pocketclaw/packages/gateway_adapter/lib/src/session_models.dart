@@ -50,8 +50,14 @@ final class SessionPatchParams {
         if (clearModel || model != null) 'model': model,
         if (clearThinkingLevel || thinkingLevel != null)
           'thinkingLevel': thinkingLevel,
-        if (fastMode != null) 'fastMode': fastMode,
+        if (clearFastMode || fastMode != null) 'fastMode': fastMode,
         if (clearVerboseLevel || verboseLevel != null)
+          'verboseLevel': verboseLevel,
+      };
+}
+      };
+}
+null)
           'verboseLevel': verboseLevel,
       };
 }

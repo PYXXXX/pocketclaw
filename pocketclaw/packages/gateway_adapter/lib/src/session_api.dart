@@ -8,6 +8,7 @@ abstract interface class SessionApi {
     String? thinkingLevel,
     bool clearThinkingLevel = false,
     bool? fastMode,
+    bool clearFastMode = false,
     String? verboseLevel,
     bool clearVerboseLevel = false,
   });

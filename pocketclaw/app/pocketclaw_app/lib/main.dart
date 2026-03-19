@@ -1155,6 +1155,24 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
+  Future<void> _clearFastModeOverride() async {
+    if (_connectionState.phase != GatewayConnectionPhase.connected) {
+      return;
+    }
+
+    try {
+      await _sessionService.patch(
+        SessionPatchParams(
+          key: _currentSession.sessionKey.value,
+          clearFastMode: true,
+        ),
+      );
+      await _loadSessionInfo();
+    } catch (error) {
+      _recordError(error, prefix: 'Fast mode reset failed');
+    }
+  }
+
   void _selectDestination(AppDestination destination) {
     if (_selectedDestination == destination) {
       return;
@@ -1242,6 +1260,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           onSelectThinking: _applyThinkingLevel,
           onSelectVerbose: _applyVerboseLevel,
           onToggleFastMode: _toggleFastMode,
+          onClearFastModeOverride: _clearFastModeOverride,
           onPickImages: _pickImages,
           onRemoveAttachment: _removePendingAttachment,
           onSendMessage: _sendMessage,
@@ -1342,6 +1361,20 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   IconData _iconForRole(ChatTimelineRole role) {
+    switch (role) {
+      case ChatTimelineRole.system:
+        return Icons.settings_ethernet;
+      case ChatTimelineRole.user:
+        return Icons.person_outline;
+      case ChatTimelineRole.assistant:
+        return Icons.smart_toy_outlined;
+      case ChatTimelineRole.tool:
+        return Icons.handyman_outlined;
+    }
+  }
+}
+}
+nData _iconForRole(ChatTimelineRole role) {
     switch (role) {
       case ChatTimelineRole.system:
         return Icons.settings_ethernet;

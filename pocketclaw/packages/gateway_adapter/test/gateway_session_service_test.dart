@@ -89,10 +89,15 @@ void main() {
         key: 'agent:main:pc-home',
         clearModel: true,
         clearThinkingLevel: true,
+        clearFastMode: true,
         clearVerboseLevel: true,
       ));
 
       expect(response.ok, isTrue);
+    });
+  });
+}
+ct(response.ok, isTrue);
     });
   });
 }

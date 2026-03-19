@@ -584,6 +584,7 @@ class SessionInfoCard extends StatelessWidget {
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
   final Future<void> Function(bool enabled) onToggleFastMode;
+  final Future<void> Function() onClearFastModeOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -758,6 +759,17 @@ class SessionInfoCard extends StatelessWidget {
               value: fastMode,
               onChanged: (value) => unawaited(onToggleFastMode(value)),
             ),
+            if (sessionInfo?.fastMode != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => unawaited(onClearFastModeOverride()),
+                  icon: const Icon(Icons.keyboard_return),
+                  label: Text(
+                    'Use default fast mode (${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'})',
+                  ),
+                ),
+              ),
           ],
         ),
       ),
