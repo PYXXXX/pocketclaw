@@ -71,30 +71,28 @@ final class AgentRuntimeEvent {
     };
 
     final normalizedStream = stream.toLowerCase();
-    final toolName = _firstString(data, <String>[
+    final toolName = _firstString(data, const <String>[
       'toolName',
       'tool',
       'name',
       'displayName',
       'label',
     ]);
-    final callId = _firstString(data, <String>['callId', 'toolCallId']);
-    final status = _firstString(data, <String>[
+    final callId = _firstString(data, const <String>['callId', 'toolCallId']);
+    final status = _firstString(data, const <String>[
       'status',
       'state',
       'phase',
       'event',
     ]);
-    final summary = _firstString(data, <String>[
-          'summary',
-          'message',
-          'text',
-          'delta',
-          'outputText',
-          'content',
-        ]) ??
-        _inlineJson(data);
-    final details = _detailsString(data);
+    final argumentsPayload = _firstValue(
+      data,
+      const <String>['arguments', 'args', 'input', 'params', 'request'],
+    );
+    final resultPayload = _firstValue(
+      data,
+      const <String>['result', 'output', 'response'],
+    );
 
     final isToolStream = normalizedStream.contains('tool') ||
         data.containsKey('toolName') ||
@@ -112,6 +110,20 @@ final class AgentRuntimeEvent {
             : normalizedStream.contains('status')
                 ? AgentRuntimeEventKind.status
                 : AgentRuntimeEventKind.unknown;
+
+    final summary = _summaryString(
+      data: data,
+      kind: kind,
+      toolName: toolName,
+      status: status,
+      argumentsPayload: argumentsPayload,
+      resultPayload: resultPayload,
+    );
+    final details = _detailsString(
+      data: data,
+      argumentsPayload: argumentsPayload,
+      resultPayload: resultPayload,
+    );
 
     final title = switch (kind) {
       AgentRuntimeEventKind.tool => toolName == null || toolName.isEmpty
@@ -152,15 +164,69 @@ final class AgentRuntimeEvent {
     return null;
   }
 
-  static String _inlineJson(Map<String, Object?> json) {
-    try {
-      return jsonEncode(json);
-    } catch (_) {
-      return json.toString();
+  static Object? _firstValue(Map<String, Object?> json, List<String> keys) {
+    for (final key in keys) {
+      if (json.containsKey(key)) {
+        return json[key];
+      }
     }
+    return null;
   }
 
-  static String? _detailsString(Map<String, Object?> json) {
+  static String _summaryString({
+    required Map<String, Object?> data,
+    required AgentRuntimeEventKind kind,
+    required String? toolName,
+    required String? status,
+    required Object? argumentsPayload,
+    required Object? resultPayload,
+  }) {
+    final explicit = _firstString(data, const <String>[
+      'summary',
+      'message',
+      'text',
+      'delta',
+      'outputText',
+      'content',
+    ]);
+    if (explicit != null) {
+      return explicit;
+    }
+
+    if (kind == AgentRuntimeEventKind.tool) {
+      final normalizedStatus = status?.toLowerCase();
+      final toolLabel = toolName ?? 'tool';
+      final previewSource = switch (normalizedStatus) {
+        'completed' || 'complete' || 'done' || 'success' || 'succeeded' =>
+          resultPayload,
+        _ => argumentsPayload,
+      };
+      final preview = _previewString(previewSource);
+      final prefix = switch (normalizedStatus) {
+        'queued' || 'pending' => 'Queued $toolLabel',
+        'running' || 'started' || 'start' => 'Calling $toolLabel',
+        'completed' || 'complete' || 'done' || 'success' || 'succeeded' =>
+          'Completed $toolLabel',
+        'failed' || 'error' => 'Failed $toolLabel',
+        'cancelled' || 'canceled' => 'Cancelled $toolLabel',
+        _ when normalizedStatus != null && normalizedStatus.isNotEmpty =>
+          '${_capitalize(normalizedStatus)} $toolLabel',
+        _ => 'Tool event · $toolLabel',
+      };
+      if (preview == null || preview.isEmpty) {
+        return prefix;
+      }
+      return '$prefix · $preview';
+    }
+
+    return _inlineJson(data);
+  }
+
+  static String? _detailsString({
+    required Map<String, Object?> data,
+    required Object? argumentsPayload,
+    required Object? resultPayload,
+  }) {
     const simpleKeys = <String>{
       'summary',
       'message',
@@ -177,21 +243,110 @@ final class AgentRuntimeEvent {
       'name',
       'displayName',
       'label',
+      'arguments',
+      'args',
+      'input',
+      'params',
+      'request',
+      'result',
+      'output',
+      'response',
     };
 
+    final sections = <String>[];
+
+    final argumentsText = _multilineValue(argumentsPayload);
+    if (argumentsText != null) {
+      sections.add('Arguments\n$argumentsText');
+    }
+
+    final resultText = _multilineValue(resultPayload);
+    if (resultText != null) {
+      sections.add('Result\n$resultText');
+    }
+
     final remainder = <String, Object?>{};
-    for (final entry in json.entries) {
+    for (final entry in data.entries) {
       if (!simpleKeys.contains(entry.key)) {
         remainder[entry.key] = entry.value;
       }
     }
-    if (remainder.isEmpty) {
+    if (remainder.isNotEmpty) {
+      sections.add('Metadata\n${_prettyJson(remainder)}');
+    }
+
+    if (sections.isEmpty) {
       return null;
     }
-    try {
-      return const JsonEncoder.withIndent('  ').convert(remainder);
-    } catch (_) {
-      return remainder.toString();
+    return sections.join('\n\n');
+  }
+
+  static String? _previewString(Object? value) {
+    final rendered = _singleLineValue(value);
+    if (rendered == null) {
+      return null;
     }
+    if (rendered.length <= 96) {
+      return rendered;
+    }
+    return '${rendered.substring(0, 93)}...';
+  }
+
+  static String? _singleLineValue(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        return null;
+      }
+      return trimmed.replaceAll(RegExp(r'\s+'), ' ');
+    }
+    if (value is Map<String, Object?> || value is List<Object?>) {
+      return _prettyJson(value).replaceAll(RegExp(r'\s+'), ' ');
+    }
+    return value.toString().trim();
+  }
+
+  static String? _multilineValue(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        return null;
+      }
+      return trimmed;
+    }
+    if (value is Map<String, Object?> || value is List<Object?>) {
+      return _prettyJson(value);
+    }
+    final rendered = value.toString().trim();
+    return rendered.isEmpty ? null : rendered;
+  }
+
+  static String _inlineJson(Map<String, Object?> json) {
+    try {
+      return jsonEncode(json);
+    } catch (_) {
+      return json.toString();
+    }
+  }
+
+  static String _prettyJson(Object? value) {
+    try {
+      return const JsonEncoder.withIndent('  ').convert(value);
+    } catch (_) {
+      return value.toString();
+    }
+  }
+
+  static String _capitalize(String value) {
+    if (value.isEmpty) {
+      return value;
+    }
+    return '${value[0].toUpperCase()}${value.substring(1)}';
   }
 }

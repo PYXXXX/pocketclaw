@@ -94,7 +94,8 @@ void main() {
       expect(controller.items.single.title, 'Tool · write');
       expect(controller.items.single.status, 'completed');
       expect(controller.items.single.text, 'Wrote README.md');
-      expect(controller.items.single.details, contains('result'));
+      expect(controller.items.single.details, contains('Result'));
+      expect(controller.items.single.details, contains('ok'));
     });
   });
 }

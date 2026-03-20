@@ -504,7 +504,7 @@ class TimelineEntryCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                item.createdAt.toIso8601String(),
+                _formatTimestamp(item.createdAt),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: foregroundColor.withValues(alpha: 0.8),
                 ),
@@ -526,10 +526,20 @@ class TimelineEntryCard extends StatelessWidget {
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: SelectableText(
-                        item.details!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: foregroundColor,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withValues(alpha: 0.24),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: SelectableText(
+                          item.details!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: foregroundColor,
+                            fontFamily: 'monospace',
+                            height: 1.35,
+                          ),
                         ),
                       ),
                     ),
@@ -541,6 +551,17 @@ class TimelineEntryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final local = timestamp.toLocal();
+    final year = local.year.toString().padLeft(4, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    final second = local.second.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute:$second';
   }
 }
 
