@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
+import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import 'connect_flow_models.dart';
 
@@ -38,6 +39,7 @@ class AppStatusBanner extends StatelessWidget {
         : hasStoredDeviceIdentity
             ? 'Device identity saved'
             : 'First pairing likely needed';
+    final usesLoopback = gatewayUrlUsesLoopback(gatewayUrl);
 
     return Card(
       color: snapshot.requiresAttention
@@ -92,8 +94,19 @@ class AppStatusBanner extends StatelessWidget {
                   ),
                   label: Text(reconnectLabel),
                 ),
+                if (usesLoopback)
+                  Chip(
+                    avatar: const Icon(Icons.warning_amber_outlined, size: 18),
+                    label: const Text('Loopback URL'),
+                  ),
               ],
             ),
+            if (usesLoopback) ...[
+              const SizedBox(height: 8),
+              const Text(
+                '127.0.0.1 / localhost points to the phone itself on a real device. Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead.',
+              ),
+            ],
           ],
         ),
       ),
@@ -193,8 +206,10 @@ class GatewayConfigCard extends StatelessWidget {
               controller: gatewayUrlController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Gateway WebSocket URL',
-                hintText: 'ws://127.0.0.1:18789',
+                labelText: 'Gateway URL',
+                hintText: 'https://gateway.example.com or 192.168.1.20:18789',
+                helperText:
+                    'You can paste http(s) or ws(s). On a real phone, do not use 127.0.0.1 / localhost unless the Gateway runs on that same device.',
               ),
             ),
             const SizedBox(height: 12),

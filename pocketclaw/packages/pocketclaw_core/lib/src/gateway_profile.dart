@@ -1,6 +1,6 @@
 final class GatewayProfile {
   const GatewayProfile({
-    this.url = 'ws://127.0.0.1:18789',
+    this.url = '',
     this.token = '',
     this.password = '',
     this.defaultAgentId = 'main',
@@ -9,7 +9,7 @@ final class GatewayProfile {
 
   factory GatewayProfile.fromJson(Map<String, Object?> json) {
     return GatewayProfile(
-      url: json['url'] as String? ?? 'ws://127.0.0.1:18789',
+      url: json['url'] as String? ?? '',
       token: json['token'] as String? ?? '',
       password: json['password'] as String? ?? '',
       defaultAgentId: json['defaultAgentId'] as String? ?? 'main',

@@ -49,13 +49,16 @@ jobs:
         working-directory: pocketclaw/app/pocketclaw_app
         run: flutter create . --project-name pocketclaw_app --platforms=android,ios
 
-      - name: Smoke build Android APK
+      - name: Build release APKs for testers
         working-directory: pocketclaw/app/pocketclaw_app
-        run: flutter build apk --debug
+        run: flutter build apk --release --split-per-abi
 
-      - name: Upload debug APK artifact
+      - name: Upload tester APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pocketclaw-android-debug-apk
-          path: pocketclaw/app/pocketclaw_app/build/app/outputs/flutter-apk/app-debug.apk
+          name: pocketclaw-android-release-apks
+          path: |
+            pocketclaw/app/pocketclaw_app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            pocketclaw/app/pocketclaw_app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            pocketclaw/app/pocketclaw_app/build/app/outputs/flutter-apk/app-x86_64-release.apk
           if-no-files-found: error

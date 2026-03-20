@@ -705,12 +705,19 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     await _persistConnectFlowPreferences();
   }
 
-  Future<void> _applyGatewayConfiguration() async {
+  bool _hasUnsavedGatewayConfiguration() {
+    return normalizeGatewayUrl(_gatewayUrlController.text) != _gatewayProfile.url ||
+        _tokenController.text != _gatewayProfile.token ||
+        _passwordController.text != _gatewayProfile.password;
+  }
+
+  Future<void> _applyGatewayConfiguration({bool announce = true}) async {
     final profile = _gatewayProfile.copyWith(
-      url: _gatewayUrlController.text.trim(),
+      url: normalizeGatewayUrl(_gatewayUrlController.text),
       token: _tokenController.text,
       password: _passwordController.text,
     );
+    _applyProfileToControllers(profile);
 
     setState(() {
       _gatewayProfile = profile;
@@ -723,14 +730,24 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _connectMethod = ConnectMethod.manual;
       _connectFlowStage = ConnectFlowStage.manualConfig;
       _selectedDestination = AppDestination.connect;
-      _setTimelineItems(<ChatTimelineItem>[
-        ChatTimelineItem(
-          role: ChatTimelineRole.system,
-          text:
-              'Applied Gateway configuration for ${profile.url}. Token and password remain optional. Device identity and device token reuse stay local on the phone when available.',
-          createdAt: DateTime.now().toUtc(),
-        ),
-      ]);
+      if (announce) {
+        _setTimelineItems(<ChatTimelineItem>[
+          ChatTimelineItem(
+            role: ChatTimelineRole.system,
+            text:
+                'Applied Gateway configuration for ${profile.url}. Token and password remain optional. Device identity and device token reuse stay local on the phone when available.',
+            createdAt: DateTime.now().toUtc(),
+          ),
+          if (gatewayUrlUsesLoopback(profile.url))
+            ChatTimelineItem(
+              role: ChatTimelineRole.system,
+              text:
+                  'Warning: 127.0.0.1 / localhost points to the phone itself on a real device. Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead.',
+              createdAt: DateTime.now().toUtc(),
+              status: 'warning',
+            ),
+        ]);
+      }
     });
 
     try {
@@ -852,7 +869,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     if (!mounted) {
       return;
     }
-    final guidance = gatewayErrorGuidanceFor(error);
+    final guidance = gatewayErrorGuidanceFor(
+      error,
+      configuredUrl: _gatewayProfile.url,
+    );
     setState(() {
       _lastError = prefix == null ? error.toString() : '$prefix: $error';
       _lastGuidance = guidance;
@@ -996,7 +1016,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _connect() async {
-    if (_gatewayProfile.url.trim().isEmpty) {
+    final configuredUrl = normalizeGatewayUrl(_gatewayUrlController.text);
+    if (configuredUrl.isEmpty) {
       _appendTimeline(
         ChatTimelineRole.system,
         'Enter a Gateway URL before connecting.',
@@ -1005,6 +1026,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _connectFlowStage = ConnectFlowStage.manualConfig;
       });
       return;
+    }
+
+    if (_hasUnsavedGatewayConfiguration()) {
+      await _applyGatewayConfiguration(announce: false);
     }
 
     setState(() {

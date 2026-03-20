@@ -2,6 +2,12 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('GatewayProfile defaults to an empty url', () {
+    const profile = GatewayProfile();
+
+    expect(profile.url, isEmpty);
+  });
+
   test('GatewayProfile round-trips through json', () {
     const profile = GatewayProfile(
       url: 'wss://gateway.example/ws',

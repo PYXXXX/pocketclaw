@@ -13,7 +13,10 @@ final class GatewayErrorGuidance {
   final String? code;
 }
 
-GatewayErrorGuidance gatewayErrorGuidanceFor(Object error) {
+GatewayErrorGuidance gatewayErrorGuidanceFor(
+  Object error, {
+  String? configuredUrl,
+}) {
   if (error is GatewayRequestError) {
     final code = error.detailsCode ?? error.code;
     switch (code) {
@@ -79,5 +82,42 @@ GatewayErrorGuidance gatewayErrorGuidanceFor(Object error) {
     );
   }
 
-  return GatewayErrorGuidance(summary: error.toString());
+  final raw = error.toString();
+  final lower = raw.toLowerCase();
+  if (lower.contains('connection refused')) {
+    if (_usesLoopback(configuredUrl)) {
+      return const GatewayErrorGuidance(
+        summary: 'The app tried to connect to localhost / loopback, which on a phone means the phone itself.',
+        action: 'Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead of 127.0.0.1 / localhost.',
+      );
+    }
+    return const GatewayErrorGuidance(
+      summary: 'The Gateway socket refused the connection.',
+      action: 'Check that the Gateway is running, the host and port are correct, and that this phone can reach that network path.',
+    );
+  }
+
+  if (lower.contains('timed out')) {
+    return const GatewayErrorGuidance(
+      summary: 'The Gateway did not finish the WebSocket handshake in time.',
+      action: 'Verify the URL, network reachability, and any reverse proxy or TLS configuration in front of the Gateway.',
+    );
+  }
+
+  return GatewayErrorGuidance(summary: raw);
+}
+
+bool _usesLoopback(String? configuredUrl) {
+  if (configuredUrl == null || configuredUrl.trim().isEmpty) {
+    return false;
+  }
+  final uri = Uri.tryParse(configuredUrl.trim());
+  if (uri == null) {
+    return false;
+  }
+  final host = uri.host.toLowerCase();
+  return host == 'localhost' ||
+      host == '127.0.0.1' ||
+      host == '::1' ||
+      host == '0.0.0.0';
 }

@@ -41,7 +41,10 @@ Target responsibilities:
 - bootstrap the monorepo
 - run analysis
 - run tests where present
-- perform a basic Android build smoke check when the app scaffold supports it
+- build installable Android tester artifacts on CI
+
+Tester artifacts should prefer release builds over debug builds so file size and runtime behavior are closer to what a phone user will actually install.
+Where practical, Android APK outputs should use `--split-per-abi` to keep download size reasonable.
 
 ### `release-android.yml`
 

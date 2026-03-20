@@ -34,5 +34,15 @@ void main() {
       expect(guidance.summary, contains('token'));
       expect(guidance.action, contains('device token'));
     });
+
+    test('explains loopback connection refused errors for phone usage', () {
+      final guidance = gatewayErrorGuidanceFor(
+        StateError('WebSocketChannelException: SocketException: Connection refused'),
+        configuredUrl: 'ws://127.0.0.1:18789',
+      );
+
+      expect(guidance.summary, contains('localhost / loopback'));
+      expect(guidance.action, contains('127.0.0.1 / localhost'));
+    });
   });
 }
