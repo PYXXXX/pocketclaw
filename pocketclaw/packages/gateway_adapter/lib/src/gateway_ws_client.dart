@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:web_socket_channel/io.dart';
@@ -339,10 +338,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     Uri uri,
     Map<String, String> headers,
   ) async {
-    final socket = await WebSocket.connect(
-      uri.toString(),
+    return IOWebSocketChannel.connect(
+      uri,
       headers: headers.isEmpty ? null : headers,
     );
-    return IOWebSocketChannel(socket);
   }
 }

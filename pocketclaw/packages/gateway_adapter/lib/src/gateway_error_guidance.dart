@@ -97,6 +97,20 @@ GatewayErrorGuidance gatewayErrorGuidanceFor(
     );
   }
 
+  if (lower.contains('unsupported url scheme')) {
+    return const GatewayErrorGuidance(
+      summary: 'PocketClaw rejected the configured WebSocket URL before connecting.',
+      action: 'Use a full ws:// or wss:// URL. If you already entered wss://..., this is likely a client-side compatibility bug rather than a Gateway auth failure.',
+    );
+  }
+
+  if (lower.contains('403') || lower.contains('forbidden')) {
+    return const GatewayErrorGuidance(
+      summary: 'The WebSocket handshake was rejected before PocketClaw could reach the Gateway.',
+      action: 'If this host is protected by Cloudflare Access, configure a service token and provide its Client ID / Client Secret in the app, or exempt the Gateway WebSocket path/domain from Access.',
+    );
+  }
+
   if (lower.contains('timed out')) {
     return const GatewayErrorGuidance(
       summary: 'The Gateway did not finish the WebSocket handshake in time.',

@@ -54,5 +54,15 @@ void main() {
       expect(guidance.summary, contains('handshake was rejected'));
       expect(guidance.action, contains('Cloudflare Access'));
     });
+
+    test('explains unsupported url scheme as a client-side connect issue', () {
+      final guidance = gatewayErrorGuidanceFor(
+        StateError('WebSocketException: Unsupported URL scheme "wss"'),
+        configuredUrl: 'wss://bot.bilirec.com',
+      );
+
+      expect(guidance.summary, contains('rejected the configured WebSocket URL'));
+      expect(guidance.action, contains('client-side compatibility bug'));
+    });
   });
 }
