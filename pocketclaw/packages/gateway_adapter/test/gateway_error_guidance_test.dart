@@ -44,5 +44,15 @@ void main() {
       expect(guidance.summary, contains('localhost / loopback'));
       expect(guidance.action, contains('127.0.0.1 / localhost'));
     });
+
+    test('explains 403 handshakes as likely access or proxy rejection', () {
+      final guidance = gatewayErrorGuidanceFor(
+        StateError('WebSocketChannelException: HandshakeException: Connection to server was not upgraded to websocket, HTTP status code: 403'),
+        configuredUrl: 'wss://bot.bilirec.com',
+      );
+
+      expect(guidance.summary, contains('handshake was rejected'));
+      expect(guidance.action, contains('Cloudflare Access'));
+    });
   });
 }

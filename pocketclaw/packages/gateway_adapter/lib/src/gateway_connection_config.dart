@@ -7,6 +7,7 @@ final class GatewayConnectionConfig {
   const GatewayConnectionConfig({
     required this.url,
     required this.connectRequest,
+    this.headers = const <String, String>{},
     this.deviceAuthProvider,
     this.deviceTokenStore,
     this.connectTimeout = const Duration(seconds: 10),
@@ -14,6 +15,7 @@ final class GatewayConnectionConfig {
 
   final String url;
   final ConnectRequest connectRequest;
+  final Map<String, String> headers;
   final GatewayDeviceAuthProvider? deviceAuthProvider;
   final GatewayDeviceTokenStore? deviceTokenStore;
   final Duration connectTimeout;

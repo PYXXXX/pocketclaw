@@ -21,7 +21,7 @@ void main() {
           url: 'ws://127.0.0.1:18789',
           connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
         ),
-        channelFactory: (_) => fakeChannel,
+        channelFactory: (_, __) async => fakeChannel,
       );
 
       final connectFuture = client.connect();
@@ -50,6 +50,57 @@ void main() {
       await connectFuture;
     });
 
+    test('passes configured headers into websocket setup', () async {
+      final incoming = StreamController<Object?>();
+      final outgoing = <String>[];
+      final fakeChannel = _TestWebSocketChannel(
+        stream: incoming.stream,
+        onAdd: (data) => outgoing.add(data as String),
+      );
+      Uri? capturedUri;
+      Map<String, String>? capturedHeaders;
+
+      final client = GatewayWsClient(
+        config: GatewayConnectionConfig(
+          url: 'wss://bot.bilirec.com',
+          connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
+          headers: const <String, String>{
+            'CF-Access-Client-Id': 'client-id.access',
+            'CF-Access-Client-Secret': 'client-secret',
+          },
+        ),
+        channelFactory: (uri, headers) async {
+          capturedUri = uri;
+          capturedHeaders = headers;
+          return fakeChannel;
+        },
+      );
+
+      final connectFuture = client.connect();
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'event',
+        'event': 'connect.challenge',
+        'payload': <String, Object?>{'nonce': 'nonce-1'},
+      }));
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final request = jsonDecode(outgoing.first) as Map<String, Object?>;
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'res',
+        'id': request['id'] as String,
+        'ok': true,
+        'payload': <String, Object?>{'hello': true},
+      }));
+
+      await connectFuture;
+
+      expect(capturedUri.toString(), 'wss://bot.bilirec.com');
+      expect(capturedHeaders?['CF-Access-Client-Id'], 'client-id.access');
+      expect(capturedHeaders?['CF-Access-Client-Secret'], 'client-secret');
+    });
+
     test('persists issued device token from hello payload', () async {
       final incoming = StreamController<Object?>();
       final outgoing = <String>[];
@@ -66,7 +117,7 @@ void main() {
           deviceAuthProvider: _StaticDeviceAuthProvider(),
           deviceTokenStore: tokenStore,
         ),
-        channelFactory: (_) => fakeChannel,
+        channelFactory: (_, __) async => fakeChannel,
       );
 
       final connectFuture = client.connect();

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:gateway_transport/gateway_transport.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'connectable_gateway_client.dart';
@@ -8,7 +10,10 @@ import 'gateway_connection_config.dart';
 import 'gateway_device_token.dart';
 import 'gateway_request_error.dart';
 
-typedef WebSocketChannelFactory = WebSocketChannel Function(Uri uri);
+typedef WebSocketChannelFactory = Future<WebSocketChannel> Function(
+  Uri uri,
+  Map<String, String> headers,
+);
 
 final class GatewayWsClient implements ConnectableGatewayClient {
   GatewayWsClient({
@@ -17,7 +22,7 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     WebSocketChannelFactory? channelFactory,
   })  : _codec = codec ?? GatewayFrameCodec(),
         _parser = const GatewayParser(),
-        _channelFactory = channelFactory ?? WebSocketChannel.connect;
+        _channelFactory = channelFactory ?? _defaultChannelFactory;
 
   final GatewayConnectionConfig config;
   final GatewayFrameCodec _codec;
@@ -66,13 +71,6 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     _connectCompleter = Completer<void>();
     _connectRequestSent = false;
     _lastChallenge = null;
-    _channel = _channelFactory(config.uri);
-    _socketSubscription = _channel!.stream.listen(
-      _handleRawFrame,
-      onError: _handleSocketError,
-      onDone: _handleSocketDone,
-      cancelOnError: false,
-    );
 
     _connectTimeoutTimer = Timer(config.connectTimeout, () {
       if (_connectCompleter?.isCompleted == false) {
@@ -86,6 +84,20 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         _connectCompleter?.completeError(StateError(message));
       }
     });
+
+    try {
+      _channel = await _channelFactory(config.uri, config.headers);
+      _socketSubscription = _channel!.stream.listen(
+        _handleRawFrame,
+        onError: _handleSocketError,
+        onDone: _handleSocketDone,
+        cancelOnError: false,
+      );
+    } catch (error, stackTrace) {
+      _connectTimeoutTimer?.cancel();
+      _connectTimeoutTimer = null;
+      _handleSocketError(error, stackTrace);
+    }
 
     return _connectCompleter!.future;
   }
@@ -321,5 +333,16 @@ final class GatewayWsClient implements ConnectableGatewayClient {
   String _nextRequestId(String prefix) {
     _requestCounter += 1;
     return '$prefix-${_requestCounter.toString().padLeft(4, '0')}';
+  }
+
+  static Future<WebSocketChannel> _defaultChannelFactory(
+    Uri uri,
+    Map<String, String> headers,
+  ) async {
+    final socket = await WebSocket.connect(
+      uri.toString(),
+      headers: headers.isEmpty ? null : headers,
+    );
+    return IOWebSocketChannel(socket);
   }
 }

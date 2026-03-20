@@ -51,6 +51,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _gatewayUrlController = TextEditingController();
   final TextEditingController _tokenController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _cloudflareAccessClientIdController =
+      TextEditingController();
+  final TextEditingController _cloudflareAccessClientSecretController =
+      TextEditingController();
   final TextEditingController _sessionTitleController = TextEditingController();
   final GatewayConnectRequestFactory _connectRequestFactory =
       const GatewayConnectRequestFactory();
@@ -157,6 +161,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _gatewayUrlController.dispose();
     _tokenController.dispose();
     _passwordController.dispose();
+    _cloudflareAccessClientIdController.dispose();
+    _cloudflareAccessClientSecretController.dispose();
     _sessionTitleController.dispose();
     super.dispose();
   }
@@ -169,6 +175,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           token: profile.token,
           password: profile.password,
         ),
+        headers: profile.webSocketHeaders,
         deviceAuthProvider: CryptographyDeviceAuthProvider(
           store: _deviceIdentityStore,
         ),
@@ -204,6 +211,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _gatewayUrlController.text = profile.url;
     _tokenController.text = profile.token;
     _passwordController.text = profile.password;
+    _cloudflareAccessClientIdController.text =
+        profile.cloudflareAccessClientId;
+    _cloudflareAccessClientSecretController.text =
+        profile.cloudflareAccessClientSecret;
   }
 
   String _agentIdForSession(String sessionKey) {
@@ -708,7 +719,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   bool _hasUnsavedGatewayConfiguration() {
     return normalizeGatewayUrl(_gatewayUrlController.text) != _gatewayProfile.url ||
         _tokenController.text != _gatewayProfile.token ||
-        _passwordController.text != _gatewayProfile.password;
+        _passwordController.text != _gatewayProfile.password ||
+        _cloudflareAccessClientIdController.text !=
+            _gatewayProfile.cloudflareAccessClientId ||
+        _cloudflareAccessClientSecretController.text !=
+            _gatewayProfile.cloudflareAccessClientSecret;
   }
 
   Future<void> _applyGatewayConfiguration({bool announce = true}) async {
@@ -716,6 +731,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       url: normalizeGatewayUrl(_gatewayUrlController.text),
       token: _tokenController.text,
       password: _passwordController.text,
+      cloudflareAccessClientId:
+          _cloudflareAccessClientIdController.text.trim(),
+      cloudflareAccessClientSecret:
+          _cloudflareAccessClientSecretController.text.trim(),
     );
     _applyProfileToControllers(profile);
 
@@ -1282,6 +1301,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 gatewayUrlController: _gatewayUrlController,
                 tokenController: _tokenController,
                 passwordController: _passwordController,
+                cloudflareAccessClientIdController:
+                    _cloudflareAccessClientIdController,
+                cloudflareAccessClientSecretController:
+                    _cloudflareAccessClientSecretController,
                 onApply: _applyGatewayConfiguration,
               ),
               const SizedBox(height: 12),

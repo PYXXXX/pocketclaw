@@ -177,12 +177,16 @@ class GatewayConfigCard extends StatelessWidget {
     required this.gatewayUrlController,
     required this.tokenController,
     required this.passwordController,
+    required this.cloudflareAccessClientIdController,
+    required this.cloudflareAccessClientSecretController,
     required this.onApply,
   });
 
   final TextEditingController gatewayUrlController;
   final TextEditingController tokenController;
   final TextEditingController passwordController;
+  final TextEditingController cloudflareAccessClientIdController;
+  final TextEditingController cloudflareAccessClientSecretController;
   final Future<void> Function() onApply;
 
   @override
@@ -199,7 +203,7 @@ class GatewayConfigCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Manual connect is the baseline path. Token and password are optional bootstrap credentials. Reusable device auth should stay local after the first successful approval.',
+              'Manual connect is the baseline path. Token and password are optional bootstrap credentials. Reusable device auth should stay local after the first successful approval. If Cloudflare Access protects the host, you can optionally provide a service token below.',
             ),
             const SizedBox(height: 12),
             TextField(
@@ -236,6 +240,25 @@ class GatewayConfigCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: cloudflareAccessClientIdController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Cloudflare Access Client ID (optional)',
+                helperText:
+                    'Use this only when the Gateway host is protected by Cloudflare Access service-token policies.',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: cloudflareAccessClientSecretController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Cloudflare Access Client Secret (optional)',
+              ),
+              obscureText: true,
             ),
             const SizedBox(height: 12),
             FilledButton(
