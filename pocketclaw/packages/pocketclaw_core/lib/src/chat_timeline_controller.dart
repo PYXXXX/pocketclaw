@@ -78,20 +78,18 @@ final class ChatTimelineController {
         _finalizeAssistantMessage(event);
         break;
       case ChatStreamState.aborted:
-        _assistantIndexByRunId.remove(event.runId);
-        if (event.message != null && event.message!.text.trim().isNotEmpty) {
-          appendMessage(
-            role: ChatTimelineRole.system,
-            text: event.message!.text,
-            createdAt: event.message!.timestamp,
-          );
-        }
+        _closeAssistantRun(
+          event,
+          status: 'aborted',
+          fallbackSystemText: event.message?.text,
+        );
         break;
       case ChatStreamState.error:
-        _assistantIndexByRunId.remove(event.runId);
-        appendMessage(
-          role: ChatTimelineRole.system,
-          text: event.errorMessage ?? 'Chat error',
+        _closeAssistantRun(
+          event,
+          status: 'error',
+          details: event.errorMessage,
+          fallbackSystemText: event.errorMessage ?? event.message?.text,
         );
         break;
     }
@@ -175,6 +173,76 @@ final class ChatTimelineController {
     );
   }
 
+  void _closeAssistantRun(
+    ChatStreamEvent event, {
+    required String status,
+    String? details,
+    String? fallbackSystemText,
+  }) {
+    final message = event.message;
+    final runId = event.runId;
+    final existingIndex = runId == null || runId.isEmpty
+        ? null
+        : _assistantIndexByRunId.remove(runId);
+
+    if (existingIndex != null &&
+        existingIndex >= 0 &&
+        existingIndex < _items.length) {
+      final existing = _items[existingIndex];
+      final nextText = message != null && message.text.trim().isNotEmpty
+          ? _preferTerminalText(existing.text, message.text)
+          : existing.text;
+      _items[existingIndex] = existing.copyWith(
+        text: nextText,
+        createdAt: message?.timestamp ?? existing.createdAt,
+        isStreaming: false,
+        status: status,
+        details: details ?? existing.details,
+      );
+      if (status == 'error' &&
+          fallbackSystemText != null &&
+          fallbackSystemText.trim().isNotEmpty) {
+        appendMessage(
+          role: ChatTimelineRole.system,
+          text: fallbackSystemText,
+          createdAt: message?.timestamp,
+        );
+      }
+      return;
+    }
+
+    if (message != null && message.text.trim().isNotEmpty) {
+      append(
+        ChatTimelineItem(
+          role: ChatTimelineRole.assistant,
+          text: message.text,
+          createdAt: message.timestamp ?? DateTime.now().toUtc(),
+          isStreaming: false,
+          status: status,
+          details: details,
+        ),
+      );
+      if (status == 'error' &&
+          fallbackSystemText != null &&
+          fallbackSystemText.trim().isNotEmpty &&
+          fallbackSystemText.trim() != message.text.trim()) {
+        appendMessage(
+          role: ChatTimelineRole.system,
+          text: fallbackSystemText,
+          createdAt: message.timestamp,
+        );
+      }
+      return;
+    }
+
+    if (fallbackSystemText != null && fallbackSystemText.trim().isNotEmpty) {
+      appendMessage(
+        role: ChatTimelineRole.system,
+        text: fallbackSystemText,
+      );
+    }
+  }
+
   void _finalizeAssistantMessage(ChatStreamEvent event) {
     final message = event.message;
     if (message == null) {
@@ -243,6 +311,19 @@ final class ChatTimelineController {
   String _preferFinalText(String existing, String incoming) {
     if (incoming.startsWith(existing) || existing.isEmpty) {
       return incoming;
+    }
+    return incoming;
+  }
+
+  String _preferTerminalText(String existing, String incoming) {
+    if (incoming.isEmpty) {
+      return existing;
+    }
+    if (incoming.startsWith(existing) || existing.isEmpty) {
+      return incoming;
+    }
+    if (existing.startsWith(incoming)) {
+      return existing;
     }
     return incoming;
   }
