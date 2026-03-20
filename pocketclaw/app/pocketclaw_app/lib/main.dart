@@ -231,6 +231,29 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _timeline = _timelineController.items;
   }
 
+  void _refreshTimelineFromController() {
+    _timeline = _timelineController.items;
+  }
+
+  bool _updateTimelineItemByKey(
+    String updateKey,
+    ChatTimelineItem Function(ChatTimelineItem existing) transform,
+  ) {
+    final updated = _timelineController.updateByUpdateKey(updateKey, transform);
+    if (updated) {
+      _refreshTimelineFromController();
+    }
+    return updated;
+  }
+
+  bool _removeTimelineItemByKey(String updateKey) {
+    final removed = _timelineController.removeByUpdateKey(updateKey);
+    if (removed) {
+      _refreshTimelineFromController();
+    }
+    return removed;
+  }
+
   void _storeCurrentAttachmentDraft() {
     _attachmentDraftsBySession[_currentSession.sessionKey.value] =
         List<PendingImageAttachment>.from(_pendingAttachments);
@@ -1038,8 +1061,20 @@ class _PocketClawHomeState extends State<PocketClawHome> {
             ? '[Image]'
             : '[Images × ${attachments.length}]',
     ].join('\n');
+    final optimisticKey =
+        'optimistic:user:${DateTime.now().microsecondsSinceEpoch}';
 
-    _appendTimeline(ChatTimelineRole.user, optimisticText);
+    setState(() {
+      _appendTimelineItem(
+        ChatTimelineItem(
+          role: ChatTimelineRole.user,
+          text: optimisticText,
+          createdAt: DateTime.now().toUtc(),
+          status: 'sending',
+          updateKey: optimisticKey,
+        ),
+      );
+    });
     _messageController.clear();
     _setPendingAttachments(const <PendingImageAttachment>[]);
 
@@ -1056,6 +1091,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         return;
       }
       setState(() {
+        _updateTimelineItemByKey(
+          optimisticKey,
+          (existing) => existing.copyWith(status: null),
+        );
         _activeRunId = response.payload?['runId'] as String?;
         _lastError = null;
         _lastGuidance = null;
@@ -1063,6 +1102,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
       await _loadSessionInfo();
     } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _removeTimelineItemByKey(optimisticKey);
+      });
       _applyComposerDraft(previousDraft);
       _setPendingAttachments(attachments);
       _recordError(error, prefix: 'Send failed');

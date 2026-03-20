@@ -49,6 +49,37 @@ final class ChatTimelineController {
     _rememberIndex(item.updateKey, index);
   }
 
+  bool updateByUpdateKey(
+    String updateKey,
+    ChatTimelineItem Function(ChatTimelineItem existing) transform,
+  ) {
+    final existingIndex = _runtimeIndexByKey[updateKey];
+    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+      return false;
+    }
+
+    final existing = _items[existingIndex];
+    final updated = transform(existing);
+    _items[existingIndex] = updated;
+
+    if (updated.updateKey != updateKey) {
+      _runtimeIndexByKey.remove(updateKey);
+      _rememberIndex(updated.updateKey, existingIndex);
+    }
+    return true;
+  }
+
+  bool removeByUpdateKey(String updateKey) {
+    final existingIndex = _runtimeIndexByKey.remove(updateKey);
+    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+      return false;
+    }
+
+    _items.removeAt(existingIndex);
+    _reindexUpdateKeys();
+    return true;
+  }
+
   void appendMessage({
     required ChatTimelineRole role,
     required String text,
@@ -290,6 +321,13 @@ final class ChatTimelineController {
       return;
     }
     _runtimeIndexByKey[updateKey] = index;
+  }
+
+  void _reindexUpdateKeys() {
+    _runtimeIndexByKey.clear();
+    for (var index = 0; index < _items.length; index += 1) {
+      _rememberIndex(_items[index].updateKey, index);
+    }
   }
 
   String _mergeStreamingText(String existing, String incoming) {

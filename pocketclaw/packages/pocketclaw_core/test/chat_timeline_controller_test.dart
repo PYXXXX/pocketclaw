@@ -114,6 +114,34 @@ void main() {
       expect(controller.items.last.text, 'Gateway timeout');
     });
 
+    test('updates and removes optimistic items by update key', () {
+      final controller = ChatTimelineController();
+
+      controller.append(
+        ChatTimelineItem(
+          role: ChatTimelineRole.user,
+          text: 'hello',
+          createdAt: DateTime.utc(2026, 3, 20),
+          status: 'sending',
+          updateKey: 'optimistic-1',
+        ),
+      );
+
+      final updated = controller.updateByUpdateKey(
+        'optimistic-1',
+        (existing) => existing.copyWith(status: null),
+      );
+
+      expect(updated, isTrue);
+      expect(controller.items, hasLength(1));
+      expect(controller.items.single.status, isNull);
+
+      final removed = controller.removeByUpdateKey('optimistic-1');
+
+      expect(removed, isTrue);
+      expect(controller.items, isEmpty);
+    });
+
     test('upserts tool lifecycle events when callId is available', () {
       final controller = ChatTimelineController();
       final started = AgentRuntimeEvent.tryParse(

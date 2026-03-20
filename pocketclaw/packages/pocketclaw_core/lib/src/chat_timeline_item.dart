@@ -1,3 +1,5 @@
+const Object _chatTimelineUnset = Object();
+
 enum ChatTimelineRole {
   system,
   user,
@@ -30,21 +32,27 @@ final class ChatTimelineItem {
     ChatTimelineRole? role,
     String? text,
     DateTime? createdAt,
-    String? title,
-    String? status,
-    String? details,
+    Object? title = _chatTimelineUnset,
+    Object? status = _chatTimelineUnset,
+    Object? details = _chatTimelineUnset,
     bool? isStreaming,
-    String? updateKey,
+    Object? updateKey = _chatTimelineUnset,
   }) {
     return ChatTimelineItem(
       role: role ?? this.role,
       text: text ?? this.text,
       createdAt: createdAt ?? this.createdAt,
-      title: title ?? this.title,
-      status: status ?? this.status,
-      details: details ?? this.details,
+      title: identical(title, _chatTimelineUnset) ? this.title : title as String?,
+      status: identical(status, _chatTimelineUnset)
+          ? this.status
+          : status as String?,
+      details: identical(details, _chatTimelineUnset)
+          ? this.details
+          : details as String?,
       isStreaming: isStreaming ?? this.isStreaming,
-      updateKey: updateKey ?? this.updateKey,
+      updateKey: identical(updateKey, _chatTimelineUnset)
+          ? this.updateKey
+          : updateKey as String?,
     );
   }
 }
