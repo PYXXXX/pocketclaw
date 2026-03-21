@@ -110,6 +110,7 @@ PocketClaw 更像一个面向移动端的 companion surface，而不是说所有
 | [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | 当前 Gateway 方法与能力映射 |
 | [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | 连接与 pairing 交互规划 |
 | [`docs/development-workflow.md`](./docs/development-workflow.md) | 开发方式与迭代原则 |
+| [`docs/zh-CN/ci-cd.md`](./docs/zh-CN/ci-cd.md) | 当前 GitHub Actions 的验证与发布行为 |
 | [`docs/official-android-reference.md`](./docs/official-android-reference.md) | Android 侧交互参考 |
 
 ## 架构方向

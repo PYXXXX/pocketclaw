@@ -20,6 +20,7 @@ Please first check:
 - [`docs/compatibility.md`](./docs/compatibility.md) for hard constraints
 - [`docs/mvp-scope.md`](./docs/mvp-scope.md) for current product scope
 - [`docs/roadmap.md`](./docs/roadmap.md) for near-term direction
+- [`docs/ci-cd.md`](./docs/ci-cd.md) for current validation and release expectations
 
 If your change conflicts with those documents, update the docs as part of the same PR or explain why the existing docs should change.
 

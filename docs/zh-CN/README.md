@@ -30,6 +30,7 @@
 | [`gateway-surface-map.md`](../gateway-surface-map.md) | 客户端当前封装的 Gateway 方法与假设 |
 | [`connect-flow-plan.md`](../connect-flow-plan.md) | 移动端连接与配对流程规划 |
 | [`development-workflow.md`](../development-workflow.md) | 仓库开发方式与迭代原则 |
+| [`ci-cd.md`](./ci-cd.md) | 当前 GitHub Actions 的验证与发布行为 |
 | [`official-android-reference.md`](../official-android-reference.md) | 官方 Android 侧交互参考 |
 
 ## 关于 `pocketclaw/docs/`

@@ -1,5 +1,8 @@
 # CI / CD
 
+This is the **workspace-facing CI/CD note** for the Flutter/Dart project under `pocketclaw/`.
+For the repository-facing summary that contributors should read first, see [`../../docs/ci-cd.md`](../../docs/ci-cd.md).
+
 ## Strategy
 
 PocketClaw prefers GitHub Actions as the primary validation and release environment.

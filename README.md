@@ -111,6 +111,7 @@ PocketClaw is a mobile-first companion surface, not a claim that every OpenClaw 
 | [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | current Gateway methods and surface assumptions |
 | [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | connection and pairing UX planning |
 | [`docs/development-workflow.md`](./docs/development-workflow.md) | development principles and iteration style |
+| [`docs/ci-cd.md`](./docs/ci-cd.md) | current GitHub Actions validation and release behavior |
 | [`docs/official-android-reference.md`](./docs/official-android-reference.md) | Android-side UX reference notes |
 
 ## Architecture direction

@@ -30,6 +30,7 @@ Ad-hoc deployment notes, one-off experiments, and local operator records should 
 | [`gateway-surface-map.md`](./gateway-surface-map.md) | Gateway methods and assumptions currently wrapped by the client |
 | [`connect-flow-plan.md`](./connect-flow-plan.md) | mobile connection and pairing UX planning |
 | [`development-workflow.md`](./development-workflow.md) | development principles for the repo |
+| [`ci-cd.md`](./ci-cd.md) | current GitHub Actions validation and release behavior |
 | [`official-android-reference.md`](./official-android-reference.md) | reference notes from the official Android surface |
 | [`zh-CN/`](./zh-CN/) | selected Simplified Chinese companion docs |
 
