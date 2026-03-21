@@ -2,10 +2,10 @@ import 'package:gateway_transport/gateway_transport.dart';
 
 final class GatewayConnectRequestFactory {
   const GatewayConnectRequestFactory({
-    this.clientId = 'pocketclaw-mobile',
+    this.clientId = 'openclaw-android',
     this.clientVersion = '0.1.0-dev',
-    this.platform = 'flutter',
-    this.mode = 'webchat',
+    this.platform = 'android',
+    this.mode = 'ui',
     this.role = 'operator',
     this.scopes = const <String>[
       'operator.admin',

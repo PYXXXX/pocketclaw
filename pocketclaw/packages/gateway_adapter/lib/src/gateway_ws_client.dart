@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:web_socket_channel/io.dart';
@@ -407,13 +410,8 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     Map<String, String> headers,
   ) async {
     final target = await prepareWebSocketHandshakeTarget(uri, headers);
-    final channel = IOWebSocketChannel.connect(
-      target.uri.toString(),
-      headers: target.headers.isEmpty ? null : target.headers,
-    );
     try {
-      await channel.ready;
-      return channel;
+      return await _connectWithControlledHandshake(target);
     } catch (error) {
       throw StateError(
         'WebSocket connect failed. Configured URI: $uri; '
@@ -422,6 +420,89 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         'original error: $error',
       );
     }
+  }
+
+  static Future<WebSocketChannel> _connectWithControlledHandshake(
+    WebSocketHandshakeTarget target,
+  ) async {
+    final client = HttpClient();
+    final cookies = <String, String>{
+      ..._parseCookieHeader(target.headers[HttpHeaders.cookieHeader]),
+    };
+    var currentWebSocketUri = _normalizeWebSocketRedirectUri(target.uri);
+
+    try {
+      for (var redirects = 0; redirects <= 5; redirects += 1) {
+        final httpUri = _webSocketToHttpUri(currentWebSocketUri);
+        final request = await client.getUrl(httpUri);
+        request.followRedirects = false;
+
+        for (final entry in target.headers.entries) {
+          if (entry.key.toLowerCase() == HttpHeaders.cookieHeader) {
+            continue;
+          }
+          request.headers.set(entry.key, entry.value);
+        }
+
+        final cookieHeader = _formatCookieHeader(cookies);
+        if (cookieHeader.isNotEmpty) {
+          request.headers.set(HttpHeaders.cookieHeader, cookieHeader);
+        }
+
+        final nonce = _generateWebSocketKey();
+        request.headers
+          ..set(HttpHeaders.connectionHeader, 'Upgrade')
+          ..set(HttpHeaders.upgradeHeader, 'websocket')
+          ..set('Sec-WebSocket-Key', nonce)
+          ..set(HttpHeaders.cacheControlHeader, 'no-cache')
+          ..set('Sec-WebSocket-Version', '13');
+
+        final response = await request.close();
+        for (final cookie in response.cookies) {
+          cookies[cookie.name] = cookie.value;
+        }
+
+        final location = response.headers.value(HttpHeaders.locationHeader);
+        final isRedirect =
+            response.statusCode >= 300 && response.statusCode < 400;
+        if (isRedirect) {
+          if (location == null || location.trim().isEmpty) {
+            throw StateError(
+              'The WebSocket upgrade was redirected, but the response did not '
+              'include a Location header. Upgrade GET $httpUri returned '
+              'HTTP ${response.statusCode}.',
+            );
+          }
+
+          final resolvedLocation = httpUri.resolve(location.trim());
+          currentWebSocketUri = _httpToWebSocketUri(resolvedLocation);
+
+          if (redirects == 5) {
+            throw StateError(
+              'The WebSocket upgrade followed too many redirects before '
+              'connecting. Last redirect target: $currentWebSocketUri.',
+            );
+          }
+          continue;
+        }
+
+        _ensureSuccessfulWebSocketUpgrade(response, nonce, httpUri);
+        final socket = await response.detachSocket();
+        final protocol = response.headers.value('Sec-WebSocket-Protocol');
+        final webSocket = WebSocket.fromUpgradedSocket(
+          socket,
+          protocol: protocol,
+          serverSide: false,
+        );
+        return IOWebSocketChannel(webSocket);
+      }
+    } finally {
+      client.close(force: true);
+    }
+
+    throw StateError(
+      'The WebSocket upgrade could not complete for an unknown reason.',
+    );
   }
 
   static bool _hasBootstrapAuth(Map<String, Object?>? auth) {
@@ -601,6 +682,83 @@ Uri _normalizePreflightRedirectUri(Uri uri) {
     'The WebSocket preflight redirected to an unsupported scheme: ${uri.scheme}. '
     'Resolved redirect target: $uri.',
   );
+}
+
+Uri _normalizeWebSocketRedirectUri(Uri uri) {
+  if (uri.scheme == 'ws' || uri.scheme == 'wss') {
+    return uri.replace(path: uri.path.isEmpty ? '/' : uri.path);
+  }
+  throw StateError(
+    'The WebSocket handshake target used an unsupported scheme: ${uri.scheme}. '
+    'Resolved target: $uri.',
+  );
+}
+
+Uri _webSocketToHttpUri(Uri webSocketUri) {
+  return webSocketUri.replace(
+    scheme: webSocketUri.scheme == 'wss' ? 'https' : 'http',
+    path: webSocketUri.path.isEmpty ? '/' : webSocketUri.path,
+  );
+}
+
+Uri _httpToWebSocketUri(Uri uri) {
+  if (uri.scheme == 'http' || uri.scheme == 'https') {
+    return uri.replace(
+      scheme: uri.scheme == 'https' ? 'wss' : 'ws',
+      path: uri.path.isEmpty ? '/' : uri.path,
+    );
+  }
+  if (uri.scheme == 'ws' || uri.scheme == 'wss') {
+    return uri.replace(path: uri.path.isEmpty ? '/' : uri.path);
+  }
+  throw StateError(
+    'The WebSocket upgrade redirected to an unsupported scheme: ${uri.scheme}. '
+    'Resolved redirect target: $uri.',
+  );
+}
+
+String _generateWebSocketKey() {
+  final random = Random.secure();
+  final bytes = Uint8List(16);
+  for (var index = 0; index < bytes.length; index += 1) {
+    bytes[index] = random.nextInt(256);
+  }
+  return base64Encode(bytes);
+}
+
+void _ensureSuccessfulWebSocketUpgrade(
+  HttpClientResponse response,
+  String nonce,
+  Uri httpUri,
+) {
+  final connectionHeader = response.headers[HttpHeaders.connectionHeader];
+  final upgradeHeader = response.headers.value(HttpHeaders.upgradeHeader);
+  final acceptHeader = response.headers.value('Sec-WebSocket-Accept');
+
+  final isUpgradeResponse =
+      response.statusCode == HttpStatus.switchingProtocols &&
+          connectionHeader != null &&
+          connectionHeader
+              .any((value) => value.toLowerCase().contains('upgrade')) &&
+          upgradeHeader != null &&
+          upgradeHeader.toLowerCase() == 'websocket';
+
+  if (!isUpgradeResponse) {
+    throw StateError(
+      'Connection to $httpUri was not upgraded to WebSocket. '
+      'HTTP ${response.statusCode}; '
+      'Connection: ${connectionHeader?.join(', ') ?? '<missing>'}; '
+      'Upgrade: ${upgradeHeader ?? '<missing>'}.',
+    );
+  }
+
+  final expectedAccept = WebSocketChannel.signKey(nonce);
+  if (acceptHeader == null || acceptHeader != expectedAccept) {
+    throw StateError(
+      'The WebSocket upgrade response returned an invalid Sec-WebSocket-Accept '
+      'header. Expected $expectedAccept but got ${acceptHeader ?? '<missing>'}.',
+    );
+  }
 }
 
 String _buildPreflightSummary({

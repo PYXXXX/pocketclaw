@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -84,8 +85,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _customRequestHeadersController =
       TextEditingController();
   final TextEditingController _sessionTitleController = TextEditingController();
-  final GatewayConnectRequestFactory _connectRequestFactory =
-      const GatewayConnectRequestFactory();
+  late final GatewayConnectRequestFactory _connectRequestFactory =
+      GatewayConnectRequestFactory(
+    clientId: _gatewayClientIdForPlatform(defaultTargetPlatform),
+    platform: _gatewayPlatformLabelForPlatform(defaultTargetPlatform),
+    mode: 'ui',
+  );
   final SecureKeyValueStore _secureStore = FlutterSecureKeyValueStore();
   final ChatTimelineController _timelineController = ChatTimelineController();
 
@@ -108,6 +113,26 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   late GatewayChatService _chatService;
   late GatewaySessionService _sessionService;
   late GatewayAgentService _agentService;
+
+  static String _gatewayClientIdForPlatform(TargetPlatform platform) {
+    return switch (platform) {
+      TargetPlatform.android => 'openclaw-android',
+      TargetPlatform.iOS => 'openclaw-ios',
+      TargetPlatform.macOS => 'openclaw-macos',
+      _ => 'openclaw-android',
+    };
+  }
+
+  static String _gatewayPlatformLabelForPlatform(TargetPlatform platform) {
+    return switch (platform) {
+      TargetPlatform.android => 'android',
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.macOS => 'macos',
+      TargetPlatform.linux => 'linux',
+      TargetPlatform.windows => 'windows',
+      TargetPlatform.fuchsia => 'fuchsia',
+    };
+  }
 
   StreamSubscription<GatewayConnectionState>? _connectionSubscription;
   StreamSubscription<GatewayEvent>? _eventSubscription;

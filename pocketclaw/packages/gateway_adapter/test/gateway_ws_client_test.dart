@@ -328,6 +328,73 @@ void main() {
       expect(upgradeCookieHeader, contains('session=abc-2'));
     });
 
+    test('follows websocket-upgrade redirects with relative locations',
+        () async {
+      final server = await HttpServer.bind('localhost', 0);
+      addTearDown(server.close);
+      String? requestPathSeenByUpgrade;
+
+      server.listen((request) async {
+        if (request.uri.path == '/' &&
+            !WebSocketTransformer.isUpgradeRequest(request)) {
+          request.response.statusCode = HttpStatus.noContent;
+          await request.response.close();
+          return;
+        }
+
+        if (request.uri.path == '/' &&
+            WebSocketTransformer.isUpgradeRequest(request)) {
+          request.response.statusCode = HttpStatus.movedTemporarily;
+          request.response.headers.set(HttpHeaders.locationHeader, '/gateway');
+          request.response.contentLength = 0;
+          request.response.persistentConnection = false;
+          await request.response.close();
+          return;
+        }
+
+        if (request.uri.path == '/gateway' &&
+            WebSocketTransformer.isUpgradeRequest(request)) {
+          requestPathSeenByUpgrade = request.uri.path;
+          final socket = await WebSocketTransformer.upgrade(request);
+          socket.add(
+            jsonEncode(<String, Object?>{
+              'type': 'event',
+              'event': 'connect.challenge',
+              'payload': <String, Object?>{'nonce': 'nonce-1'},
+            }),
+          );
+          final rawRequest = await socket.first as String;
+          final parsed = jsonDecode(rawRequest) as Map<String, Object?>;
+          socket.add(
+            jsonEncode(<String, Object?>{
+              'type': 'res',
+              'id': parsed['id'] as String,
+              'ok': true,
+              'payload': <String, Object?>{'hello': true},
+            }),
+          );
+          await socket.close();
+          return;
+        }
+
+        request.response.statusCode = HttpStatus.notFound;
+        await request.response.close();
+      });
+
+      final client = GatewayWsClient(
+        config: GatewayConnectionConfig(
+          url: 'ws://localhost:${server.port}',
+          connectRequest: const GatewayConnectRequestFactory().build(
+            token: 'abc',
+          ),
+        ),
+      );
+
+      await client.connect();
+
+      expect(requestPathSeenByUpgrade, '/gateway');
+    });
+
     test('wraps websocket handshake failures with configured and effective uri',
         () async {
       final server = await HttpServer.bind('localhost', 0);
