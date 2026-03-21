@@ -16,6 +16,7 @@ This guide keeps contributions aligned with the repository’s current direction
 Please first check:
 
 - [`README.md`](./README.md) for the project overview
+- [`SUPPORT.md`](./SUPPORT.md) for help paths and issue routing
 - [`docs/architecture.md`](./docs/architecture.md) for layering and boundaries
 - [`docs/compatibility.md`](./docs/compatibility.md) for hard constraints
 - [`docs/mvp-scope.md`](./docs/mvp-scope.md) for current product scope

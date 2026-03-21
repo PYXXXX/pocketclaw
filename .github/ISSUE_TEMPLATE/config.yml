@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Support guide
+    url: https://github.com/PYXXXX/pocketclaw/blob/main/SUPPORT.md
+    about: Start here if you are not sure whether you need docs, an issue, or a pull request.
   - name: PocketClaw docs map
     url: https://github.com/PYXXXX/pocketclaw/blob/main/docs/README.md
     about: Start here for the repository-facing docs and project boundaries.

@@ -8,7 +8,7 @@
 
 *A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.*
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · [Docs](./docs/README.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md) · [Contributing](./CONTRIBUTING.md)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · [Docs](./docs/README.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md) · [Contributing](./CONTRIBUTING.md) · [Support](./SUPPORT.md)
 
 ![PocketClaw banner](./assets/pocketclaw-banner.svg)
 
