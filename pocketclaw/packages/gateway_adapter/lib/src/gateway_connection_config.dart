@@ -20,5 +20,11 @@ final class GatewayConnectionConfig {
   final GatewayDeviceTokenStore? deviceTokenStore;
   final Duration connectTimeout;
 
-  Uri get uri => Uri.parse(url);
+  Uri get uri {
+    final parsed = Uri.parse(url);
+    if (parsed.path.isEmpty) {
+      return parsed.replace(path: '/');
+    }
+    return parsed;
+  }
 }

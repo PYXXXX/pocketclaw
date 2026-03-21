@@ -109,7 +109,7 @@ void main() {
 
       await connectFuture;
 
-      expect(capturedUri.toString(), 'wss://bot.bilirec.com');
+      expect(capturedUri.toString(), 'wss://bot.bilirec.com/');
       expect(capturedHeaders?['CF-Access-Client-Id'], 'client-id.access');
       expect(capturedHeaders?['CF-Access-Client-Secret'], 'client-secret');
     });
