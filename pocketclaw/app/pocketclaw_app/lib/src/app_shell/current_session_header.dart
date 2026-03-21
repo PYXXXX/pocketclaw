@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'app_strings.dart';
 import 'current_session_header_view_data.dart';
 
 class CurrentSessionHeader extends StatelessWidget {
@@ -23,8 +24,10 @@ class CurrentSessionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final viewData = CurrentSessionHeaderViewData.from(
       currentSession,
+      strings: strings,
       canForgetCurrentSession: canForgetCurrentSession,
     );
 
@@ -33,9 +36,9 @@ class CurrentSessionHeader extends StatelessWidget {
       children: [
         TextField(
           controller: sessionTitleController,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Session title',
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            labelText: strings.sessionTitleLabel,
           ),
           textInputAction: TextInputAction.done,
           onSubmitted: onSessionTitleSubmitted,
@@ -115,7 +118,7 @@ class CurrentSessionHeader extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(AppStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),

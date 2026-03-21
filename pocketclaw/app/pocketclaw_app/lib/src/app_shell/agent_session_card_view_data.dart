@@ -1,5 +1,7 @@
 import 'package:gateway_adapter/gateway_adapter.dart';
 
+import 'app_strings.dart';
+
 final class AgentSessionCardViewData {
   const AgentSessionCardViewData({
     required this.agents,
@@ -14,6 +16,7 @@ final class AgentSessionCardViewData {
   final bool hasGatewaySessions;
 
   factory AgentSessionCardViewData.from({
+    required AppStrings strings,
     required List<AgentSummary> agents,
     required String selectedAgentId,
     required List<SessionInfo> gatewaySessions,
@@ -21,7 +24,7 @@ final class AgentSessionCardViewData {
     int maxGatewaySessions = 8,
   }) {
     final effectiveAgents = agents.isEmpty
-        ? const <AgentSummary>[AgentSummary(id: 'main', name: 'Main')]
+        ? <AgentSummary>[AgentSummary(id: 'main', name: strings.mainAgentLabel)]
         : agents;
 
     final sortedGatewaySessions = [...gatewaySessions]

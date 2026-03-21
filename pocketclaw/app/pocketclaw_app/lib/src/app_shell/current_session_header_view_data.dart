@@ -1,5 +1,7 @@
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'app_strings.dart';
+
 final class CurrentSessionHeaderViewData {
   const CurrentSessionHeaderViewData({
     required this.sessionKeyText,
@@ -29,6 +31,7 @@ final class CurrentSessionHeaderViewData {
 
   factory CurrentSessionHeaderViewData.from(
     LocalSessionEntry session, {
+    required AppStrings strings,
     required bool canForgetCurrentSession,
   }) {
     final gatewayLabel = session.gatewayLabel?.trim();
@@ -36,29 +39,29 @@ final class CurrentSessionHeaderViewData {
     final isGatewayBacked = session.isGatewayBacked;
 
     return CurrentSessionHeaderViewData(
-      sessionKeyText: 'Session key: ${session.sessionKey.value}',
+      sessionKeyText: strings.sessionKey(session.sessionKey.value),
       sourceLabel: isGatewayBacked
-          ? 'Gateway session'
-          : 'Local PocketClaw session',
+          ? strings.gatewaySession
+          : strings.localPocketClawSession,
       isGatewayBacked: isGatewayBacked,
       gatewayLabel: gatewayLabel != null && gatewayLabel.isNotEmpty
           ? gatewayLabel
           : null,
       hasLocalDraft: hasLocalDraft,
-      draftStatusLabel: hasLocalDraft ? 'Draft saved locally' : 'No local draft',
-      forgetActionLabel: isGatewayBacked
-          ? 'Forget local shortcut'
-          : 'Remove from phone',
+      draftStatusLabel:
+          hasLocalDraft ? strings.draftSavedLocally : strings.noLocalDraft,
+      forgetActionLabel:
+          isGatewayBacked ? strings.forgetLocalShortcut : strings.removeFromPhone,
       forgetDialogTitle: isGatewayBacked
-          ? 'Forget this Gateway shortcut?'
-          : 'Remove this local session?',
+          ? strings.forgetGatewayShortcutTitle
+          : strings.removeLocalSessionTitle,
       forgetDialogMessage: isGatewayBacked
-          ? 'PocketClaw will remove this session from the phone session list, but the Gateway conversation itself will remain available and can be reopened later.'
-          : 'PocketClaw will remove this local session and its unsent draft from the phone. This does not delete anything on the Gateway unless the session already exists there.',
-      forgetConfirmLabel: isGatewayBacked ? 'Forget shortcut' : 'Remove',
-      cannotForgetHint: canForgetCurrentSession
-          ? null
-          : 'Keep at least one session on this device.',
+          ? strings.forgetGatewayShortcutMessage
+          : strings.removeLocalSessionMessage,
+      forgetConfirmLabel:
+          isGatewayBacked ? strings.forgetShortcut : strings.remove,
+      cannotForgetHint:
+          canForgetCurrentSession ? null : strings.keepAtLeastOneSession,
     );
   }
 }

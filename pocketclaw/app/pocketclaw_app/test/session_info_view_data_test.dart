@@ -1,10 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
+import 'package:pocketclaw_app/src/app_shell/app_strings.dart';
 import 'package:pocketclaw_app/src/app_shell/session_info_view_data.dart';
 
 void main() {
+  const en = Locale('en');
+  const zh = Locale('zh');
+
   test('SessionInfoViewData exposes inherited defaults cleanly', () {
     final viewData = SessionInfoViewData.from(
+      strings: AppStrings.fromLocale(en),
       identity: const AgentIdentity(agentId: 'main', name: 'PocketLobster'),
       sessionDefaults: const SessionDefaults(
         model: 'gpt-5.4',
@@ -31,6 +37,7 @@ void main() {
 
   test('SessionInfoViewData keeps unknown override values selectable', () {
     final viewData = SessionInfoViewData.from(
+      strings: AppStrings.fromLocale(en),
       sessionInfo: const SessionInfo(
         key: 'agent:main:pc-home',
         model: 'custom-model',
@@ -63,6 +70,7 @@ void main() {
 
   test('SessionInfoViewData reports fast mode overrides and reset labels', () {
     final viewData = SessionInfoViewData.from(
+      strings: AppStrings.fromLocale(en),
       sessionInfo: const SessionInfo(
         key: 'agent:main:pc-home',
         fastMode: false,
@@ -75,5 +83,22 @@ void main() {
     expect(viewData.fastModeSummary, 'Override active · off');
     expect(viewData.hasFastModeOverride, isTrue);
     expect(viewData.fastModeResetLabel, 'Use default fast mode (on)');
+  });
+
+  test('SessionInfoViewData supports zh summaries', () {
+    final viewData = SessionInfoViewData.from(
+      strings: AppStrings.fromLocale(zh),
+      sessionDefaults: const SessionDefaults(
+        model: 'gpt-5.4',
+        thinkingLevel: 'medium',
+        fastMode: true,
+        verboseLevel: 'low',
+      ),
+      models: const <ModelInfo>[ModelInfo(id: 'gpt-5.4')],
+    );
+
+    expect(viewData.model.options.first.label, '默认（继承：gpt-5.4）');
+    expect(viewData.fastModeSummary, '继承默认值 · 开');
+    expect(viewData.fastModeResetLabel, '使用默认快速模式（开）');
   });
 }

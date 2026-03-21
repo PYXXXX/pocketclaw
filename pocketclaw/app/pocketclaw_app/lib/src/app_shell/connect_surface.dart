@@ -376,7 +376,7 @@ class GuidanceCard extends StatelessWidget {
     final payload = <String>[
       guidance.summary,
       if (guidance.action != null) guidance.action!,
-      if (guidance.code != null) 'Code: ${guidance.code}',
+      if (guidance.code != null) '${strings.codeLabel}: ${guidance.code}',
     ].join('\n\n');
 
     return Card(
@@ -407,7 +407,7 @@ class GuidanceCard extends StatelessWidget {
               ],
               if (guidance.code != null) ...[
                 const SizedBox(height: 8),
-                SelectableText('Code: ${guidance.code}'),
+                SelectableText('${strings.codeLabel}: ${guidance.code}'),
               ],
               const SizedBox(height: 8),
               Text(

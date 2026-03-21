@@ -1,8 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pocketclaw_app/src/app_shell/app_strings.dart';
 import 'package:pocketclaw_app/src/app_shell/current_session_header_view_data.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 void main() {
+  const en = Locale('en');
+  const zh = Locale('zh');
+
   LocalSessionEntry localSession({String draftText = ''}) {
     return LocalSessionEntry(
       sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
@@ -24,6 +29,7 @@ void main() {
   test('CurrentSessionHeaderViewData describes local sessions', () {
     final viewData = CurrentSessionHeaderViewData.from(
       localSession(draftText: 'hello'),
+      strings: AppStrings.fromLocale(en),
       canForgetCurrentSession: true,
     );
 
@@ -42,6 +48,7 @@ void main() {
   test('CurrentSessionHeaderViewData describes gateway shortcuts', () {
     final viewData = CurrentSessionHeaderViewData.from(
       gatewaySession(),
+      strings: AppStrings.fromLocale(en),
       canForgetCurrentSession: true,
     );
 
@@ -58,9 +65,23 @@ void main() {
   test('CurrentSessionHeaderViewData reports keep-one-session hint', () {
     final viewData = CurrentSessionHeaderViewData.from(
       localSession(),
+      strings: AppStrings.fromLocale(en),
       canForgetCurrentSession: false,
     );
 
     expect(viewData.cannotForgetHint, 'Keep at least one session on this device.');
+  });
+
+  test('CurrentSessionHeaderViewData supports zh labels', () {
+    final viewData = CurrentSessionHeaderViewData.from(
+      localSession(draftText: '你好'),
+      strings: AppStrings.fromLocale(zh),
+      canForgetCurrentSession: true,
+    );
+
+    expect(viewData.sessionKeyText, '会话键：agent:main:pc-home');
+    expect(viewData.sourceLabel, '本地 PocketClaw 会话');
+    expect(viewData.draftStatusLabel, '草稿已保存在本地');
+    expect(viewData.forgetActionLabel, '从手机中移除');
   });
 }

@@ -1,10 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:pocketclaw_app/src/app_shell/agent_session_card_view_data.dart';
+import 'package:pocketclaw_app/src/app_shell/app_strings.dart';
 
 void main() {
+  const en = Locale('en');
+  const zh = Locale('zh');
+
   test('AgentSessionCardViewData falls back to main agent when list is empty', () {
     final viewData = AgentSessionCardViewData.from(
+      strings: AppStrings.fromLocale(en),
       agents: const <AgentSummary>[],
       selectedAgentId: 'main',
       gatewaySessions: const <SessionInfo>[],
@@ -20,6 +26,7 @@ void main() {
 
   test('AgentSessionCardViewData sorts current session first, then selected agent matches', () {
     final viewData = AgentSessionCardViewData.from(
+      strings: AppStrings.fromLocale(en),
       agents: const <AgentSummary>[
         AgentSummary(id: 'main', identityName: 'Main'),
         AgentSummary(id: 'writer', identityName: 'Writer', emoji: '✍️'),
@@ -60,6 +67,7 @@ void main() {
     );
 
     final viewData = AgentSessionCardViewData.from(
+      strings: AppStrings.fromLocale(en),
       agents: const <AgentSummary>[AgentSummary(id: 'main', identityName: 'Main')],
       selectedAgentId: 'main',
       gatewaySessions: gatewaySessions,
@@ -69,5 +77,17 @@ void main() {
     expect(viewData.gatewaySessions, hasLength(8));
     expect(viewData.hiddenGatewaySessionCount, 2);
     expect(viewData.hasGatewaySessions, isTrue);
+  });
+
+  test('AgentSessionCardViewData supports zh fallback labels', () {
+    final viewData = AgentSessionCardViewData.from(
+      strings: AppStrings.fromLocale(zh),
+      agents: const <AgentSummary>[],
+      selectedAgentId: 'main',
+      gatewaySessions: const <SessionInfo>[],
+      currentSessionKey: 'agent:main:pc-home',
+    );
+
+    expect(viewData.agents.single.label, '主助手');
   });
 }

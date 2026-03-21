@@ -8,6 +8,7 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import '../chat/pending_image_attachment.dart';
 import 'agent_session_card_view_data.dart';
+import 'app_strings.dart';
 import 'current_session_header.dart';
 import 'session_info_view_data.dart';
 
@@ -81,11 +82,13 @@ class ChatShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final selectedSessionIndex = sessions.indexWhere(
       (session) => session.sessionKey.value == currentSession.sessionKey.value,
     );
     final canForgetCurrentSession = sessions.length > 1;
     final agentSessionCardViewData = AgentSessionCardViewData.from(
+      strings: strings,
       agents: agents,
       selectedAgentId: selectedAgentId,
       gatewaySessions: gatewaySessions,
@@ -104,9 +107,9 @@ class ChatShell extends StatelessWidget {
               if (compact) ...[
                 DropdownButtonFormField<int>(
                   initialValue: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Session',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: strings.sessionLabel,
                   ),
                   items: [
                     for (var index = 0; index < sessions.length; index += 1)
@@ -154,9 +157,9 @@ class ChatShell extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: timeline.isEmpty
-                        ? const Align(
+                        ? Align(
                             alignment: Alignment.topLeft,
-                            child: Text('Timeline is empty.'),
+                            child: Text(strings.timelineEmpty),
                           )
                         : ListView.separated(
                             itemCount: timeline.length,
@@ -227,8 +230,8 @@ class ChatShell extends StatelessWidget {
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     hintText: pendingAttachments.isEmpty
-                        ? 'Send a message'
-                        : 'Add a caption or send images directly',
+                        ? strings.sendMessageHint
+                        : strings.sendImagesHint,
                   ),
                   minLines: 1,
                   maxLines: 6,
@@ -244,17 +247,17 @@ class ChatShell extends StatelessWidget {
                           ? () => unawaited(onPickImages())
                           : null,
                       icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: const Text('Image'),
+                      label: Text(strings.image),
                     ),
                     FilledButton(
                       onPressed: connectionState.phase == GatewayConnectionPhase.connected
                           ? onSendMessage
                           : null,
-                      child: const Text('Send'),
+                      child: Text(strings.send),
                     ),
                     OutlinedButton(
                       onPressed: activeRunId != null ? onAbortRun : null,
-                      child: const Text('Stop'),
+                      child: Text(strings.stop),
                     ),
                   ],
                 ),
@@ -267,7 +270,7 @@ class ChatShell extends StatelessWidget {
                           ? () => unawaited(onPickImages())
                           : null,
                       icon: const Icon(Icons.add_photo_alternate_outlined),
-                      tooltip: 'Add image',
+                      tooltip: strings.addImage,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -276,8 +279,8 @@ class ChatShell extends StatelessWidget {
                         decoration: InputDecoration(
                           border: const OutlineInputBorder(),
                           hintText: pendingAttachments.isEmpty
-                              ? 'Send a message'
-                              : 'Add a caption or send images directly',
+                              ? strings.sendMessageHint
+                              : strings.sendImagesHint,
                         ),
                         minLines: 1,
                         maxLines: 4,
@@ -289,12 +292,12 @@ class ChatShell extends StatelessWidget {
                       onPressed: connectionState.phase == GatewayConnectionPhase.connected
                           ? onSendMessage
                           : null,
-                      child: const Text('Send'),
+                      child: Text(strings.send),
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton(
                       onPressed: activeRunId != null ? onAbortRun : null,
-                      child: const Text('Stop'),
+                      child: Text(strings.stop),
                     ),
                   ],
                 ),
@@ -344,6 +347,7 @@ class AgentSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -351,7 +355,7 @@ class AgentSessionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Agent & session source',
+              strings.agentSessionSourceTitle,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -370,12 +374,12 @@ class AgentSessionCard extends StatelessWidget {
             if (viewData.hasGatewaySessions) ...[
               const SizedBox(height: 12),
               Text(
-                'Existing Gateway sessions',
+                strings.existingGatewaySessions,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 4),
               Text(
-                'Open an existing session when you want to continue a Gateway-visible thread, matching the current Web UI flow more closely.',
+                strings.existingGatewaySessionsDescription,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
@@ -401,7 +405,9 @@ class AgentSessionCard extends StatelessWidget {
               if (viewData.hiddenGatewaySessionCount > 0) ...[
                 const SizedBox(height: 8),
                 Text(
-                  '+${viewData.hiddenGatewaySessionCount} more Gateway sessions not shown here yet.',
+                  strings.moreGatewaySessionsNotShown(
+                    viewData.hiddenGatewaySessionCount,
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -427,6 +433,7 @@ class TimelineEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isUser = item.role == ChatTimelineRole.user;
@@ -451,12 +458,16 @@ class TimelineEntryCard extends StatelessWidget {
     final maxWidth = compact ? double.infinity : 560.0;
     final title = item.title ??
         switch (item.role) {
-          ChatTimelineRole.system => 'System',
-          ChatTimelineRole.user => 'You',
-          ChatTimelineRole.assistant => 'Assistant',
-          ChatTimelineRole.tool => 'Tool',
+          ChatTimelineRole.system => strings.systemTitle,
+          ChatTimelineRole.user => strings.youTitle,
+          ChatTimelineRole.assistant => strings.assistantTitle,
+          ChatTimelineRole.tool => strings.toolTitle,
         };
-    final badgeLabel = item.status ?? (item.isStreaming ? 'streaming' : null);
+    final badgeLabel = item.status != null
+        ? strings.timelineStatus(item.status!)
+        : item.isStreaming
+            ? strings.streaming
+            : null;
 
     return Align(
       alignment: alignment,
@@ -525,7 +536,7 @@ class TimelineEntryCard extends StatelessWidget {
                   childrenPadding: EdgeInsets.zero,
                   dense: true,
                   title: Text(
-                    'Details',
+                    strings.detailsTitle,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: foregroundColor,
                     ),
@@ -623,7 +634,9 @@ class SessionInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final viewData = SessionInfoViewData.from(
+      strings: strings,
       identity: identity,
       sessionInfo: sessionInfo,
       sessionDefaults: sessionDefaults,
@@ -646,17 +659,17 @@ class SessionInfoCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 _SessionSettingChip(
-                  label: 'Model',
+                  label: strings.model,
                   value: viewData.model.displayValue,
                   inherited: viewData.model.inherited,
                 ),
                 _SessionSettingChip(
-                  label: 'Thinking',
+                  label: strings.thinking,
                   value: viewData.thinking.displayValue,
                   inherited: viewData.thinking.inherited,
                 ),
                 _SessionSettingChip(
-                  label: 'Verbose',
+                  label: strings.verbose,
                   value: viewData.verbose.displayValue,
                   inherited: viewData.verbose.inherited,
                 ),
@@ -671,9 +684,9 @@ class SessionInfoCard extends StatelessWidget {
                   width: 280,
                   child: DropdownButtonFormField<String>(
                     initialValue: viewData.model.selectedValue,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Model',
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.model,
                     ),
                     items: [
                       for (final option in viewData.model.options)
@@ -700,9 +713,9 @@ class SessionInfoCard extends StatelessWidget {
                   width: 180,
                   child: DropdownButtonFormField<String>(
                     initialValue: viewData.thinking.selectedValue,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Thinking',
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.thinking,
                     ),
                     items: [
                       for (final option in viewData.thinking.options)
@@ -729,9 +742,9 @@ class SessionInfoCard extends StatelessWidget {
                   width: 180,
                   child: DropdownButtonFormField<String>(
                     initialValue: viewData.verbose.selectedValue,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Verbose',
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.verbose,
                     ),
                     items: [
                       for (final option in viewData.verbose.options)
@@ -759,9 +772,9 @@ class SessionInfoCard extends StatelessWidget {
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Fast mode'),
+              title: Text(strings.fastMode),
               subtitle: Text(
-                'Maps to sessions.patch fastMode · ${viewData.fastModeSummary}',
+                strings.fastModeMapsTo(viewData.fastModeSummary),
               ),
               value: viewData.fastMode,
               onChanged: (value) => unawaited(onToggleFastMode(value)),

@@ -1,5 +1,7 @@
 import 'package:gateway_adapter/gateway_adapter.dart';
 
+import 'app_strings.dart';
+
 final class SessionInfoViewData {
   const SessionInfoViewData({
     required this.assistantName,
@@ -40,6 +42,7 @@ final class SessionInfoViewData {
   final String fastModeResetLabel;
 
   factory SessionInfoViewData.from({
+    required AppStrings strings,
     AgentIdentity? identity,
     SessionInfo? sessionInfo,
     SessionDefaults? sessionDefaults,
@@ -49,8 +52,9 @@ final class SessionInfoViewData {
       currentOverride: sessionInfo?.model,
       inheritedValue: sessionDefaults?.model,
       defaultValue: defaultModelValue,
-      defaultLabelBuilder: (defaultLabel) =>
-          'Default (inherit: $defaultLabel)',
+      defaultLabelBuilder: strings.defaultInherit,
+      currentLabelBuilder: strings.currentValue,
+      gatewayDefaultLabel: strings.gatewayDefault,
       knownOptions: models
           .map((model) => SessionDropdownOption(value: model.id, label: model.id))
           .toList(),
@@ -60,7 +64,9 @@ final class SessionInfoViewData {
       currentOverride: sessionInfo?.thinkingLevel,
       inheritedValue: sessionDefaults?.thinkingLevel,
       defaultValue: defaultThinkingValue,
-      defaultLabelBuilder: (defaultLabel) => 'Default ($defaultLabel)',
+      defaultLabelBuilder: strings.defaultValue,
+      currentLabelBuilder: strings.currentValue,
+      gatewayDefaultLabel: strings.gatewayDefault,
       knownOptions: thinkingChoices
           .map(
             (value) => SessionDropdownOption(value: value, label: value),
@@ -72,7 +78,9 @@ final class SessionInfoViewData {
       currentOverride: sessionInfo?.verboseLevel,
       inheritedValue: sessionDefaults?.verboseLevel,
       defaultValue: defaultVerboseValue,
-      defaultLabelBuilder: (defaultLabel) => 'Default ($defaultLabel)',
+      defaultLabelBuilder: strings.defaultValue,
+      currentLabelBuilder: strings.currentValue,
+      gatewayDefaultLabel: strings.gatewayDefault,
       knownOptions: verboseChoices
           .map(
             (value) => SessionDropdownOption(value: value, label: value),
@@ -83,23 +91,21 @@ final class SessionInfoViewData {
     final inheritedFastMode = sessionDefaults?.fastMode;
     final effectiveFastMode = sessionInfo?.fastMode ?? inheritedFastMode ?? false;
     final fastModeDefaultLabel = inheritedFastMode == null
-        ? 'gateway default'
-        : inheritedFastMode
-            ? 'on'
-            : 'off';
+        ? strings.gatewayDefault
+        : strings.boolLabel(inheritedFastMode);
     final fastModeSummary = sessionInfo?.fastMode == null
-        ? 'Inheriting default · $fastModeDefaultLabel'
-        : 'Override active · ${effectiveFastMode ? 'on' : 'off'}';
+        ? strings.inheritingDefault(fastModeDefaultLabel)
+        : strings.overrideActive(effectiveFastMode);
 
     return SessionInfoViewData(
-      assistantName: identity?.name ?? 'Assistant',
+      assistantName: identity?.name ?? strings.assistantFallback,
       model: model,
       thinking: thinking,
       verbose: verbose,
       fastMode: effectiveFastMode,
       fastModeSummary: fastModeSummary,
       hasFastModeOverride: sessionInfo?.fastMode != null,
-      fastModeResetLabel: 'Use default fast mode ($fastModeDefaultLabel)',
+      fastModeResetLabel: strings.useDefaultFastMode(fastModeDefaultLabel),
     );
   }
 }
@@ -124,9 +130,11 @@ final class SessionSettingViewData {
     required String? inheritedValue,
     required String defaultValue,
     required String Function(String defaultLabel) defaultLabelBuilder,
+    required String Function(String value) currentLabelBuilder,
+    required String gatewayDefaultLabel,
     required List<SessionDropdownOption> knownOptions,
   }) {
-    final fallbackLabel = inheritedValue ?? 'gateway default';
+    final fallbackLabel = inheritedValue ?? gatewayDefaultLabel;
     final knownValues = knownOptions.map((option) => option.value).toSet();
 
     return SessionSettingViewData(
@@ -142,7 +150,7 @@ final class SessionSettingViewData {
         if (currentOverride != null && !knownValues.contains(currentOverride))
           SessionDropdownOption(
             value: currentOverride,
-            label: '$currentOverride (current)',
+            label: currentLabelBuilder(currentOverride),
           ),
         ...knownOptions,
       ],

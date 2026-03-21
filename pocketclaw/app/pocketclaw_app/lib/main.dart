@@ -150,7 +150,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
           sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
-          title: 'Home',
+          title: _strings.home,
         ),
       ],
     );
@@ -167,8 +167,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _setTimelineItems(<ChatTimelineItem>[
       ChatTimelineItem(
         role: ChatTimelineRole.system,
-        text:
-            'PocketClaw is ready for a real Gateway. Start with the connect flow, then enter chat when the app is ready to reconnect.',
+        text: _strings.startupReadyMessage,
         createdAt: DateTime.now().toUtc(),
       ),
     ]);
@@ -217,19 +216,19 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     try {
       final results = await const SequentialBootstrapRunner().run(<BootstrapTask>[
         BootstrapTask(
-          label: 'Saved Gateway configuration restore',
+          label: _strings.savedGatewayConfigurationRestore,
           action: _restorePersistedGatewayProfile,
         ),
         BootstrapTask(
-          label: 'Local session restore',
+          label: _strings.localSessionRestore,
           action: _restorePersistedSessionRegistry,
         ),
         BootstrapTask(
-          label: 'Connect flow preference restore',
+          label: _strings.connectFlowPreferenceRestore,
           action: _restoreConnectFlowPreferences,
         ),
         BootstrapTask(
-          label: 'Stored device auth refresh',
+          label: _strings.storedDeviceAuthRefresh,
           action: _refreshStoredDeviceAuthState,
         ),
       ]);
@@ -243,7 +242,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         }
         _appendTimeline(
           ChatTimelineRole.system,
-          '${result.label} timed out during startup. PocketClaw skipped that restore step so the app can still open.',
+          _strings.restoreTimedOut(result.label),
           status: 'warning',
         );
       }
@@ -357,6 +356,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     return session.key;
   }
 
+  AppStrings get _strings =>
+      AppStrings.fromLocale(WidgetsBinding.instance.platformDispatcher.locale);
+
   LocalSessionEntry _localEntryForGatewaySession(
     SessionInfo session, {
     LocalSessionEntry? existing,
@@ -386,7 +388,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
       await _replaceGatewayClient(_buildGatewayClient(storedProfile));
     } catch (error) {
-      _recordError(error, prefix: 'Secure configuration restore failed');
+      _recordError(error, prefix: _strings.secureConfigurationRestoreFailed);
     }
   }
 
@@ -417,7 +419,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _applyComposerDraft(_currentSession.draftText);
       _applySessionTitle(_currentSession.title);
     } catch (error) {
-      _recordError(error, prefix: 'Local session restore failed');
+      _recordError(error, prefix: _strings.localSessionRestoreFailed);
     }
   }
 
@@ -435,7 +437,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         };
       });
     } catch (error) {
-      _recordError(error, prefix: 'Connect flow restore failed');
+      _recordError(error, prefix: _strings.connectFlowRestoreFailed);
     }
   }
 
@@ -460,7 +462,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _hasStoredDeviceToken = hasToken;
       });
     } catch (error) {
-      _recordError(error, prefix: 'Stored device auth refresh failed');
+      _recordError(error, prefix: _strings.storedDeviceAuthRefreshFailed);
     }
   }
 
@@ -471,7 +473,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         currentSessionKey: _currentSession.sessionKey.value,
       );
     } catch (error) {
-      _recordError(error, prefix: 'Saving local sessions failed');
+      _recordError(error, prefix: _strings.savingLocalSessionsFailed);
     }
   }
 
@@ -482,7 +484,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         lastConnectionMethod: _connectMethod.name,
       );
     } catch (error) {
-      _recordError(error, prefix: 'Saving connect flow preferences failed');
+      _recordError(error, prefix: _strings.savingConnectFlowPreferencesFailed);
     }
   }
 
@@ -560,7 +562,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      _recordError(error, prefix: 'Rename failed');
+      _recordError(error, prefix: _strings.renameFailed);
     }
   }
 
@@ -573,7 +575,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
     }
 
-    final title = '${_displayNameForAgent(agentId)} · Home';
+    final title = _strings.agentHomeTitle(_displayNameForAgent(agentId));
     final entry = LocalSessionEntry(sessionKey: homeKey, title: title);
     setState(() {
       _registry.remember(entry);
@@ -630,7 +632,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       if (event.event == 'connect.challenge') {
         _appendTimeline(
           ChatTimelineRole.system,
-          'Received device-auth challenge. PocketClaw will answer it automatically when local device identity is available.',
+          _strings.receivedDeviceAuthChallenge,
         );
         setState(() {
           _connectFlowStage = ConnectFlowStage.authPending;
@@ -807,7 +809,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         strict: true,
       );
     } on FormatException catch (error) {
-      _recordError(error, prefix: 'Gateway configuration is invalid');
+      _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
       return;
     }
 
@@ -838,15 +840,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _setTimelineItems(<ChatTimelineItem>[
           ChatTimelineItem(
             role: ChatTimelineRole.system,
-            text:
-                'Applied Gateway configuration for ${profile.url}. Token and password remain optional. Device identity and device token reuse stay local on the phone when available.',
+            text: _strings.appliedGatewayConfiguration(profile.url),
             createdAt: DateTime.now().toUtc(),
           ),
           if (gatewayUrlUsesLoopback(profile.url))
             ChatTimelineItem(
               role: ChatTimelineRole.system,
-              text:
-                  'Warning: 127.0.0.1 / localhost points to the phone itself on a real device. Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead.',
+              text: _strings.loopbackWarningMessage,
               createdAt: DateTime.now().toUtc(),
               status: 'warning',
             ),
@@ -857,7 +857,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     try {
       await _profileStore.write(profile);
     } catch (error) {
-      _recordError(error, prefix: 'Saving encrypted Gateway configuration failed');
+      _recordError(error, prefix: _strings.savingEncryptedGatewayConfigurationFailed);
     }
 
     await _persistConnectFlowPreferences();
@@ -890,23 +890,23 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     final results = await const CurrentViewDataLoader().run(<ViewDataTask>[
       ViewDataTask(
-        label: 'Chat history',
+        label: _strings.chatHistoryLoad,
         action: _loadHistoryForCurrentSession,
       ),
       ViewDataTask(
-        label: 'Assistant identity',
+        label: _strings.assistantIdentityLoad,
         action: _loadAssistantIdentity,
       ),
       ViewDataTask(
-        label: 'Model list',
+        label: _strings.modelListLoad,
         action: _loadModels,
       ),
       ViewDataTask(
-        label: 'Session info',
+        label: _strings.sessionInfoLoad,
         action: _loadSessionInfo,
       ),
       ViewDataTask(
-        label: 'Agent list',
+        label: _strings.agentListLoad,
         action: _loadAgents,
       ),
     ]);
@@ -925,14 +925,15 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
 
     final firstFailure = failures.first;
-    final firstError = firstFailure.error ?? StateError('${firstFailure.label} failed');
+    final firstError =
+        firstFailure.error ?? StateError(_strings.taskFailed(firstFailure.label));
     final guidance = gatewayErrorGuidanceFor(
       firstError,
       configuredUrl: _gatewayProfile.url,
     );
 
     setState(() {
-      _lastError = 'Load issue: ${firstFailure.label}: $firstError';
+      _lastError = _strings.loadIssue(firstFailure.label, firstError);
       _lastGuidance = guidance;
       if (_connectionState.phase == GatewayConnectionPhase.connected) {
         _connectFlowStage = ConnectFlowStage.ready;
@@ -942,12 +943,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     for (final failure in failures) {
       final error = failure.error;
       final summary = gatewayErrorGuidanceFor(
-        error ?? StateError('${failure.label} failed'),
+        error ?? StateError(_strings.taskFailed(failure.label)),
         configuredUrl: _gatewayProfile.url,
       ).summary;
       _appendTimeline(
         ChatTimelineRole.system,
-        '${failure.label} failed to load. $summary',
+        _strings.loadFailed(failure.label, summary),
         status: 'warning',
         details: error?.toString(),
       );
@@ -1123,7 +1124,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _setTimelineItems(<ChatTimelineItem>[
         ChatTimelineItem(
           role: ChatTimelineRole.system,
-          text: 'Created local session ${entry.sessionKey.value}',
+          text: _strings.createdLocalSession(entry.sessionKey.value),
           createdAt: DateTime.now().toUtc(),
         ),
       ]);
@@ -1163,8 +1164,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         ChatTimelineItem(
           role: ChatTimelineRole.system,
           text: removedSession.isGatewayBacked
-              ? 'Forgot local shortcut for ${removedSession.sessionKey.value}. Loading ${nextSession.title}…'
-              : 'Removed local session ${removedSession.sessionKey.value} from this phone. Loading ${nextSession.title}…',
+              ? _strings.forgotLocalShortcutFor(
+                  removedSession.sessionKey.value,
+                  nextSession.title,
+                )
+              : _strings.removedLocalSessionFromPhone(
+                  removedSession.sessionKey.value,
+                  nextSession.title,
+                ),
           createdAt: DateTime.now().toUtc(),
         ),
       ]);
@@ -1236,13 +1243,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       if (next.length == _pendingAttachments.length) {
         _appendTimeline(
           ChatTimelineRole.system,
-          'No supported image files were added.',
+          _strings.noSupportedImageFilesAdded,
         );
         return;
       }
       _setPendingAttachments(next);
     } catch (error) {
-      _recordError(error, prefix: 'Image pick failed');
+      _recordError(error, prefix: _strings.imagePickFailed);
     }
   }
 
@@ -1256,7 +1263,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     if (configuredUrl.isEmpty) {
       _appendTimeline(
         ChatTimelineRole.system,
-        'Enter a Gateway URL before connecting.',
+        _strings.enterGatewayUrlBeforeConnecting,
       );
       setState(() {
         _connectFlowStage = ConnectFlowStage.manualConfig;
@@ -1283,11 +1290,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _connectFlowStage = ConnectFlowStage.ready;
         _selectedDestination = AppDestination.chat;
       });
-      _appendTimeline(ChatTimelineRole.system, 'Connected to ${_gatewayProfile.url}');
+      _appendTimeline(ChatTimelineRole.system, _strings.connectedTo(_gatewayProfile.url));
       await _refreshStoredDeviceAuthState();
       await _loadCurrentViewData();
     } catch (error) {
-      _recordError(error, prefix: 'Connect failed');
+      _recordError(error, prefix: _strings.connectFailed);
     }
   }
 
@@ -1303,7 +1310,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _selectedDestination = AppDestination.connect;
       }
     });
-    _appendTimeline(ChatTimelineRole.system, 'Disconnected from ${_gatewayProfile.url}');
+    _appendTimeline(ChatTimelineRole.system, _strings.disconnectedFrom(_gatewayProfile.url));
   }
 
   Future<void> _sendMessage() async {
@@ -1319,8 +1326,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       if (text.isNotEmpty) text,
       if (attachments.isNotEmpty)
         attachments.length == 1
-            ? '[Image]'
-            : '[Images × ${attachments.length}]',
+            ? _strings.optimisticSingleImage
+            : _strings.optimisticImages(attachments.length),
     ].join('\n');
     final optimisticKey =
         'optimistic:user:${DateTime.now().microsecondsSinceEpoch}';
@@ -1371,7 +1378,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       });
       _applyComposerDraft(previousDraft);
       _setPendingAttachments(attachments);
-      _recordError(error, prefix: 'Send failed');
+      _recordError(error, prefix: _strings.sendFailed);
     }
   }
 
@@ -1386,7 +1393,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         runId: _activeRunId,
       );
     } catch (error) {
-      _recordError(error, prefix: 'Abort failed');
+      _recordError(error, prefix: _strings.abortFailed);
     }
   }
 
@@ -1405,7 +1412,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      _recordError(error, prefix: 'Model update failed');
+      _recordError(error, prefix: _strings.modelUpdateFailed);
     }
   }
 
@@ -1424,7 +1431,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      _recordError(error, prefix: 'Thinking update failed');
+      _recordError(error, prefix: _strings.thinkingUpdateFailed);
     }
   }
 
@@ -1443,7 +1450,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      _recordError(error, prefix: 'Verbose update failed');
+      _recordError(error, prefix: _strings.verboseUpdateFailed);
     }
   }
 
@@ -1461,7 +1468,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      _recordError(error, prefix: 'Fast mode update failed');
+      _recordError(error, prefix: _strings.fastModeUpdateFailed);
     }
   }
 
@@ -1479,7 +1486,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       );
       await _loadSessionInfo();
     } catch (error) {
-      _recordError(error, prefix: 'Fast mode reset failed');
+      _recordError(error, prefix: _strings.fastModeResetFailed);
     }
   }
 
@@ -1653,12 +1660,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('PocketClaw'),
+            title: Text(strings.appTitle),
             actions: [
               IconButton(
                 onPressed: showChatShell ? _createSession : null,
                 icon: const Icon(Icons.add_comment_outlined),
-                tooltip: 'Create session',
+                tooltip: strings.createSession,
               ),
             ],
           ),
@@ -1684,16 +1691,16 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                   onDestinationSelected: (index) {
                     _selectDestination(AppDestination.values[index]);
                   },
-                  destinations: const [
+                  destinations: [
                     NavigationDestination(
-                      icon: Icon(Icons.chat_bubble_outline),
-                      selectedIcon: Icon(Icons.chat_bubble),
-                      label: 'Chat',
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      selectedIcon: const Icon(Icons.chat_bubble),
+                      label: strings.chat,
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.hub_outlined),
-                      selectedIcon: Icon(Icons.hub),
-                      label: 'Connect',
+                      icon: const Icon(Icons.hub_outlined),
+                      selectedIcon: const Icon(Icons.hub),
+                      label: strings.connect,
                     ),
                   ],
                 ),
