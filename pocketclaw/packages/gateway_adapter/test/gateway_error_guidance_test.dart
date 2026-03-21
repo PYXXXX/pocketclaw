@@ -55,14 +55,24 @@ void main() {
       expect(guidance.action, contains('Cloudflare Access'));
     });
 
-    test('explains unsupported url scheme as a client-side connect issue', () {
+    test('explains unsupported url scheme as a connect or proxy issue', () {
       final guidance = gatewayErrorGuidanceFor(
         StateError('WebSocketException: Unsupported URL scheme "wss"'),
         configuredUrl: 'wss://bot.bilirec.com',
       );
 
       expect(guidance.summary, contains('rejected the configured WebSocket URL'));
-      expect(guidance.action, contains('client-side compatibility bug'));
+      expect(guidance.action, contains('interactive login page'));
+    });
+
+    test('explains cloudflare interactive redirects explicitly', () {
+      final guidance = gatewayErrorGuidanceFor(
+        StateError('Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade.'),
+        configuredUrl: 'wss://bot.bilirec.com',
+      );
+
+      expect(guidance.summary, contains('interactive login flow'));
+      expect(guidance.action, contains('service token'));
     });
   });
 }

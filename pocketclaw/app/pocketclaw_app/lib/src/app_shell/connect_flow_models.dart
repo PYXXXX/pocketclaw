@@ -10,6 +10,7 @@ enum ConnectFlowStage {
   chooseMethod,
   manualConfig,
   authPending,
+  authRequired,
   pairingPending,
   ready,
   error,

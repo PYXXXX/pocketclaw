@@ -78,8 +78,20 @@ final class AppStrings {
       _isZh ? '保存连接设置' : 'Save connection settings';
   String gatewayState(String state) =>
       _isZh ? 'Gateway 状态：$state' : 'Gateway state: $state';
-  String flowStage(String stage) =>
-      _isZh ? '流程阶段：$stage' : 'Flow stage: $stage';
+  String flowStage(String stage) {
+    final label = switch (stage) {
+      'welcome' => _isZh ? '欢迎' : 'Welcome',
+      'chooseMethod' => _isZh ? '选择连接方式' : 'Choose method',
+      'manualConfig' => _isZh ? '手动配置' : 'Manual config',
+      'authPending' => _isZh ? '正在认证' : 'Authenticating',
+      'authRequired' => _isZh ? '需要认证' : 'Authentication required',
+      'pairingPending' => _isZh ? '等待配对批准' : 'Pairing pending',
+      'ready' => _isZh ? '已就绪' : 'Ready',
+      'error' => _isZh ? '错误' : 'Error',
+      _ => stage,
+    };
+    return _isZh ? '流程阶段：$label' : 'Flow stage: $label';
+  }
   String get connect => _isZh ? '连接' : 'Connect';
   String get disconnect => _isZh ? '断开连接' : 'Disconnect';
   String get finishConnectionFlowFirst =>
@@ -108,6 +120,11 @@ final class AppStrings {
   String get authenticatingDescription => _isZh
       ? '应用正在尝试引导凭据或应答设备认证挑战。如果需要在别处批准，请保持此页面打开并批准该设备。'
       : 'The app is trying bootstrap credentials or answering device-auth challenges. If approval is needed elsewhere, keep this screen open and approve the device.';
+  String get authenticationRequiredTitle =>
+      _isZh ? '需要认证' : 'Authentication required';
+  String get authenticationRequiredDescription => _isZh
+      ? 'Gateway 已返回明确的认证阻塞。请检查 token / 密码 / 设备认证状态，或先完成设备批准后再重试。'
+      : 'The Gateway reported an explicit authentication blocker. Check the token, password, or device-auth state, or approve this device before retrying.';
   String get pairingPendingTitle =>
       _isZh ? '等待配对批准' : 'Pairing pending';
   String get pairingPendingDescription => _isZh

@@ -12,7 +12,10 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 import 'src/app_shell/app_strings.dart';
 import 'src/app_shell/chat_shell.dart';
 import 'src/app_shell/connect_flow_models.dart';
+import 'src/app_shell/connect_flow_stage_resolver.dart';
 import 'src/app_shell/connect_surface.dart';
+import 'src/bootstrap/startup_bootstrap.dart';
+import 'src/chat/current_view_data_loader.dart';
 import 'src/chat/pending_image_attachment.dart';
 import 'src/storage/connect_flow_preferences_store.dart';
 import 'src/storage/local_session_registry_store.dart';
@@ -721,6 +724,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           description: strings.authenticatingDescription,
           requiresAttention: true,
         );
+      case ConnectFlowStage.authRequired:
+        return ConnectFlowSnapshot(
+          stage: ConnectFlowStage.authRequired,
+          title: strings.authenticationRequiredTitle,
+          description: strings.authenticationRequiredDescription,
+          requiresAttention: true,
+        );
       case ConnectFlowStage.pairingPending:
         return ConnectFlowSnapshot(
           stage: ConnectFlowStage.pairingPending,
@@ -909,6 +919,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     setState(() {
       _lastError = 'Load issue: ${firstFailure.label}: $firstError';
+      _lastErrorStage = ConnectFlowStage.ready;
       _lastGuidance = guidance;
       if (_connectionState.phase == GatewayConnectionPhase.connected) {
         _connectFlowStage = ConnectFlowStage.ready;
@@ -1009,15 +1020,18 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       error,
       configuredUrl: _gatewayProfile.url,
     );
+    final nextStage = resolveConnectFlowStageForError(error);
     setState(() {
       _lastError = prefix == null ? error.toString() : '$prefix: $error';
+      _lastErrorStage = nextStage;
       _lastGuidance = guidance;
-      _connectFlowStage = ConnectFlowStage.error;
+      _connectFlowStage = nextStage;
       _selectedDestination = AppDestination.connect;
     });
     _appendTimeline(
       ChatTimelineRole.system,
       prefix == null ? guidance.summary : '$prefix: ${guidance.summary}',
+      status: nextStage == ConnectFlowStage.error ? null : 'warning',
     );
   }
 
@@ -1269,6 +1283,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         );
         _activeRunId = response.payload?['runId'] as String?;
         _lastError = null;
+        _lastErrorStage = null;
         _lastGuidance = null;
       });
 
@@ -1630,4 +1645,5 @@ ned;
         return Icons.handyman_outlined;
     }
   }
+}
 }
