@@ -1,0 +1,61 @@
+name: Docs or repo maintenance
+description: Suggest a documentation, structure, consistency, or repository-surface improvement.
+title: "docs: "
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for repository quality improvements such as:
+        - README clarity
+        - docs structure or outdated wording
+        - contributor-facing GitHub improvements
+        - naming, consistency, or repo-surface cleanup
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - README improvement
+        - Docs cleanup / inconsistency
+        - Contributor experience
+        - GitHub templates / workflows
+        - Repository organization
+        - Visual polish / presentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Current problem
+      description: What feels unclear, outdated, inconsistent, or messy today?
+      placeholder: Describe the exact friction in the current repo surface.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed improvement
+      description: What small, concrete change would improve the repo?
+      placeholder: Suggest a focused maintenance slice.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Affected files or references
+      placeholder: |
+        - README.md
+        - docs/README.md
+        - .github/workflows/...
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: This proposal is about clarity, consistency, maintenance cost, or contributor experience.
+          required: true
+        - label: This does not require a large architecture rewrite to be useful.
+          required: true

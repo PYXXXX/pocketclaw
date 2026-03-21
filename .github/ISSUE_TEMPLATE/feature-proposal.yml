@@ -1,0 +1,65 @@
+name: Feature proposal
+description: Propose a focused PocketClaw improvement that fits the current project scope.
+title: "proposal: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        PocketClaw is intentionally scoped.
+
+        Strong proposals usually stay aligned with these boundaries:
+        - mobile-first OpenClaw client
+        - works with the current OpenClaw Gateway surface
+        - no custom backend by default
+        - small, reviewable slices over broad rewrites
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user or contributor problem does this address?
+      placeholder: Describe the pain point first, not the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: What focused improvement do you want to see?
+    validations:
+      required: true
+  - type: dropdown
+    id: scope_fit
+    attributes:
+      label: Scope fit
+      description: Which description fits best?
+      options:
+        - Clearly fits the current mobile client MVP
+        - Fits current docs / repo maintenance goals
+        - Might need roadmap discussion first
+        - Likely out of scope for PocketClaw right now
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Compatibility or scope notes
+      description: Call out if this proposal assumes new Gateway behavior, backend work, or major restructuring.
+      placeholder: Note any assumptions explicitly.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Mention lighter-weight alternatives or workarounds if any.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I reviewed the README and relevant docs before opening this proposal.
+          required: true
+        - label: I explained the problem and not only the solution.
+          required: true
+        - label: I called out any assumption about new Gateway capability, backend support, or major repo restructuring.
+          required: true

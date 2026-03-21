@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible bug in the PocketClaw repo, docs, or app workspace.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug.
+
+        Before filing, please quickly check:
+        - `README.md` for current project positioning
+        - `docs/compatibility.md` for Gateway compatibility boundaries
+        - `CONTRIBUTING.md` for repository scope and contribution guidance
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the repository is affected?
+      options:
+        - Flutter app (`pocketclaw/app/pocketclaw_app`)
+        - Dart packages (`pocketclaw/packages/*`)
+        - Documentation (`docs/` or README)
+        - GitHub / CI / repository maintenance
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A short description of the bug.
+      placeholder: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide a clear set of steps.
+      placeholder: |
+        1. Go to ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include versions, platform, and any relevant setup context.
+      placeholder: |
+        - Device / OS:
+        - Flutter / Dart:
+        - OpenClaw Gateway version:
+        - Repo commit / branch:
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or recordings
+      description: Paste any relevant output or attach screenshots.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched for existing issues before opening this report.
+          required: true
+        - label: I kept this report focused on a concrete bug rather than a broad product request.
+          required: true
