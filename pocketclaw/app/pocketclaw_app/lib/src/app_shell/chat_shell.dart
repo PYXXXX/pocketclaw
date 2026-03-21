@@ -33,6 +33,7 @@ class ChatShell extends StatelessWidget {
     required this.onSessionTitleSubmitted,
     required this.onSelectAgent,
     required this.onOpenGatewaySession,
+    required this.onForgetCurrentSession,
     required this.onSelectModel,
     required this.onSelectThinking,
     required this.onSelectVerbose,
@@ -64,6 +65,7 @@ class ChatShell extends StatelessWidget {
   final ValueChanged<String> onSessionTitleSubmitted;
   final Future<void> Function(String agentId) onSelectAgent;
   final Future<void> Function(SessionInfo session) onOpenGatewaySession;
+  final Future<void> Function() onForgetCurrentSession;
   final Future<void> Function(String? modelId) onSelectModel;
   final Future<void> Function(String? thinkingLevel) onSelectThinking;
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
@@ -96,6 +98,7 @@ class ChatShell extends StatelessWidget {
     final selectedSessionIndex = sessions.indexWhere(
       (session) => session.sessionKey.value == currentSession.sessionKey.value,
     );
+    final canForgetCurrentSession = sessions.length > 1;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -163,6 +166,37 @@ class ChatShell extends StatelessWidget {
                       avatar: const Icon(Icons.label_outline, size: 18),
                       label: Text(currentSession.gatewayLabel!),
                     ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: canForgetCurrentSession
+                        ? () => unawaited(
+                            _confirmForgetCurrentSession(
+                              context,
+                              currentSession: currentSession,
+                              onForgetCurrentSession: onForgetCurrentSession,
+                            ),
+                          )
+                        : null,
+                    icon: const Icon(Icons.delete_outline),
+                    label: Text(
+                      currentSession.isGatewayBacked
+                          ? 'Forget local shortcut'
+                          : 'Remove from phone',
+                    ),
+                  ),
+                  if (!canForgetCurrentSession) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Keep at least one session on this device.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 12),
@@ -365,6 +399,46 @@ class ChatShell extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _confirmForgetCurrentSession(
+    BuildContext context, {
+    required LocalSessionEntry currentSession,
+    required Future<void> Function() onForgetCurrentSession,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            currentSession.isGatewayBacked
+                ? 'Forget this Gateway shortcut?'
+                : 'Remove this local session?',
+          ),
+          content: Text(
+            currentSession.isGatewayBacked
+                ? 'PocketClaw will remove this session from the phone session list, but the Gateway conversation itself will remain available and can be reopened later.'
+                : 'PocketClaw will remove this local session and its unsent draft from the phone. This does not delete anything on the Gateway unless the session already exists there.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(
+                currentSession.isGatewayBacked ? 'Forget shortcut' : 'Remove',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await onForgetCurrentSession();
+    }
   }
 }
 

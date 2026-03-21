@@ -87,4 +87,25 @@ void main() {
     expect(found, isNotNull);
     expect(found?.title, 'Home');
   });
+
+  test('removeBySessionKey removes a matching entry', () {
+    final registry = LocalSessionRegistry(
+      initialSessions: <LocalSessionEntry>[
+        LocalSessionEntry(
+          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
+          title: 'Home',
+        ),
+        LocalSessionEntry(
+          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-2'),
+          title: 'Second',
+        ),
+      ],
+    );
+
+    final removed = registry.removeBySessionKey('agent:main:pc-home');
+
+    expect(removed, isTrue);
+    expect(registry.sessions, hasLength(1));
+    expect(registry.sessions.single.sessionKey.value, 'agent:main:pc-2');
+  });
 }

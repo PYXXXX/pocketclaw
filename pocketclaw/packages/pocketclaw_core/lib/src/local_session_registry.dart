@@ -126,6 +126,16 @@ class LocalSessionRegistry {
     _sessions.add(entry);
   }
 
+  bool removeBySessionKey(String sessionKey) {
+    for (var index = 0; index < _sessions.length; index += 1) {
+      if (_sessions[index].sessionKey.value == sessionKey) {
+        _sessions.removeAt(index);
+        return true;
+      }
+    }
+    return false;
+  }
+
   List<Map<String, Object?>> toJsonList() {
     return _sessions.map((entry) => entry.toJson()).toList();
   }

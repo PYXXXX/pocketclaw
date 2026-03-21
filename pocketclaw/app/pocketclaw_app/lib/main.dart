@@ -12,6 +12,7 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 import 'src/app_shell/app_strings.dart';
 import 'src/app_shell/chat_shell.dart';
 import 'src/app_shell/connect_flow_models.dart';
+import 'src/app_shell/current_session_forget_plan.dart';
 import 'src/app_shell/connect_flow_stage_resolver.dart';
 import 'src/app_shell/connect_surface.dart';
 import 'src/bootstrap/startup_bootstrap.dart';
@@ -1136,6 +1137,47 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     unawaited(_persistSessionRegistry());
   }
 
+  Future<void> _forgetCurrentSession() async {
+    final plan = CurrentSessionForgetPlan.forCurrentSession(
+      sessions: _registry.sessions,
+      currentSessionKey: _currentSession.sessionKey.value,
+    );
+    if (plan == null) {
+      return;
+    }
+
+    _syncCurrentSessionDraft(schedulePersist: false);
+    _storeCurrentAttachmentDraft();
+
+    final removedSession = plan.removedSession;
+    final nextSession = plan.nextSession;
+    _attachmentDraftsBySession.remove(removedSession.sessionKey.value);
+
+    setState(() {
+      _registry.removeBySessionKey(removedSession.sessionKey.value);
+      _currentSession = nextSession;
+      _selectedAgentId = _agentIdForSession(nextSession.sessionKey.value);
+      _selectedDestination = AppDestination.chat;
+      _restoreAttachmentDraftForCurrentSession();
+      _setTimelineItems(<ChatTimelineItem>[
+        ChatTimelineItem(
+          role: ChatTimelineRole.system,
+          text: removedSession.isGatewayBacked
+              ? 'Forgot local shortcut for ${removedSession.sessionKey.value}. Loading ${nextSession.title}…'
+              : 'Removed local session ${removedSession.sessionKey.value} from this phone. Loading ${nextSession.title}…',
+          createdAt: DateTime.now().toUtc(),
+        ),
+      ]);
+      _currentSessionInfo = null;
+      _sessionDefaults = null;
+    });
+
+    _applyComposerDraft(nextSession.draftText);
+    _applySessionTitle(nextSession.title);
+    await _persistSessionRegistry();
+    await _loadCurrentViewData();
+  }
+
   String? _mimeTypeForImageName(String name) {
     final normalized = name.toLowerCase();
     if (normalized.endsWith('.png')) {
@@ -1555,6 +1597,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           onSessionTitleSubmitted: _renameCurrentSession,
           onSelectAgent: _openOrCreateAgentHomeSession,
           onOpenGatewaySession: _openGatewaySession,
+          onForgetCurrentSession: _forgetCurrentSession,
           onSelectModel: _applyModel,
           onSelectThinking: _applyThinkingLevel,
           onSelectVerbose: _applyVerboseLevel,
