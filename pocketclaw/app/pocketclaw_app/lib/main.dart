@@ -252,17 +252,16 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         );
       }
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        final nextStage = _deriveConnectFlowStage();
+        setState(() {
+          _isBootstrapping = false;
+          _connectFlowStage = nextStage;
+          _selectedDestination = nextStage == ConnectFlowStage.ready
+              ? AppDestination.chat
+              : AppDestination.connect;
+        });
       }
-      final nextStage = _deriveConnectFlowStage();
-      setState(() {
-        _isBootstrapping = false;
-        _connectFlowStage = nextStage;
-        _selectedDestination = nextStage == ConnectFlowStage.ready
-            ? AppDestination.chat
-            : AppDestination.connect;
-      });
     }
   }
 
@@ -350,14 +349,6 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
     }
     return agentId;
-  }
-
-  String _titleForGatewaySession(SessionInfo session) {
-    final label = session.label?.trim();
-    if (label != null && label.isNotEmpty) {
-      return label;
-    }
-    return session.key;
   }
 
   AppStrings get _strings =>
