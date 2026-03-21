@@ -97,10 +97,25 @@ GatewayErrorGuidance gatewayErrorGuidanceFor(
     );
   }
 
+  if (lower.contains('cloudflare access redirected') ||
+      lower.contains('interactive login flow')) {
+    return const GatewayErrorGuidance(
+      summary: 'Cloudflare Access redirected the request into an interactive login flow before PocketClaw could upgrade to WebSocket.',
+      action: 'Make sure the Access application explicitly allows the configured service token for this host/path, or exempt the Gateway WebSocket path/domain from Access.',
+    );
+  }
+
+  if (lower.contains('rejected the provided service token')) {
+    return const GatewayErrorGuidance(
+      summary: 'Cloudflare Access rejected the provided service token.',
+      action: 'Verify the Client ID / Client Secret pair, the Access policy binding, and whether the protected application includes this exact host/path.',
+    );
+  }
+
   if (lower.contains('unsupported url scheme')) {
     return const GatewayErrorGuidance(
       summary: 'PocketClaw rejected the configured WebSocket URL before connecting.',
-      action: 'Use a full ws:// or wss:// URL. If you already entered wss://..., this is likely a client-side compatibility bug rather than a Gateway auth failure.',
+      action: 'Use a full ws:// or wss:// URL. If you already entered wss://..., the server or proxy may be redirecting the WebSocket handshake to a non-WebSocket URL such as an interactive login page.',
     );
   }
 

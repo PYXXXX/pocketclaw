@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:web_socket_channel/io.dart';
@@ -338,9 +339,89 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     Uri uri,
     Map<String, String> headers,
   ) async {
+    final effectiveHeaders = await _prepareHandshakeHeaders(uri, headers);
     return IOWebSocketChannel.connect(
-      uri,
-      headers: headers.isEmpty ? null : headers,
+      uri.toString(),
+      headers: effectiveHeaders.isEmpty ? null : effectiveHeaders,
     );
+  }
+
+  static Future<Map<String, String>> _prepareHandshakeHeaders(
+    Uri uri,
+    Map<String, String> headers,
+  ) async {
+    if (!_hasCloudflareAccessHeaders(headers)) {
+      return headers;
+    }
+
+    final cookieHeader = await _preflightCloudflareAccessCookie(uri, headers);
+    if (cookieHeader == null || cookieHeader.isEmpty) {
+      return headers;
+    }
+
+    final effective = Map<String, String>.from(headers);
+    final existingCookie = effective['Cookie'];
+    effective['Cookie'] =
+        existingCookie == null || existingCookie.isEmpty
+            ? cookieHeader
+            : '$existingCookie; $cookieHeader';
+    return effective;
+  }
+
+  static bool _hasCloudflareAccessHeaders(Map<String, String> headers) {
+    return (headers['CF-Access-Client-Id']?.trim().isNotEmpty ?? false) &&
+        (headers['CF-Access-Client-Secret']?.trim().isNotEmpty ?? false);
+  }
+
+  static Future<String?> _preflightCloudflareAccessCookie(
+    Uri uri,
+    Map<String, String> headers,
+  ) async {
+    if (uri.scheme != 'ws' && uri.scheme != 'wss') {
+      return null;
+    }
+
+    final preflightUri = uri.replace(
+      scheme: uri.scheme == 'wss' ? 'https' : 'http',
+      path: uri.path.isEmpty ? '/' : uri.path,
+    );
+
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(preflightUri);
+      request.followRedirects = false;
+      for (final entry in headers.entries) {
+        request.headers.set(entry.key, entry.value);
+      }
+
+      final response = await request.close();
+      final location = response.headers.value(HttpHeaders.locationHeader);
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        final redirectLocation = location ?? '';
+        if (redirectLocation.contains('cloudflareaccess.com')) {
+          throw StateError(
+            'Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade. Verify the service token policy or exempt this host/path from Access.',
+          );
+        }
+        throw StateError(
+          'The WebSocket preflight was redirected before connecting. Check the reverse proxy and WebSocket upgrade path.',
+        );
+      }
+
+      if (response.statusCode == HttpStatus.forbidden) {
+        throw StateError(
+          'Cloudflare Access rejected the provided service token before the WebSocket upgrade.',
+        );
+      }
+
+      if (response.cookies.isEmpty) {
+        return null;
+      }
+      return response.cookies
+          .map((cookie) => '${cookie.name}=${cookie.value}')
+          .join('; ');
+    } finally {
+      client.close(force: true);
+    }
   }
 }

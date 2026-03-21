@@ -37,6 +37,10 @@ jobs:
         working-directory: pocketclaw
         run: flutter pub get
 
+      - name: Check formatting
+        working-directory: pocketclaw
+        run: dart format --output=none --set-exit-if-changed app packages
+
       - name: Analyze workspace
         working-directory: pocketclaw
         run: ~/.pub-cache/bin/melos run analyze

@@ -3,10 +3,13 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'src/app_shell/app_strings.dart';
 import 'src/app_shell/chat_shell.dart';
 import 'src/app_shell/connect_flow_models.dart';
 import 'src/app_shell/connect_surface.dart';
@@ -29,10 +32,29 @@ class PocketClawApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PocketClaw',
+      themeMode: ThemeMode.system,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      supportedLocales: const <Locale>[
+        Locale('en'),
+        Locale('zh'),
+        Locale('zh', 'CN'),
+      ],
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const PocketClawHome(),
     );
   }
@@ -54,6 +76,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final TextEditingController _cloudflareAccessClientIdController =
       TextEditingController();
   final TextEditingController _cloudflareAccessClientSecretController =
+      TextEditingController();
+  final TextEditingController _customRequestHeadersController =
       TextEditingController();
   final TextEditingController _sessionTitleController = TextEditingController();
   final GatewayConnectRequestFactory _connectRequestFactory =
@@ -163,6 +187,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _passwordController.dispose();
     _cloudflareAccessClientIdController.dispose();
     _cloudflareAccessClientSecretController.dispose();
+    _customRequestHeadersController.dispose();
     _sessionTitleController.dispose();
     super.dispose();
   }
@@ -186,12 +211,22 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   Future<void> _bootstrapLocalState() async {
     try {
-      await Future.wait<void>([
-        _restorePersistedGatewayProfile(),
-        _restorePersistedSessionRegistry(),
-        _restoreConnectFlowPreferences(),
-        _refreshStoredDeviceAuthState(),
-      ]);
+      await _runBootstrapStep(
+        label: 'Saved Gateway configuration restore',
+        action: _restorePersistedGatewayProfile,
+      );
+      await _runBootstrapStep(
+        label: 'Local session restore',
+        action: _restorePersistedSessionRegistry,
+      );
+      await _runBootstrapStep(
+        label: 'Connect flow preference restore',
+        action: _restoreConnectFlowPreferences,
+      );
+      await _runBootstrapStep(
+        label: 'Stored device auth refresh',
+        action: _refreshStoredDeviceAuthState,
+      );
     } finally {
       if (!mounted) {
         return;
@@ -207,6 +242,25 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
   }
 
+  Future<void> _runBootstrapStep({
+    required String label,
+    required Future<void> Function() action,
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    try {
+      await action().timeout(timeout);
+    } on TimeoutException {
+      if (!mounted) {
+        return;
+      }
+      _appendTimeline(
+        ChatTimelineRole.system,
+        '$label timed out during startup. PocketClaw skipped that restore step so the app can still open.',
+        status: 'warning',
+      );
+    }
+  }
+
   void _applyProfileToControllers(GatewayProfile profile) {
     _gatewayUrlController.text = profile.url;
     _tokenController.text = profile.token;
@@ -215,6 +269,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         profile.cloudflareAccessClientId;
     _cloudflareAccessClientSecretController.text =
         profile.cloudflareAccessClientSecret;
+    _customRequestHeadersController.text = profile.customRequestHeadersText;
   }
 
   String _agentIdForSession(String sessionKey) {
@@ -640,57 +695,53 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   ConnectFlowSnapshot _snapshotForConnectFlow() {
+    final strings = AppStrings.fromLocale(
+      WidgetsBinding.instance.platformDispatcher.locale,
+    );
     switch (_connectFlowStage) {
       case ConnectFlowStage.welcome:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.welcome,
-          title: 'Welcome',
-          description:
-              'PocketClaw connects to an existing OpenClaw Gateway. Finish the quick onboarding, then choose how this phone should connect.',
+          title: strings.welcomeTitle,
+          description: strings.welcomeDescription,
         );
       case ConnectFlowStage.chooseMethod:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.chooseMethod,
-          title: 'Choose connection method',
-          description:
-              'Manual connect is the baseline flow and should always work. Setup code can be added later when the client path is ready.',
+          title: strings.chooseMethodTitle,
+          description: strings.chooseMethodDescription,
         );
       case ConnectFlowStage.manualConfig:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.manualConfig,
-          title: 'Manual connection',
-          description:
-              'Enter the Gateway URL and optional bootstrap credentials. PocketClaw will store reusable auth locally so reconnect can work next time.',
+          title: strings.manualConnectionTitle,
+          description: strings.manualConnectionDescription,
         );
       case ConnectFlowStage.authPending:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.authPending,
-          title: 'Authenticating',
-          description:
-              'The app is trying bootstrap credentials or answering device-auth challenges. If approval is needed elsewhere, keep this screen open and approve the device.',
+          title: strings.authenticatingTitle,
+          description: strings.authenticatingDescription,
           requiresAttention: true,
         );
       case ConnectFlowStage.pairingPending:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.pairingPending,
-          title: 'Pairing pending',
-          description:
-              'The Gateway still needs device approval or pairing. Once approved, PocketClaw should be able to reuse the issued device token automatically.',
+          title: strings.pairingPendingTitle,
+          description: strings.pairingPendingDescription,
           requiresAttention: true,
         );
       case ConnectFlowStage.ready:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.ready,
-          title: 'Ready to chat',
-          description:
-              'Connection setup is usable. You can enter the chat shell now, and reconnect should be much lighter next time.',
+          title: strings.readyToChatTitle,
+          description: strings.readyToChatDescription,
         );
       case ConnectFlowStage.error:
-        return const ConnectFlowSnapshot(
+        return ConnectFlowSnapshot(
           stage: ConnectFlowStage.error,
-          title: 'Needs attention',
-          description:
-              'Something blocked the connection flow. Review the guidance below, adjust the config if needed, then try again.',
+          title: strings.needsAttentionTitle,
+          description: strings.needsAttentionDescription,
           requiresAttention: true,
         );
     }
@@ -723,10 +774,22 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _cloudflareAccessClientIdController.text !=
             _gatewayProfile.cloudflareAccessClientId ||
         _cloudflareAccessClientSecretController.text !=
-            _gatewayProfile.cloudflareAccessClientSecret;
+            _gatewayProfile.cloudflareAccessClientSecret ||
+        _customRequestHeadersController.text !=
+            _gatewayProfile.customRequestHeadersText;
   }
 
   Future<void> _applyGatewayConfiguration({bool announce = true}) async {
+    try {
+      parseGatewayRequestHeadersText(
+        _customRequestHeadersController.text,
+        strict: true,
+      );
+    } on FormatException catch (error) {
+      _recordError(error, prefix: 'Gateway configuration is invalid');
+      return;
+    }
+
     final profile = _gatewayProfile.copyWith(
       url: normalizeGatewayUrl(_gatewayUrlController.text),
       token: _tokenController.text,
@@ -735,6 +798,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           _cloudflareAccessClientIdController.text.trim(),
       cloudflareAccessClientSecret:
           _cloudflareAccessClientSecretController.text.trim(),
+      customRequestHeadersText: _customRequestHeadersController.text,
     );
     _applyProfileToControllers(profile);
 
@@ -901,6 +965,17 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _appendTimeline(
       ChatTimelineRole.system,
       prefix == null ? guidance.summary : '$prefix: ${guidance.summary}',
+    );
+  }
+
+  Future<void> _copyToClipboard(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) {
+      return;
+    }
+    final strings = AppStrings.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.copied)),
     );
   }
 
@@ -1277,6 +1352,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final connectSnapshot = _snapshotForConnectFlow();
     final sessions = _registry.sessions;
     final showChatShell = _connectFlowStage == ConnectFlowStage.ready;
@@ -1305,6 +1381,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                     _cloudflareAccessClientIdController,
                 cloudflareAccessClientSecretController:
                     _cloudflareAccessClientSecretController,
+                customRequestHeadersController:
+                    _customRequestHeadersController,
                 onApply: _applyGatewayConfiguration,
               ),
               const SizedBox(height: 12),
@@ -1320,10 +1398,34 @@ class _PocketClawHomeState extends State<PocketClawHome> {
               ],
               if (_lastError != null) ...[
                 const SizedBox(height: 12),
-                Text(
-                  _lastError!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
+                Card(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onLongPress: () => unawaited(_copyToClipboard(_lastError!)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.rawErrorTitle,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          SelectableText(
+                            _lastError!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            strings.longPressToCopy,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],

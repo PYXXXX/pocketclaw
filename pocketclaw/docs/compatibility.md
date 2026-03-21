@@ -22,6 +22,7 @@ PocketClaw expects the Gateway to already support the behaviors used by current 
 - session listing and patching
 - model listing
 - agent identity lookup
+- standard WebSocket handshakes, with optional client-supplied request headers when a deployment sits behind Cloudflare Access or similar edge protection
 
 ## Compatibility strategy
 

@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
+import 'app_strings.dart';
 import 'connect_flow_models.dart';
 
 class AppStatusBanner extends StatelessWidget {
@@ -27,18 +29,19 @@ class AppStatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
-    final gatewayLabel = hasGatewayUrl ? gatewayUrl.trim() : 'No Gateway configured yet';
+    final gatewayLabel = hasGatewayUrl ? gatewayUrl.trim() : strings.noGatewayConfigured;
     final bootstrapLabel = hasBootstrapCredentials
-        ? 'Bootstrap credentials saved'
-        : 'No bootstrap credentials';
+        ? strings.bootstrapSaved
+        : strings.noBootstrap;
     final reconnectLabel = hasStoredDeviceToken
-        ? 'Reconnect token available'
+        ? strings.reconnectTokenAvailable
         : hasStoredDeviceIdentity
-            ? 'Device identity saved'
-            : 'First pairing likely needed';
+            ? strings.deviceIdentitySaved
+            : strings.firstPairingLikely;
     final usesLoopback = gatewayUrlUsesLoopback(gatewayUrl);
 
     return Card(
@@ -79,7 +82,7 @@ class AppStatusBanner extends StatelessWidget {
                 ),
                 Chip(
                   avatar: const Icon(Icons.sync_outlined, size: 18),
-                  label: Text('State: ${connectionState.phase.name}'),
+                  label: Text('${strings.stateLabel}: ${connectionState.phase.name}'),
                 ),
                 Chip(
                   avatar: const Icon(Icons.key_outlined, size: 18),
@@ -97,15 +100,13 @@ class AppStatusBanner extends StatelessWidget {
                 if (usesLoopback)
                   Chip(
                     avatar: const Icon(Icons.warning_amber_outlined, size: 18),
-                    label: const Text('Loopback URL'),
+                    label: Text(strings.loopbackUrl),
                   ),
               ],
             ),
             if (usesLoopback) ...[
               const SizedBox(height: 8),
-              const Text(
-                '127.0.0.1 / localhost points to the phone itself on a real device. Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead.',
-              ),
+              Text(strings.loopbackWarning),
             ],
           ],
         ),
@@ -132,6 +133,7 @@ class ConnectFlowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       color: snapshot.requiresAttention ? colorScheme.surfaceContainerHighest : null,
@@ -150,15 +152,19 @@ class ConnectFlowCard extends StatelessWidget {
               children: [
                 FilledButton(
                   onPressed: onboardingCompleted ? null : onCompleteWelcome,
-                  child: Text(onboardingCompleted ? 'Onboarding complete' : 'Start setup'),
+                  child: Text(
+                    onboardingCompleted
+                        ? strings.onboardingComplete
+                        : strings.startSetup,
+                  ),
                 ),
                 ChoiceChip(
-                  label: const Text('Manual connect'),
+                  label: Text(strings.manualConnect),
                   selected: connectMethod == ConnectMethod.manual,
                   onSelected: (_) => unawaited(onSelectMethod(ConnectMethod.manual)),
                 ),
                 ChoiceChip(
-                  label: const Text('Setup code (later)'),
+                  label: Text(strings.setupCodeLater),
                   selected: connectMethod == ConnectMethod.setupCode,
                   onSelected: (_) => unawaited(onSelectMethod(ConnectMethod.setupCode)),
                 ),
@@ -179,6 +185,7 @@ class GatewayConfigCard extends StatelessWidget {
     required this.passwordController,
     required this.cloudflareAccessClientIdController,
     required this.cloudflareAccessClientSecretController,
+    required this.customRequestHeadersController,
     required this.onApply,
   });
 
@@ -187,10 +194,17 @@ class GatewayConfigCard extends StatelessWidget {
   final TextEditingController passwordController;
   final TextEditingController cloudflareAccessClientIdController;
   final TextEditingController cloudflareAccessClientSecretController;
+  final TextEditingController customRequestHeadersController;
   final Future<void> Function() onApply;
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final showAdvancedOptions =
+        cloudflareAccessClientIdController.text.trim().isNotEmpty ||
+        cloudflareAccessClientSecretController.text.trim().isNotEmpty ||
+        customRequestHeadersController.text.trim().isNotEmpty;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -198,22 +212,19 @@ class GatewayConfigCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Gateway configuration',
+              strings.gatewayConfiguration,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Manual connect is the baseline path. Token and password are optional bootstrap credentials. Reusable device auth should stay local after the first successful approval. If Cloudflare Access protects the host, you can optionally provide a service token below.',
-            ),
+            Text(strings.gatewayIntro),
             const SizedBox(height: 12),
             TextField(
               controller: gatewayUrlController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Gateway URL',
-                hintText: 'https://gateway.example.com or 192.168.1.20:18789',
-                helperText:
-                    'You can paste http(s) or ws(s). On a real phone, do not use 127.0.0.1 / localhost unless the Gateway runs on that same device.',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: strings.gatewayUrlLabel,
+                hintText: strings.gatewayUrlHint,
+                helperText: strings.gatewayUrlHelp,
               ),
             ),
             const SizedBox(height: 12),
@@ -222,9 +233,9 @@ class GatewayConfigCard extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: tokenController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Token',
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.token,
                     ),
                   ),
                 ),
@@ -232,9 +243,9 @@ class GatewayConfigCard extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: passwordController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Password',
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.password,
                     ),
                     obscureText: true,
                   ),
@@ -242,28 +253,52 @@ class GatewayConfigCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: cloudflareAccessClientIdController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Cloudflare Access Client ID (optional)',
-                helperText:
-                    'Use this only when the Gateway host is protected by Cloudflare Access service-token policies.',
+            Card.outlined(
+              margin: EdgeInsets.zero,
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                initiallyExpanded: showAdvancedOptions,
+                title: Text(strings.moreOptions),
+                subtitle: Text(strings.moreOptionsHelp),
+                children: [
+                  TextField(
+                    controller: cloudflareAccessClientIdController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.cfAccessClientId,
+                      helperText: strings.cfAccessHelp,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: cloudflareAccessClientSecretController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.cfAccessClientSecret,
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: customRequestHeadersController,
+                    minLines: 3,
+                    maxLines: 6,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: strings.customRequestHeaders,
+                      hintText: strings.customRequestHeadersHint,
+                      helperText: strings.customRequestHeadersHelp,
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: cloudflareAccessClientSecretController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Cloudflare Access Client Secret (optional)',
-              ),
-              obscureText: true,
             ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: onApply,
-              child: const Text('Save connection settings'),
+              child: Text(strings.saveConnectionSettings),
             ),
           ],
         ),
@@ -288,6 +323,7 @@ class ConnectionStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final canConnect = state.phase == GatewayConnectionPhase.disconnected ||
         state.phase == GatewayConnectionPhase.error;
     final canDisconnect = state.phase != GatewayConnectionPhase.disconnected;
@@ -299,11 +335,11 @@ class ConnectionStatusCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Gateway state: ${state.phase.name}',
+              strings.gatewayState(state.phase.name),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
-            Text('Flow stage: ${connectFlowStage.name}'),
+            Text(strings.flowStage(connectFlowStage.name)),
             if (state.message != null) ...[
               const SizedBox(height: 8),
               Text(state.message!),
@@ -314,11 +350,11 @@ class ConnectionStatusCard extends StatelessWidget {
               children: [
                 FilledButton(
                   onPressed: canConnect ? onConnect : null,
-                  child: const Text('Connect'),
+                  child: Text(strings.connect),
                 ),
                 OutlinedButton(
                   onPressed: canDisconnect ? onDisconnect : null,
-                  child: const Text('Disconnect'),
+                  child: Text(strings.disconnect),
                 ),
               ],
             ),
@@ -336,26 +372,50 @@ class GuidanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final payload = <String>[
+      guidance.summary,
+      if (guidance.action != null) guidance.action!,
+      if (guidance.code != null) 'Code: ${guidance.code}',
+    ].join('\n\n');
+
     return Card(
       color: Theme.of(context).colorScheme.errorContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              guidance.summary,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (guidance.action != null) ...[
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onLongPress: () async {
+          await Clipboard.setData(ClipboardData(text: payload));
+          if (!context.mounted) {
+            return;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(strings.copied)),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                guidance.summary,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (guidance.action != null) ...[
+                const SizedBox(height: 8),
+                SelectableText(guidance.action!),
+              ],
+              if (guidance.code != null) ...[
+                const SizedBox(height: 8),
+                SelectableText('Code: ${guidance.code}'),
+              ],
               const SizedBox(height: 8),
-              Text(guidance.action!),
+              Text(
+                strings.longPressToCopy,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
-            if (guidance.code != null) ...[
-              const SizedBox(height: 8),
-              Text('Code: ${guidance.code}'),
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -369,6 +429,7 @@ class ChatLockedPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -382,12 +443,12 @@ class ChatLockedPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Finish the connection flow first',
+              strings.finishConnectionFlowFirst,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'PocketClaw keeps the chat shell behind a usable Gateway setup so the app does not feel like a debug screen before it can reconnect cleanly.',
+            Text(
+              strings.chatLockedDescription,
               textAlign: TextAlign.center,
             ),
             if (onOpenConnect != null) ...[
@@ -395,7 +456,7 @@ class ChatLockedPlaceholder extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onOpenConnect,
                 icon: const Icon(Icons.hub_outlined),
-                label: const Text('Open connect'),
+                label: Text(strings.openConnect),
               ),
             ],
           ],
