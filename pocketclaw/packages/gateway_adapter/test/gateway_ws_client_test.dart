@@ -8,47 +8,54 @@ import 'package:test/test.dart';
 
 void main() {
   group('GatewayWsClient', () {
-    test('sends connect request after connect.challenge and resolves handshake', () async {
-      final incoming = StreamController<Object?>();
-      final outgoing = <String>[];
-      final fakeChannel = _TestWebSocketChannel(
-        stream: incoming.stream,
-        onAdd: (data) => outgoing.add(data as String),
-      );
+    test(
+      'sends connect request after connect.challenge and resolves handshake',
+      () async {
+        final incoming = StreamController<Object?>();
+        final outgoing = <String>[];
+        final fakeChannel = _TestWebSocketChannel(
+          stream: incoming.stream,
+          onAdd: (data) => outgoing.add(data as String),
+        );
 
-      final client = GatewayWsClient(
-        config: GatewayConnectionConfig(
-          url: 'ws://127.0.0.1:18789',
-          connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
-        ),
-        channelFactory: (_, __) async => fakeChannel,
-      );
+        final client = GatewayWsClient(
+          config: GatewayConnectionConfig(
+            url: 'ws://127.0.0.1:18789',
+            connectRequest: const GatewayConnectRequestFactory().build(
+              token: 'abc',
+            ),
+          ),
+          channelFactory: (_, __) async => fakeChannel,
+        );
 
-      final connectFuture = client.connect();
+        final connectFuture = client.connect();
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'event',
-        'event': 'connect.challenge',
-        'payload': <String, Object?>{'nonce': 'nonce-1'},
-      }));
+        incoming.add(
+          jsonEncode(<String, Object?>{
+            'type': 'event',
+            'event': 'connect.challenge',
+            'payload': <String, Object?>{'nonce': 'nonce-1'},
+          }),
+        );
 
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(outgoing, isNotEmpty);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(outgoing, isNotEmpty);
 
-      final firstRequest = jsonDecode(outgoing.first) as Map<String, Object?>;
-      expect(firstRequest['method'], 'connect');
+        final firstRequest = jsonDecode(outgoing.first) as Map<String, Object?>;
+        expect(firstRequest['method'], 'connect');
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'res',
-        'id': firstRequest['id'] as String,
-        'ok': true,
-        'payload': <String, Object?>{
-          'hello': true,
-        },
-      }));
+        incoming.add(
+          jsonEncode(<String, Object?>{
+            'type': 'res',
+            'id': firstRequest['id'] as String,
+            'ok': true,
+            'payload': <String, Object?>{'hello': true},
+          }),
+        );
 
-      await connectFuture;
-    });
+        await connectFuture;
+      },
+    );
 
     test('passes configured headers into websocket setup', () async {
       final incoming = StreamController<Object?>();
@@ -63,7 +70,9 @@ void main() {
       final client = GatewayWsClient(
         config: GatewayConnectionConfig(
           url: 'wss://bot.bilirec.com',
-          connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
+          connectRequest: const GatewayConnectRequestFactory().build(
+            token: 'abc',
+          ),
           headers: const <String, String>{
             'CF-Access-Client-Id': 'client-id.access',
             'CF-Access-Client-Secret': 'client-secret',
@@ -78,21 +87,25 @@ void main() {
 
       final connectFuture = client.connect();
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'event',
-        'event': 'connect.challenge',
-        'payload': <String, Object?>{'nonce': 'nonce-1'},
-      }));
+      incoming.add(
+        jsonEncode(<String, Object?>{
+          'type': 'event',
+          'event': 'connect.challenge',
+          'payload': <String, Object?>{'nonce': 'nonce-1'},
+        }),
+      );
 
       await Future<void>.delayed(const Duration(milliseconds: 10));
       final request = jsonDecode(outgoing.first) as Map<String, Object?>;
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'res',
-        'id': request['id'] as String,
-        'ok': true,
-        'payload': <String, Object?>{'hello': true},
-      }));
+      incoming.add(
+        jsonEncode(<String, Object?>{
+          'type': 'res',
+          'id': request['id'] as String,
+          'ok': true,
+          'payload': <String, Object?>{'hello': true},
+        }),
+      );
 
       await connectFuture;
 
@@ -101,82 +114,91 @@ void main() {
       expect(capturedHeaders?['CF-Access-Client-Secret'], 'client-secret');
     });
 
-    test('retries with bootstrap auth when stored device token is rejected', () async {
-      final incoming = StreamController<Object?>();
-      final outgoing = <String>[];
-      final fakeChannel = _TestWebSocketChannel(
-        stream: incoming.stream,
-        onAdd: (data) => outgoing.add(data as String),
-      );
-      final tokenStore = MemoryGatewayDeviceTokenStore();
-      await tokenStore.write(
-        const GatewayDeviceToken(
-          deviceId: 'device-1',
-          role: 'operator',
-          token: 'stale-device-token',
-        ),
-      );
+    test(
+      'retries with bootstrap auth when stored device token is rejected',
+      () async {
+        final incoming = StreamController<Object?>();
+        final outgoing = <String>[];
+        final fakeChannel = _TestWebSocketChannel(
+          stream: incoming.stream,
+          onAdd: (data) => outgoing.add(data as String),
+        );
+        final tokenStore = MemoryGatewayDeviceTokenStore();
+        await tokenStore.write(
+          const GatewayDeviceToken(
+            deviceId: 'device-1',
+            role: 'operator',
+            token: 'stale-device-token',
+          ),
+        );
 
-      final client = GatewayWsClient(
-        config: GatewayConnectionConfig(
-          url: 'ws://127.0.0.1:18789',
-          connectRequest: const GatewayConnectRequestFactory().build(token: 'bootstrap-token'),
-          deviceAuthProvider: _StaticDeviceAuthProvider(),
-          deviceTokenStore: tokenStore,
-        ),
-        channelFactory: (_, __) async => fakeChannel,
-      );
+        final client = GatewayWsClient(
+          config: GatewayConnectionConfig(
+            url: 'ws://127.0.0.1:18789',
+            connectRequest: const GatewayConnectRequestFactory().build(
+              token: 'bootstrap-token',
+            ),
+            deviceAuthProvider: _StaticDeviceAuthProvider(),
+            deviceTokenStore: tokenStore,
+          ),
+          channelFactory: (_, __) async => fakeChannel,
+        );
 
-      final connectFuture = client.connect();
+        final connectFuture = client.connect();
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'event',
-        'event': 'connect.challenge',
-        'payload': <String, Object?>{'nonce': 'nonce-1'},
-      }));
+        incoming.add(
+          jsonEncode(<String, Object?>{
+            'type': 'event',
+            'event': 'connect.challenge',
+            'payload': <String, Object?>{'nonce': 'nonce-1'},
+          }),
+        );
 
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      final firstRequest = jsonDecode(outgoing.first) as Map<String, Object?>;
-      expect(
-        (firstRequest['params'] as Map<String, Object?>)['auth'],
-        <String, Object?>{
-          'token': 'bootstrap-token',
-          'deviceToken': 'stale-device-token',
-        },
-      );
-
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'res',
-        'id': firstRequest['id'] as String,
-        'ok': false,
-        'error': <String, Object?>{
-          'code': 'UNAVAILABLE',
-          'message': 'request failed',
-          'details': <String, Object?>{
-            'code': GatewayErrorCodes.authDeviceTokenMismatch,
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        final firstRequest = jsonDecode(outgoing.first) as Map<String, Object?>;
+        expect(
+          (firstRequest['params'] as Map<String, Object?>)['auth'],
+          <String, Object?>{
+            'token': 'bootstrap-token',
+            'deviceToken': 'stale-device-token',
           },
-        },
-      }));
+        );
 
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(outgoing, hasLength(2));
-      final secondRequest = jsonDecode(outgoing[1]) as Map<String, Object?>;
-      expect(
-        (secondRequest['params'] as Map<String, Object?>)['auth'],
-        <String, Object?>{
-          'token': 'bootstrap-token',
-        },
-      );
+        incoming.add(
+          jsonEncode(<String, Object?>{
+            'type': 'res',
+            'id': firstRequest['id'] as String,
+            'ok': false,
+            'error': <String, Object?>{
+              'code': 'UNAVAILABLE',
+              'message': 'request failed',
+              'details': <String, Object?>{
+                'code': GatewayErrorCodes.authDeviceTokenMismatch,
+              },
+            },
+          }),
+        );
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'res',
-        'id': secondRequest['id'] as String,
-        'ok': true,
-        'payload': <String, Object?>{'hello': true},
-      }));
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(outgoing, hasLength(2));
+        final secondRequest = jsonDecode(outgoing[1]) as Map<String, Object?>;
+        expect(
+          (secondRequest['params'] as Map<String, Object?>)['auth'],
+          <String, Object?>{'token': 'bootstrap-token'},
+        );
 
-      await connectFuture;
-    });
+        incoming.add(
+          jsonEncode(<String, Object?>{
+            'type': 'res',
+            'id': secondRequest['id'] as String,
+            'ok': true,
+            'payload': <String, Object?>{'hello': true},
+          }),
+        );
+
+        await connectFuture;
+      },
+    );
 
     test('persists issued device token from hello payload', () async {
       final incoming = StreamController<Object?>();
@@ -190,7 +212,9 @@ void main() {
       final client = GatewayWsClient(
         config: GatewayConnectionConfig(
           url: 'ws://127.0.0.1:18789',
-          connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
+          connectRequest: const GatewayConnectRequestFactory().build(
+            token: 'abc',
+          ),
           deviceAuthProvider: _StaticDeviceAuthProvider(),
           deviceTokenStore: tokenStore,
         ),
@@ -199,27 +223,31 @@ void main() {
 
       final connectFuture = client.connect();
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'event',
-        'event': 'connect.challenge',
-        'payload': <String, Object?>{'nonce': 'nonce-1'},
-      }));
+      incoming.add(
+        jsonEncode(<String, Object?>{
+          'type': 'event',
+          'event': 'connect.challenge',
+          'payload': <String, Object?>{'nonce': 'nonce-1'},
+        }),
+      );
 
       await Future<void>.delayed(const Duration(milliseconds: 10));
       final request = jsonDecode(outgoing.first) as Map<String, Object?>;
 
-      incoming.add(jsonEncode(<String, Object?>{
-        'type': 'res',
-        'id': request['id'] as String,
-        'ok': true,
-        'payload': <String, Object?>{
-          'auth': <String, Object?>{
-            'deviceToken': 'issued-device-token',
-            'role': 'operator',
-            'scopes': <String>['operator.admin'],
+      incoming.add(
+        jsonEncode(<String, Object?>{
+          'type': 'res',
+          'id': request['id'] as String,
+          'ok': true,
+          'payload': <String, Object?>{
+            'auth': <String, Object?>{
+              'deviceToken': 'issued-device-token',
+              'role': 'operator',
+              'scopes': <String>['operator.admin'],
+            },
           },
-        },
-      }));
+        }),
+      );
 
       await connectFuture;
 
@@ -275,7 +303,8 @@ class _TestWebSocketSink implements WebSocketSink {
   Future<void> addStream(Stream stream) => Future<void>.value();
 
   @override
-  Future<void> close([int? closeCode, String? closeReason]) => Future<void>.value();
+  Future<void> close([int? closeCode, String? closeReason]) =>
+      Future<void>.value();
 
   @override
   Future<void> get done => Future<void>.value();

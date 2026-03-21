@@ -31,10 +31,7 @@ final class SecureGatewayProfileStore implements GatewayProfileStore {
 
   @override
   Future<void> write(GatewayProfile profile) {
-    return _store.write(
-      key: storageKey,
-      value: jsonEncode(profile.toJson()),
-    );
+    return _store.write(key: storageKey, value: jsonEncode(profile.toJson()));
   }
 
   @override

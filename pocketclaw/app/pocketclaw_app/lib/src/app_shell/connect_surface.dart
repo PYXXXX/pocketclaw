@@ -33,15 +33,17 @@ class AppStatusBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
-    final gatewayLabel = hasGatewayUrl ? gatewayUrl.trim() : strings.noGatewayConfigured;
+    final gatewayLabel = hasGatewayUrl
+        ? gatewayUrl.trim()
+        : strings.noGatewayConfigured;
     final bootstrapLabel = hasBootstrapCredentials
         ? strings.bootstrapSaved
         : strings.noBootstrap;
     final reconnectLabel = hasStoredDeviceToken
         ? strings.reconnectTokenAvailable
         : hasStoredDeviceIdentity
-            ? strings.deviceIdentitySaved
-            : strings.firstPairingLikely;
+        ? strings.deviceIdentitySaved
+        : strings.firstPairingLikely;
     final usesLoopback = gatewayUrlUsesLoopback(gatewayUrl);
 
     return Card(
@@ -82,7 +84,9 @@ class AppStatusBanner extends StatelessWidget {
                 ),
                 Chip(
                   avatar: const Icon(Icons.sync_outlined, size: 18),
-                  label: Text('${strings.stateLabel}: ${connectionState.phase.name}'),
+                  label: Text(
+                    '${strings.stateLabel}: ${connectionState.phase.name}',
+                  ),
                 ),
                 Chip(
                   avatar: const Icon(Icons.key_outlined, size: 18),
@@ -136,7 +140,9 @@ class ConnectFlowCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
-      color: snapshot.requiresAttention ? colorScheme.surfaceContainerHighest : null,
+      color: snapshot.requiresAttention
+          ? colorScheme.surfaceContainerHighest
+          : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -161,12 +167,14 @@ class ConnectFlowCard extends StatelessWidget {
                 ChoiceChip(
                   label: Text(strings.manualConnect),
                   selected: connectMethod == ConnectMethod.manual,
-                  onSelected: (_) => unawaited(onSelectMethod(ConnectMethod.manual)),
+                  onSelected: (_) =>
+                      unawaited(onSelectMethod(ConnectMethod.manual)),
                 ),
                 ChoiceChip(
                   label: Text(strings.setupCodeLater),
                   selected: connectMethod == ConnectMethod.setupCode,
-                  onSelected: (_) => unawaited(onSelectMethod(ConnectMethod.setupCode)),
+                  onSelected: (_) =>
+                      unawaited(onSelectMethod(ConnectMethod.setupCode)),
                 ),
               ],
             ),
@@ -324,7 +332,8 @@ class ConnectionStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final canConnect = state.phase == GatewayConnectionPhase.disconnected ||
+    final canConnect =
+        state.phase == GatewayConnectionPhase.disconnected ||
         state.phase == GatewayConnectionPhase.error;
     final canDisconnect = state.phase != GatewayConnectionPhase.disconnected;
 
@@ -388,9 +397,9 @@ class GuidanceCard extends StatelessWidget {
           if (!context.mounted) {
             return;
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(strings.copied)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(strings.copied)));
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -447,10 +456,7 @@ class ChatLockedPlaceholder extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text(
-              strings.chatLockedDescription,
-              textAlign: TextAlign.center,
-            ),
+            Text(strings.chatLockedDescription, textAlign: TextAlign.center),
             if (onOpenConnect != null) ...[
               const SizedBox(height: 16),
               FilledButton.icon(

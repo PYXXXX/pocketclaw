@@ -23,7 +23,9 @@ final class GatewayAgentService {
       ),
     );
 
-    return AgentIdentity.fromJson(response.payload ?? const <String, Object?>{});
+    return AgentIdentity.fromJson(
+      response.payload ?? const <String, Object?>{},
+    );
   }
 
   Future<AgentsListResult> listAgents() async {

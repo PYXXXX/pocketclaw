@@ -11,7 +11,8 @@ final class ChatTimelineController {
   final Map<String, int> _assistantIndexByRunId = <String, int>{};
   final Map<String, int> _runtimeIndexByKey = <String, int>{};
 
-  List<ChatTimelineItem> get items => List<ChatTimelineItem>.unmodifiable(_items);
+  List<ChatTimelineItem> get items =>
+      List<ChatTimelineItem>.unmodifiable(_items);
 
   void replaceAll(Iterable<ChatTimelineItem> items) {
     _items
@@ -54,7 +55,9 @@ final class ChatTimelineController {
     ChatTimelineItem Function(ChatTimelineItem existing) transform,
   ) {
     final existingIndex = _runtimeIndexByKey[updateKey];
-    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+    if (existingIndex == null ||
+        existingIndex < 0 ||
+        existingIndex >= _items.length) {
       return false;
     }
 
@@ -71,7 +74,9 @@ final class ChatTimelineController {
 
   bool removeByUpdateKey(String updateKey) {
     final existingIndex = _runtimeIndexByKey.remove(updateKey);
-    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+    if (existingIndex == null ||
+        existingIndex < 0 ||
+        existingIndex >= _items.length) {
       return false;
     }
 
@@ -149,7 +154,9 @@ final class ChatTimelineController {
     }
 
     final existingIndex = _runtimeIndexByKey[updateKey];
-    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+    if (existingIndex == null ||
+        existingIndex < 0 ||
+        existingIndex >= _items.length) {
       append(item);
       return;
     }
@@ -184,7 +191,9 @@ final class ChatTimelineController {
     }
 
     final existingIndex = _assistantIndexByRunId[runId];
-    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+    if (existingIndex == null ||
+        existingIndex < 0 ||
+        existingIndex >= _items.length) {
       final item = ChatTimelineItem(
         role: ChatTimelineRole.assistant,
         text: message.text,
@@ -267,10 +276,7 @@ final class ChatTimelineController {
     }
 
     if (fallbackSystemText != null && fallbackSystemText.trim().isNotEmpty) {
-      appendMessage(
-        role: ChatTimelineRole.system,
-        text: fallbackSystemText,
-      );
+      appendMessage(role: ChatTimelineRole.system, text: fallbackSystemText);
     }
   }
 
@@ -294,7 +300,9 @@ final class ChatTimelineController {
     }
 
     final existingIndex = _assistantIndexByRunId.remove(runId);
-    if (existingIndex == null || existingIndex < 0 || existingIndex >= _items.length) {
+    if (existingIndex == null ||
+        existingIndex < 0 ||
+        existingIndex >= _items.length) {
       append(
         ChatTimelineItem(
           role: ChatTimelineRole.assistant,

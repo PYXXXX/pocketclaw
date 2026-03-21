@@ -1,11 +1,6 @@
 const Object _chatTimelineUnset = Object();
 
-enum ChatTimelineRole {
-  system,
-  user,
-  assistant,
-  tool,
-}
+enum ChatTimelineRole { system, user, assistant, tool }
 
 final class ChatTimelineItem {
   const ChatTimelineItem({
@@ -42,7 +37,9 @@ final class ChatTimelineItem {
       role: role ?? this.role,
       text: text ?? this.text,
       createdAt: createdAt ?? this.createdAt,
-      title: identical(title, _chatTimelineUnset) ? this.title : title as String?,
+      title: identical(title, _chatTimelineUnset)
+          ? this.title
+          : title as String?,
       status: identical(status, _chatTimelineUnset)
           ? this.status
           : status as String?,

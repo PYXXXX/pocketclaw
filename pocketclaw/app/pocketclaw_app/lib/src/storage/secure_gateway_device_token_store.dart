@@ -33,10 +33,7 @@ final class SecureGatewayDeviceTokenStore implements GatewayDeviceTokenStore {
     );
   }
 
-  String _storageKey({
-    required String deviceId,
-    required String role,
-  }) {
+  String _storageKey({required String deviceId, required String role}) {
     return 'pocketclaw.gateway_device_token.$deviceId.$role';
   }
 }

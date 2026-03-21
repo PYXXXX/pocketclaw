@@ -51,10 +51,7 @@ final class SessionDefaults {
 }
 
 final class SessionsListResult {
-  const SessionsListResult({
-    required this.sessions,
-    this.defaults,
-  });
+  const SessionsListResult({required this.sessions, this.defaults});
 
   final List<SessionInfo> sessions;
   final SessionDefaults? defaults;

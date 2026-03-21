@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ConnectMethod {
-  manual,
-  setupCode,
-}
+enum ConnectMethod { manual, setupCode }
 
 enum ConnectFlowStage {
   welcome,
@@ -16,10 +13,7 @@ enum ConnectFlowStage {
   error,
 }
 
-enum AppDestination {
-  chat,
-  connect,
-}
+enum AppDestination { chat, connect }
 
 @immutable
 class ConnectFlowSnapshot {

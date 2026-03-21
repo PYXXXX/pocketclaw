@@ -8,9 +8,7 @@ void main() {
         const GatewayRequestError(
           code: 'UNAVAILABLE',
           message: 'request failed',
-          details: <String, Object?>{
-            'code': GatewayErrorCodes.pairingRequired,
-          },
+          details: <String, Object?>{'code': GatewayErrorCodes.pairingRequired},
         ),
       );
 
@@ -37,7 +35,9 @@ void main() {
 
     test('explains loopback connection refused errors for phone usage', () {
       final guidance = gatewayErrorGuidanceFor(
-        StateError('WebSocketChannelException: SocketException: Connection refused'),
+        StateError(
+          'WebSocketChannelException: SocketException: Connection refused',
+        ),
         configuredUrl: 'ws://127.0.0.1:18789',
       );
 
@@ -47,7 +47,9 @@ void main() {
 
     test('explains 403 handshakes as likely access or proxy rejection', () {
       final guidance = gatewayErrorGuidanceFor(
-        StateError('WebSocketChannelException: HandshakeException: Connection to server was not upgraded to websocket, HTTP status code: 403'),
+        StateError(
+          'WebSocketChannelException: HandshakeException: Connection to server was not upgraded to websocket, HTTP status code: 403',
+        ),
         configuredUrl: 'wss://bot.bilirec.com',
       );
 
@@ -61,13 +63,18 @@ void main() {
         configuredUrl: 'wss://bot.bilirec.com',
       );
 
-      expect(guidance.summary, contains('rejected the configured WebSocket URL'));
+      expect(
+        guidance.summary,
+        contains('rejected the configured WebSocket URL'),
+      );
       expect(guidance.action, contains('interactive login page'));
     });
 
     test('explains cloudflare interactive redirects explicitly', () {
       final guidance = gatewayErrorGuidanceFor(
-        StateError('Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade.'),
+        StateError(
+          'Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade.',
+        ),
         configuredUrl: 'wss://bot.bilirec.com',
       );
 

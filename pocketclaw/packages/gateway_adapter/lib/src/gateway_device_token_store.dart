@@ -10,7 +10,8 @@ abstract interface class GatewayDeviceTokenStore {
 }
 
 final class MemoryGatewayDeviceTokenStore implements GatewayDeviceTokenStore {
-  final Map<String, GatewayDeviceToken> _tokens = <String, GatewayDeviceToken>{};
+  final Map<String, GatewayDeviceToken> _tokens =
+      <String, GatewayDeviceToken>{};
 
   @override
   Future<GatewayDeviceToken?> read({

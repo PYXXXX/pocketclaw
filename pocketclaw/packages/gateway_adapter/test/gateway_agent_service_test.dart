@@ -60,7 +60,9 @@ void main() {
         ),
       );
 
-      final identity = await service.getIdentity(sessionKey: 'agent:main:pc-home');
+      final identity = await service.getIdentity(
+        sessionKey: 'agent:main:pc-home',
+      );
       final agents = await service.listAgents();
       final models = await service.listModels();
 

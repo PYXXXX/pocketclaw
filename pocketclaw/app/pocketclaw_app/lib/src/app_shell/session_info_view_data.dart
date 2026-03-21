@@ -56,7 +56,9 @@ final class SessionInfoViewData {
       currentLabelBuilder: strings.currentValue,
       gatewayDefaultLabel: strings.gatewayDefault,
       knownOptions: models
-          .map((model) => SessionDropdownOption(value: model.id, label: model.id))
+          .map(
+            (model) => SessionDropdownOption(value: model.id, label: model.id),
+          )
           .toList(),
     );
 
@@ -68,9 +70,7 @@ final class SessionInfoViewData {
       currentLabelBuilder: strings.currentValue,
       gatewayDefaultLabel: strings.gatewayDefault,
       knownOptions: thinkingChoices
-          .map(
-            (value) => SessionDropdownOption(value: value, label: value),
-          )
+          .map((value) => SessionDropdownOption(value: value, label: value))
           .toList(),
     );
 
@@ -82,14 +82,13 @@ final class SessionInfoViewData {
       currentLabelBuilder: strings.currentValue,
       gatewayDefaultLabel: strings.gatewayDefault,
       knownOptions: verboseChoices
-          .map(
-            (value) => SessionDropdownOption(value: value, label: value),
-          )
+          .map((value) => SessionDropdownOption(value: value, label: value))
           .toList(),
     );
 
     final inheritedFastMode = sessionDefaults?.fastMode;
-    final effectiveFastMode = sessionInfo?.fastMode ?? inheritedFastMode ?? false;
+    final effectiveFastMode =
+        sessionInfo?.fastMode ?? inheritedFastMode ?? false;
     final fastModeDefaultLabel = inheritedFastMode == null
         ? strings.gatewayDefault
         : strings.boolLabel(inheritedFastMode);
@@ -159,10 +158,7 @@ final class SessionSettingViewData {
 }
 
 final class SessionDropdownOption {
-  const SessionDropdownOption({
-    required this.value,
-    required this.label,
-  });
+  const SessionDropdownOption({required this.value, required this.label});
 
   final String value;
   final String label;

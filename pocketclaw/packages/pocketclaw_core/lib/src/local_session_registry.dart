@@ -1,9 +1,6 @@
 import 'session_key.dart';
 
-enum LocalSessionOrigin {
-  local,
-  gateway,
-}
+enum LocalSessionOrigin { local, gateway }
 
 final class LocalSessionEntry {
   const LocalSessionEntry({
@@ -49,7 +46,9 @@ final class LocalSessionEntry {
       title: title ?? this.title,
       draftText: draftText ?? this.draftText,
       origin: origin ?? this.origin,
-      gatewayLabel: clearGatewayLabel ? null : (gatewayLabel ?? this.gatewayLabel),
+      gatewayLabel: clearGatewayLabel
+          ? null
+          : (gatewayLabel ?? this.gatewayLabel),
     );
   }
 
@@ -74,9 +73,8 @@ class LocalSessionRegistry {
       initialSessions: values
           .whereType<Map<Object?, Object?>>()
           .map(
-            (value) => LocalSessionEntry.fromJson(
-              Map<String, Object?>.from(value),
-            ),
+            (value) =>
+                LocalSessionEntry.fromJson(Map<String, Object?>.from(value)),
           )
           .toList(),
     );
@@ -110,7 +108,9 @@ class LocalSessionRegistry {
   }
 
   void remember(LocalSessionEntry entry) {
-    if (_sessions.any((item) => item.sessionKey.value == entry.sessionKey.value)) {
+    if (_sessions.any(
+      (item) => item.sessionKey.value == entry.sessionKey.value,
+    )) {
       return;
     }
     _sessions.add(entry);

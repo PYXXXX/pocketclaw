@@ -22,7 +22,10 @@ void main() {
     final registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
-          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
+          sessionKey: SessionKey.forClient(
+            agentId: 'main',
+            clientKey: 'pc-home',
+          ),
           title: 'Home',
           draftText: 'draft-1',
         ),
@@ -51,7 +54,10 @@ void main() {
     final registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
-          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
+          sessionKey: SessionKey.forClient(
+            agentId: 'main',
+            clientKey: 'pc-home',
+          ),
           title: 'Home',
         ),
       ],
@@ -76,7 +82,10 @@ void main() {
     final registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
-          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
+          sessionKey: SessionKey.forClient(
+            agentId: 'main',
+            clientKey: 'pc-home',
+          ),
           title: 'Home',
         ),
       ],
@@ -92,7 +101,10 @@ void main() {
     final registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
-          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
+          sessionKey: SessionKey.forClient(
+            agentId: 'main',
+            clientKey: 'pc-home',
+          ),
           title: 'Home',
         ),
         LocalSessionEntry(

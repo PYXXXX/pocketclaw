@@ -106,7 +106,9 @@ class ChatShell extends StatelessWidget {
             children: [
               if (compact) ...[
                 DropdownButtonFormField<int>(
-                  initialValue: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
+                  initialValue: selectedSessionIndex >= 0
+                      ? selectedSessionIndex
+                      : 0,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     labelText: strings.sessionLabel,
@@ -163,7 +165,8 @@ class ChatShell extends StatelessWidget {
                           )
                         : ListView.separated(
                             itemCount: timeline.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final item = timeline[index];
                               return TimelineEntryCard(
@@ -243,14 +246,18 @@ class ChatShell extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
+                      onPressed:
+                          connectionState.phase ==
+                              GatewayConnectionPhase.connected
                           ? () => unawaited(onPickImages())
                           : null,
                       icon: const Icon(Icons.add_photo_alternate_outlined),
                       label: Text(strings.image),
                     ),
                     FilledButton(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
+                      onPressed:
+                          connectionState.phase ==
+                              GatewayConnectionPhase.connected
                           ? onSendMessage
                           : null,
                       child: Text(strings.send),
@@ -266,7 +273,9 @@ class ChatShell extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     IconButton(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
+                      onPressed:
+                          connectionState.phase ==
+                              GatewayConnectionPhase.connected
                           ? () => unawaited(onPickImages())
                           : null,
                       icon: const Icon(Icons.add_photo_alternate_outlined),
@@ -289,7 +298,9 @@ class ChatShell extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: connectionState.phase == GatewayConnectionPhase.connected
+                      onPressed:
+                          connectionState.phase ==
+                              GatewayConnectionPhase.connected
                           ? onSendMessage
                           : null,
                       child: Text(strings.send),
@@ -312,7 +323,9 @@ class ChatShell extends StatelessWidget {
         return Row(
           children: [
             NavigationRail(
-              selectedIndex: selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
+              selectedIndex: selectedSessionIndex >= 0
+                  ? selectedSessionIndex
+                  : 0,
               onDestinationSelected: onDestinationSelected,
               labelType: NavigationRailLabelType.all,
               destinations: [
@@ -398,7 +411,9 @@ class AgentSessionCard extends StatelessWidget {
                       label: Text(session.label),
                       onPressed: session.isCurrent
                           ? null
-                          : () => unawaited(onOpenGatewaySession(session.session)),
+                          : () => unawaited(
+                              onOpenGatewaySession(session.session),
+                            ),
                     ),
                 ],
               ),
@@ -443,20 +458,21 @@ class TimelineEntryCard extends StatelessWidget {
     final backgroundColor = isUser
         ? colorScheme.primaryContainer
         : isTool
-            ? colorScheme.tertiaryContainer
-            : isSystem
-                ? colorScheme.surfaceContainerHighest
-                : colorScheme.surfaceContainerLow;
+        ? colorScheme.tertiaryContainer
+        : isSystem
+        ? colorScheme.surfaceContainerHighest
+        : colorScheme.surfaceContainerLow;
     final foregroundColor = isUser
         ? colorScheme.onPrimaryContainer
         : isTool
-            ? colorScheme.onTertiaryContainer
-            : isSystem
-                ? colorScheme.onSurfaceVariant
-                : colorScheme.onSurface;
+        ? colorScheme.onTertiaryContainer
+        : isSystem
+        ? colorScheme.onSurfaceVariant
+        : colorScheme.onSurface;
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
     final maxWidth = compact ? double.infinity : 560.0;
-    final title = item.title ??
+    final title =
+        item.title ??
         switch (item.role) {
           ChatTimelineRole.system => strings.systemTitle,
           ChatTimelineRole.user => strings.youTitle,
@@ -466,8 +482,8 @@ class TimelineEntryCard extends StatelessWidget {
     final badgeLabel = item.status != null
         ? strings.timelineStatus(item.status!)
         : item.isStreaming
-            ? strings.streaming
-            : null;
+        ? strings.streaming
+        : null;
 
     return Align(
       alignment: alignment,
@@ -599,10 +615,7 @@ class _SessionSettingChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Chip(
-      avatar: Icon(
-        inherited ? Icons.keyboard_return : Icons.tune,
-        size: 18,
-      ),
+      avatar: Icon(inherited ? Icons.keyboard_return : Icons.tune, size: 18),
       label: Text('$label: $value'),
     );
   }
@@ -773,9 +786,7 @@ class SessionInfoCard extends StatelessWidget {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(strings.fastMode),
-              subtitle: Text(
-                strings.fastModeMapsTo(viewData.fastModeSummary),
-              ),
+              subtitle: Text(strings.fastModeMapsTo(viewData.fastModeSummary)),
               value: viewData.fastMode,
               onChanged: (value) => unawaited(onToggleFastMode(value)),
             ),

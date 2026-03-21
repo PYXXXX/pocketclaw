@@ -29,45 +29,52 @@ void main() {
       );
 
       final service = GatewayChatService(client);
-      final history = await service.loadHistory(sessionKey: 'agent:main:pc-home');
+      final history = await service.loadHistory(
+        sessionKey: 'agent:main:pc-home',
+      );
 
       expect(history.messages, hasLength(1));
       expect(history.messages.first.text, 'hello');
       expect(history.messages.first.role, ChatMessageRole.assistant);
     });
 
-    test('history parsing keeps image placeholders from content array', () async {
-      final client = TestGatewayClient(
-        onRequest: (request) async {
-          expect(request.method, GatewayMethodNames.chatHistory);
-          return GatewayResponse(
-            id: request.id,
-            ok: true,
-            payload: <String, Object?>{
-              'messages': <Map<String, Object?>>[
-                <String, Object?>{
-                  'role': 'user',
-                  'content': <Map<String, Object?>>[
-                    <String, Object?>{'type': 'text', 'text': 'look'},
-                    <String, Object?>{
-                      'type': 'image',
-                      'source': <String, Object?>{'type': 'base64'},
-                    },
-                  ],
-                },
-              ],
-            },
-          );
-        },
-      );
+    test(
+      'history parsing keeps image placeholders from content array',
+      () async {
+        final client = TestGatewayClient(
+          onRequest: (request) async {
+            expect(request.method, GatewayMethodNames.chatHistory);
+            return GatewayResponse(
+              id: request.id,
+              ok: true,
+              payload: <String, Object?>{
+                'messages': <Map<String, Object?>>[
+                  <String, Object?>{
+                    'role': 'user',
+                    'content': <Map<String, Object?>>[
+                      <String, Object?>{'type': 'text', 'text': 'look'},
+                      <String, Object?>{
+                        'type': 'image',
+                        'source': <String, Object?>{'type': 'base64'},
+                      },
+                    ],
+                  },
+                ],
+              },
+            );
+          },
+        );
 
-      final service = GatewayChatService(client);
-      final history = await service.loadHistory(sessionKey: 'agent:main:pc-home');
+        final service = GatewayChatService(client);
+        final history = await service.loadHistory(
+          sessionKey: 'agent:main:pc-home',
+        );
 
-      expect(history.messages, hasLength(1));
-      expect(history.messages.first.text, 'look\n[Image]');
-      expect(history.messages.first.role, ChatMessageRole.user);
-    });
+        expect(history.messages, hasLength(1));
+        expect(history.messages.first.text, 'look\n[Image]');
+        expect(history.messages.first.role, ChatMessageRole.user);
+      },
+    );
 
     test('sends chat with optional attachments passthrough', () async {
       final client = TestGatewayClient(

@@ -1,19 +1,13 @@
 typedef ViewDataTaskAction = Future<void> Function();
 
 final class ViewDataTask {
-  const ViewDataTask({
-    required this.label,
-    required this.action,
-  });
+  const ViewDataTask({required this.label, required this.action});
 
   final String label;
   final ViewDataTaskAction action;
 }
 
-enum ViewDataTaskStatus {
-  completed,
-  failed,
-}
+enum ViewDataTaskStatus { completed, failed }
 
 final class ViewDataTaskResult {
   const ViewDataTaskResult({
@@ -32,9 +26,7 @@ final class ViewDataTaskResult {
 final class CurrentViewDataLoader {
   const CurrentViewDataLoader();
 
-  Future<List<ViewDataTaskResult>> run(
-    Iterable<ViewDataTask> tasks,
-  ) async {
+  Future<List<ViewDataTaskResult>> run(Iterable<ViewDataTask> tasks) async {
     final results = <ViewDataTaskResult>[];
 
     for (final task in tasks) {

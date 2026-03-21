@@ -11,10 +11,8 @@ import 'gateway_device_token.dart';
 import 'gateway_error_codes.dart';
 import 'gateway_request_error.dart';
 
-typedef WebSocketChannelFactory = Future<WebSocketChannel> Function(
-  Uri uri,
-  Map<String, String> headers,
-);
+typedef WebSocketChannelFactory =
+    Future<WebSocketChannel> Function(Uri uri, Map<String, String> headers);
 
 final class _PreparedConnectAttempt {
   const _PreparedConnectAttempt({
@@ -35,9 +33,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     required this.config,
     GatewayFrameCodec? codec,
     WebSocketChannelFactory? channelFactory,
-  })  : _codec = codec ?? GatewayFrameCodec(),
-        _parser = const GatewayParser(),
-        _channelFactory = channelFactory ?? _defaultChannelFactory;
+  }) : _codec = codec ?? GatewayFrameCodec(),
+       _parser = const GatewayParser(),
+       _channelFactory = channelFactory ?? _defaultChannelFactory;
 
   final GatewayConnectionConfig config;
   final GatewayFrameCodec _codec;
@@ -294,7 +292,8 @@ final class GatewayWsClient implements ConnectableGatewayClient {
       _emitState(
         const GatewayConnectionState(
           phase: GatewayConnectionPhase.connecting,
-          message: 'Stored device token was rejected. Retrying with bootstrap auth…',
+          message:
+              'Stored device token was rejected. Retrying with bootstrap auth…',
         ),
       );
 
@@ -371,7 +370,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     }
 
     completer.completeError(
-      GatewayRequestError.fromPayload(response.error ?? const <String, Object?>{}),
+      GatewayRequestError.fromPayload(
+        response.error ?? const <String, Object?>{},
+      ),
     );
   }
 
@@ -434,10 +435,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
 
     final effective = Map<String, String>.from(headers);
     final existingCookie = effective['Cookie'];
-    effective['Cookie'] =
-        existingCookie == null || existingCookie.isEmpty
-            ? cookieHeader
-            : '$existingCookie; $cookieHeader';
+    effective['Cookie'] = existingCookie == null || existingCookie.isEmpty
+        ? cookieHeader
+        : '$existingCookie; $cookieHeader';
     return effective;
   }
 

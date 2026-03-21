@@ -1,11 +1,6 @@
 import 'chat_message.dart';
 
-enum ChatStreamState {
-  delta,
-  finalMessage,
-  aborted,
-  error,
-}
+enum ChatStreamState { delta, finalMessage, aborted, error }
 
 final class ChatStreamEvent {
   const ChatStreamEvent({

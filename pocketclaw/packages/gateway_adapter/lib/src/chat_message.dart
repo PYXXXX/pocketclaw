@@ -1,15 +1,7 @@
-enum ChatMessageRole {
-  system,
-  user,
-  assistant,
-}
+enum ChatMessageRole { system, user, assistant }
 
 final class ChatMessage {
-  const ChatMessage({
-    required this.role,
-    required this.text,
-    this.timestamp,
-  });
+  const ChatMessage({required this.role, required this.text, this.timestamp});
 
   final ChatMessageRole role;
   final String text;
@@ -53,19 +45,12 @@ final class ChatMessage {
         ? DateTime.fromMillisecondsSinceEpoch(timestampRaw, isUtc: true)
         : null;
 
-    return ChatMessage(
-      role: role,
-      text: text,
-      timestamp: timestamp,
-    );
+    return ChatMessage(role: role, text: text, timestamp: timestamp);
   }
 }
 
 final class ChatHistoryResult {
-  const ChatHistoryResult({
-    required this.messages,
-    this.thinkingLevel,
-  });
+  const ChatHistoryResult({required this.messages, this.thinkingLevel});
 
   final List<ChatMessage> messages;
   final String? thinkingLevel;

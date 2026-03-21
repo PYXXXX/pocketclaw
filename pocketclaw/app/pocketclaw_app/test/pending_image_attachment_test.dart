@@ -10,17 +10,11 @@ void main() {
       base64Content: 'aGVsbG8=',
     );
 
-    expect(
-      attachment.toGatewayAttachment(),
-      <String, Object?>{
-        'type': 'image',
-        'mimeType': 'image/png',
-        'content': 'aGVsbG8=',
-      },
-    );
-    expect(
-      attachment.dataUrl,
-      'data:image/png;base64,aGVsbG8=',
-    );
+    expect(attachment.toGatewayAttachment(), <String, Object?>{
+      'type': 'image',
+      'mimeType': 'image/png',
+      'content': 'aGVsbG8=',
+    });
+    expect(attachment.dataUrl, 'data:image/png;base64,aGVsbG8=');
   });
 }

@@ -11,7 +11,9 @@ final class GatewaySessionService {
   final GatewayClient _client;
   int _requestCounter = 0;
 
-  Future<SessionsListResult> list({SessionsListParams params = const SessionsListParams()}) async {
+  Future<SessionsListResult> list({
+    SessionsListParams params = const SessionsListParams(),
+  }) async {
     final response = await _client.request(
       GatewayRequest(
         id: _nextRequestId('sessions'),

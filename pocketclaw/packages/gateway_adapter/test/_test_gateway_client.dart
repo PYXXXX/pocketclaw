@@ -5,10 +5,11 @@ import 'package:gateway_transport/gateway_transport.dart';
 
 final class TestGatewayClient implements GatewayClient {
   TestGatewayClient({
-    required FutureOr<GatewayResponse> Function(GatewayRequest request) onRequest,
+    required FutureOr<GatewayResponse> Function(GatewayRequest request)
+    onRequest,
     Stream<GatewayEvent>? events,
-  })  : _onRequest = onRequest,
-        _events = events ?? const Stream<GatewayEvent>.empty();
+  }) : _onRequest = onRequest,
+       _events = events ?? const Stream<GatewayEvent>.empty();
 
   final FutureOr<GatewayResponse> Function(GatewayRequest request) _onRequest;
   final Stream<GatewayEvent> _events;

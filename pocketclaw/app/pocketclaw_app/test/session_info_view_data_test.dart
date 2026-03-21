@@ -54,10 +54,7 @@ void main() {
 
     expect(viewData.model.displayValue, 'custom-model');
     expect(viewData.model.inherited, isFalse);
-    expect(
-      viewData.model.options[1].label,
-      'custom-model (current)',
-    );
+    expect(viewData.model.options[1].label, 'custom-model (current)');
 
     expect(viewData.thinking.selectedValue, 'ultra');
     expect(viewData.thinking.displayValue, 'ultra');

@@ -3,25 +3,16 @@ import 'dart:async';
 typedef BootstrapAction = Future<void> Function();
 
 final class BootstrapTask {
-  const BootstrapTask({
-    required this.label,
-    required this.action,
-  });
+  const BootstrapTask({required this.label, required this.action});
 
   final String label;
   final BootstrapAction action;
 }
 
-enum BootstrapTaskStatus {
-  completed,
-  timedOut,
-}
+enum BootstrapTaskStatus { completed, timedOut }
 
 final class BootstrapTaskResult {
-  const BootstrapTaskResult({
-    required this.label,
-    required this.status,
-  });
+  const BootstrapTaskResult({required this.label, required this.status});
 
   final String label;
   final BootstrapTaskStatus status;
@@ -36,9 +27,7 @@ final class SequentialBootstrapRunner {
 
   final Duration stepTimeout;
 
-  Future<List<BootstrapTaskResult>> run(
-    Iterable<BootstrapTask> tasks,
-  ) async {
+  Future<List<BootstrapTaskResult>> run(Iterable<BootstrapTask> tasks) async {
     final results = <BootstrapTaskResult>[];
 
     for (final task in tasks) {

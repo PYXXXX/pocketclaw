@@ -69,7 +69,10 @@ void main() {
       canForgetCurrentSession: false,
     );
 
-    expect(viewData.cannotForgetHint, 'Keep at least one session on this device.');
+    expect(
+      viewData.cannotForgetHint,
+      'Keep at least one session on this device.',
+    );
   });
 
   test('CurrentSessionHeaderViewData supports zh labels', () {

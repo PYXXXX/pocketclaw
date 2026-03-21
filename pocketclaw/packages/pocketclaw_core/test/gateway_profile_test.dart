@@ -25,18 +25,12 @@ void main() {
     expect(decoded.url, profile.url);
     expect(decoded.token, profile.token);
     expect(decoded.password, profile.password);
-    expect(
-      decoded.cloudflareAccessClientId,
-      profile.cloudflareAccessClientId,
-    );
+    expect(decoded.cloudflareAccessClientId, profile.cloudflareAccessClientId);
     expect(
       decoded.cloudflareAccessClientSecret,
       profile.cloudflareAccessClientSecret,
     );
-    expect(
-      decoded.customRequestHeadersText,
-      profile.customRequestHeadersText,
-    );
+    expect(decoded.customRequestHeadersText, profile.customRequestHeadersText);
     expect(decoded.defaultAgentId, profile.defaultAgentId);
     expect(decoded.defaultSessionKey, profile.defaultSessionKey);
     expect(decoded.webSocketHeaders['CF-Access-Client-Id'], 'id-123.access');
@@ -55,12 +49,15 @@ void main() {
     });
   });
 
-  test('parseGatewayRequestHeadersText throws in strict mode for invalid lines', () {
-    expect(
-      () => parseGatewayRequestHeadersText('not-a-header', strict: true),
-      throwsA(isA<FormatException>()),
-    );
-  });
+  test(
+    'parseGatewayRequestHeadersText throws in strict mode for invalid lines',
+    () {
+      expect(
+        () => parseGatewayRequestHeadersText('not-a-header', strict: true),
+        throwsA(isA<FormatException>()),
+      );
+    },
+  );
 
   test('cloudflare shortcut fields override duplicate custom headers', () {
     const profile = GatewayProfile(

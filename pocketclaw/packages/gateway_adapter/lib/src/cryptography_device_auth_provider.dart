@@ -9,16 +9,17 @@ import 'gateway_device_auth_provider.dart';
 import 'gateway_device_identity.dart';
 import 'gateway_device_identity_store.dart';
 
-final class CryptographyDeviceAuthProvider implements GatewayDeviceAuthProvider {
+final class CryptographyDeviceAuthProvider
+    implements GatewayDeviceAuthProvider {
   CryptographyDeviceAuthProvider({
     required GatewayDeviceIdentityStore store,
     Ed25519? algorithm,
     Sha256? sha256,
     Random? random,
-  })  : _store = store,
-        _algorithm = algorithm ?? Ed25519(),
-        _sha256 = sha256 ?? Sha256(),
-        _random = random ?? Random.secure();
+  }) : _store = store,
+       _algorithm = algorithm ?? Ed25519(),
+       _sha256 = sha256 ?? Sha256(),
+       _random = random ?? Random.secure();
 
   final GatewayDeviceIdentityStore _store;
   final Ed25519 _algorithm;

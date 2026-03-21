@@ -2,12 +2,7 @@ import 'dart:convert';
 
 import 'package:gateway_transport/gateway_transport.dart';
 
-enum AgentRuntimeEventKind {
-  tool,
-  internal,
-  status,
-  unknown,
-}
+enum AgentRuntimeEventKind { tool, internal, status, unknown }
 
 final class AgentRuntimeEvent {
   const AgentRuntimeEvent({
@@ -64,9 +59,9 @@ final class AgentRuntimeEvent {
     final timestamp = switch (ts) {
       int value => DateTime.fromMillisecondsSinceEpoch(value, isUtc: true),
       num value => DateTime.fromMillisecondsSinceEpoch(
-          value.toInt(),
-          isUtc: true,
-        ),
+        value.toInt(),
+        isUtc: true,
+      ),
       _ => DateTime.now().toUtc(),
     };
 
@@ -85,31 +80,37 @@ final class AgentRuntimeEvent {
       'phase',
       'event',
     ]);
-    final argumentsPayload = _firstValue(
-      data,
-      const <String>['arguments', 'args', 'input', 'params', 'request'],
-    );
-    final resultPayload = _firstValue(
-      data,
-      const <String>['result', 'output', 'response'],
-    );
+    final argumentsPayload = _firstValue(data, const <String>[
+      'arguments',
+      'args',
+      'input',
+      'params',
+      'request',
+    ]);
+    final resultPayload = _firstValue(data, const <String>[
+      'result',
+      'output',
+      'response',
+    ]);
 
-    final isToolStream = normalizedStream.contains('tool') ||
+    final isToolStream =
+        normalizedStream.contains('tool') ||
         data.containsKey('toolName') ||
         data.containsKey('tool') ||
         data.containsKey('callId') ||
         data.containsKey('arguments') ||
         data.containsKey('result');
-    final isInternal = normalizedStream.contains('internal') ||
+    final isInternal =
+        normalizedStream.contains('internal') ||
         data['type'] == 'task_completion';
 
     final kind = isToolStream
         ? AgentRuntimeEventKind.tool
         : isInternal
-            ? AgentRuntimeEventKind.internal
-            : normalizedStream.contains('status')
-                ? AgentRuntimeEventKind.status
-                : AgentRuntimeEventKind.unknown;
+        ? AgentRuntimeEventKind.internal
+        : normalizedStream.contains('status')
+        ? AgentRuntimeEventKind.status
+        : AgentRuntimeEventKind.unknown;
 
     final summary = _summaryString(
       data: data,
@@ -126,9 +127,10 @@ final class AgentRuntimeEvent {
     );
 
     final title = switch (kind) {
-      AgentRuntimeEventKind.tool => toolName == null || toolName.isEmpty
-          ? 'Tool event'
-          : 'Tool · $toolName',
+      AgentRuntimeEventKind.tool =>
+        toolName == null || toolName.isEmpty
+            ? 'Tool event'
+            : 'Tool · $toolName',
       AgentRuntimeEventKind.internal => 'Internal event',
       AgentRuntimeEventKind.status => 'Run status',
       AgentRuntimeEventKind.unknown => stream,
@@ -197,16 +199,22 @@ final class AgentRuntimeEvent {
       final normalizedStatus = status?.toLowerCase();
       final toolLabel = toolName ?? 'tool';
       final previewSource = switch (normalizedStatus) {
-        'completed' || 'complete' || 'done' || 'success' || 'succeeded' =>
-          resultPayload,
+        'completed' ||
+        'complete' ||
+        'done' ||
+        'success' ||
+        'succeeded' => resultPayload,
         _ => argumentsPayload,
       };
       final preview = _previewString(previewSource);
       final prefix = switch (normalizedStatus) {
         'queued' || 'pending' => 'Queued $toolLabel',
         'running' || 'started' || 'start' => 'Calling $toolLabel',
-        'completed' || 'complete' || 'done' || 'success' || 'succeeded' =>
-          'Completed $toolLabel',
+        'completed' ||
+        'complete' ||
+        'done' ||
+        'success' ||
+        'succeeded' => 'Completed $toolLabel',
         'failed' || 'error' => 'Failed $toolLabel',
         'cancelled' || 'canceled' => 'Cancelled $toolLabel',
         _ when normalizedStatus != null && normalizedStatus.isNotEmpty =>

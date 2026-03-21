@@ -6,7 +6,8 @@ abstract interface class GatewayDeviceIdentityStore {
   Future<void> write(GatewayDeviceIdentity identity);
 }
 
-final class MemoryGatewayDeviceIdentityStore implements GatewayDeviceIdentityStore {
+final class MemoryGatewayDeviceIdentityStore
+    implements GatewayDeviceIdentityStore {
   GatewayDeviceIdentity? _identity;
 
   @override

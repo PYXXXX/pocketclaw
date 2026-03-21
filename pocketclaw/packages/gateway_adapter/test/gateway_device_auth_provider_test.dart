@@ -11,7 +11,9 @@ void main() {
 
       final device = await provider.buildDeviceAuth(
         challenge: const ConnectChallenge(nonce: 'nonce-1'),
-        connectRequest: const GatewayConnectRequestFactory().build(token: 'abc'),
+        connectRequest: const GatewayConnectRequestFactory().build(
+          token: 'abc',
+        ),
       );
 
       expect(device['id'], isA<String>());

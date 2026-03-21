@@ -58,12 +58,14 @@ void main() {
         ),
       );
 
-      final response = await service.patch(const SessionPatchParams(
-        key: 'agent:main:pc-home',
-        label: 'Pocket main',
-        model: 'codex-lb/gpt-5.4',
-        fastMode: true,
-      ));
+      final response = await service.patch(
+        const SessionPatchParams(
+          key: 'agent:main:pc-home',
+          label: 'Pocket main',
+          model: 'codex-lb/gpt-5.4',
+          fastMode: true,
+        ),
+      );
 
       expect(response.ok, isTrue);
     });
@@ -86,13 +88,15 @@ void main() {
         ),
       );
 
-      final response = await service.patch(const SessionPatchParams(
-        key: 'agent:main:pc-home',
-        clearModel: true,
-        clearThinkingLevel: true,
-        clearFastMode: true,
-        clearVerboseLevel: true,
-      ));
+      final response = await service.patch(
+        const SessionPatchParams(
+          key: 'agent:main:pc-home',
+          clearModel: true,
+          clearThinkingLevel: true,
+          clearFastMode: true,
+          clearVerboseLevel: true,
+        ),
+      );
 
       expect(response.ok, isTrue);
     });

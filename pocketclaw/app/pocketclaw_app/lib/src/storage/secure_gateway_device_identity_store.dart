@@ -27,9 +27,6 @@ final class SecureGatewayDeviceIdentityStore
 
   @override
   Future<void> write(GatewayDeviceIdentity identity) {
-    return _store.write(
-      key: storageKey,
-      value: jsonEncode(identity.toJson()),
-    );
+    return _store.write(key: storageKey, value: jsonEncode(identity.toJson()));
   }
 }

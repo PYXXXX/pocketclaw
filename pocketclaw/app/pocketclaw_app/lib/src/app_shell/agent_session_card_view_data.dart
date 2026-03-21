@@ -50,7 +50,9 @@ final class AgentSessionCardViewData {
         return leftLabel.compareTo(rightLabel);
       });
 
-    final visibleSessions = sortedGatewaySessions.take(maxGatewaySessions).toList();
+    final visibleSessions = sortedGatewaySessions
+        .take(maxGatewaySessions)
+        .toList();
     return AgentSessionCardViewData(
       agents: effectiveAgents
           .map(
@@ -76,8 +78,8 @@ final class AgentSessionCardViewData {
           .toList(),
       hiddenGatewaySessionCount:
           sortedGatewaySessions.length > maxGatewaySessions
-              ? sortedGatewaySessions.length - maxGatewaySessions
-              : 0,
+          ? sortedGatewaySessions.length - maxGatewaySessions
+          : 0,
       hasGatewaySessions: sortedGatewaySessions.isNotEmpty,
     );
   }

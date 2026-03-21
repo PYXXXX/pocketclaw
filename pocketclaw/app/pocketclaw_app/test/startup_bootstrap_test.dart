@@ -44,32 +44,35 @@ void main() {
     );
   });
 
-  test('SequentialBootstrapRunner marks timed out tasks and continues', () async {
-    final visited = <String>[];
-    final completer = Completer<void>();
-    final runner = const SequentialBootstrapRunner(
-      stepTimeout: Duration(milliseconds: 10),
-    );
+  test(
+    'SequentialBootstrapRunner marks timed out tasks and continues',
+    () async {
+      final visited = <String>[];
+      final completer = Completer<void>();
+      final runner = const SequentialBootstrapRunner(
+        stepTimeout: Duration(milliseconds: 10),
+      );
 
-    final results = await runner.run(<BootstrapTask>[
-      BootstrapTask(
-        label: 'stuck',
-        action: () async {
-          visited.add('stuck:start');
-          await completer.future;
-        },
-      ),
-      BootstrapTask(
-        label: 'next',
-        action: () async {
-          visited.add('next:start');
-        },
-      ),
-    ]);
+      final results = await runner.run(<BootstrapTask>[
+        BootstrapTask(
+          label: 'stuck',
+          action: () async {
+            visited.add('stuck:start');
+            await completer.future;
+          },
+        ),
+        BootstrapTask(
+          label: 'next',
+          action: () async {
+            visited.add('next:start');
+          },
+        ),
+      ]);
 
-    expect(visited, <String>['stuck:start', 'next:start']);
-    expect(results.length, 2);
-    expect(results.first.didTimeout, isTrue);
-    expect(results.last.didTimeout, isFalse);
-  });
+      expect(visited, <String>['stuck:start', 'next:start']);
+      expect(results.length, 2);
+      expect(results.first.didTimeout, isTrue);
+      expect(results.last.didTimeout, isFalse);
+    },
+  );
 }

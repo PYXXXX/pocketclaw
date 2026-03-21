@@ -7,10 +7,7 @@ enum GatewayConnectionPhase {
 }
 
 final class GatewayConnectionState {
-  const GatewayConnectionState({
-    required this.phase,
-    this.message,
-  });
+  const GatewayConnectionState({required this.phase, this.message});
 
   final GatewayConnectionPhase phase;
   final String? message;

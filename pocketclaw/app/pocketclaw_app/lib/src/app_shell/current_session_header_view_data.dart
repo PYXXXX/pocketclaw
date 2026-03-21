@@ -48,20 +48,24 @@ final class CurrentSessionHeaderViewData {
           ? gatewayLabel
           : null,
       hasLocalDraft: hasLocalDraft,
-      draftStatusLabel:
-          hasLocalDraft ? strings.draftSavedLocally : strings.noLocalDraft,
-      forgetActionLabel:
-          isGatewayBacked ? strings.forgetLocalShortcut : strings.removeFromPhone,
+      draftStatusLabel: hasLocalDraft
+          ? strings.draftSavedLocally
+          : strings.noLocalDraft,
+      forgetActionLabel: isGatewayBacked
+          ? strings.forgetLocalShortcut
+          : strings.removeFromPhone,
       forgetDialogTitle: isGatewayBacked
           ? strings.forgetGatewayShortcutTitle
           : strings.removeLocalSessionTitle,
       forgetDialogMessage: isGatewayBacked
           ? strings.forgetGatewayShortcutMessage
           : strings.removeLocalSessionMessage,
-      forgetConfirmLabel:
-          isGatewayBacked ? strings.forgetShortcut : strings.remove,
-      cannotForgetHint:
-          canForgetCurrentSession ? null : strings.keepAtLeastOneSession,
+      forgetConfirmLabel: isGatewayBacked
+          ? strings.forgetShortcut
+          : strings.remove,
+      cannotForgetHint: canForgetCurrentSession
+          ? null
+          : strings.keepAtLeastOneSession,
     );
   }
 }

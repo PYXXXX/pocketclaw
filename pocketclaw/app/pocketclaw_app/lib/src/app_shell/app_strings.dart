@@ -21,12 +21,10 @@ final class AppStrings {
       _isZh ? '尚未配置 Gateway' : 'No Gateway configured yet';
   String get bootstrapSaved =>
       _isZh ? '已保存引导凭据' : 'Bootstrap credentials saved';
-  String get noBootstrap =>
-      _isZh ? '未配置引导凭据' : 'No bootstrap credentials';
+  String get noBootstrap => _isZh ? '未配置引导凭据' : 'No bootstrap credentials';
   String get reconnectTokenAvailable =>
       _isZh ? '可用重连令牌' : 'Reconnect token available';
-  String get deviceIdentitySaved =>
-      _isZh ? '设备身份已保存' : 'Device identity saved';
+  String get deviceIdentitySaved => _isZh ? '设备身份已保存' : 'Device identity saved';
   String get firstPairingLikely =>
       _isZh ? '可能需要首次配对' : 'First pairing likely needed';
   String get loopbackUrl => _isZh ? '本机回环地址' : 'Loopback URL';
@@ -34,8 +32,7 @@ final class AppStrings {
       ? '在真机上，127.0.0.1 / localhost 指向的是手机自己。请改用 Gateway 所在主机的 IP、局域网主机名、Tailscale 名称或公网域名。'
       : '127.0.0.1 / localhost points to the phone itself on a real device. Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead.';
   String get startSetup => _isZh ? '开始设置' : 'Start setup';
-  String get onboardingComplete =>
-      _isZh ? '初始化已完成' : 'Onboarding complete';
+  String get onboardingComplete => _isZh ? '初始化已完成' : 'Onboarding complete';
   String get manualConnect => _isZh ? '手动连接' : 'Manual connect';
   String get setupCodeLater => _isZh ? '配置码（稍后）' : 'Setup code (later)';
   String get gatewayConfiguration =>
@@ -65,9 +62,8 @@ final class AppStrings {
   String get moreOptionsHelp => _isZh
       ? '把 Cloudflare Access 与自定义请求头折叠到这里，降低普通用户的操作压力。'
       : 'Cloudflare Access and custom request headers live here so the default connect flow stays simple.';
-  String get customRequestHeaders => _isZh
-      ? '自定义请求头（可选）'
-      : 'Custom request headers (optional)';
+  String get customRequestHeaders =>
+      _isZh ? '自定义请求头（可选）' : 'Custom request headers (optional)';
   String get customRequestHeadersHint => _isZh
       ? '每行一条，例如\nX-Custom-Auth: value\nCF-Access-Client-Id: ...'
       : 'One per line, for example\nX-Custom-Auth: value\nCF-Access-Client-Id: ...';
@@ -117,13 +113,11 @@ final class AppStrings {
   String get welcomeDescription => _isZh
       ? 'PocketClaw 用于连接现有的 OpenClaw Gateway。先完成快速初始化，再选择这台手机的连接方式。'
       : 'PocketClaw connects to an existing OpenClaw Gateway. Finish the quick onboarding, then choose how this phone should connect.';
-  String get chooseMethodTitle =>
-      _isZh ? '选择连接方式' : 'Choose connection method';
+  String get chooseMethodTitle => _isZh ? '选择连接方式' : 'Choose connection method';
   String get chooseMethodDescription => _isZh
       ? '手动连接是基础路径，应始终可用。配置码流程可以在客户端路径成熟后再补。'
       : 'Manual connect is the baseline flow and should always work. Setup code can be added later when the client path is ready.';
-  String get manualConnectionTitle =>
-      _isZh ? '手动连接' : 'Manual connection';
+  String get manualConnectionTitle => _isZh ? '手动连接' : 'Manual connection';
   String get manualConnectionDescription => _isZh
       ? '输入 Gateway 地址和可选引导凭据。PocketClaw 会把可复用认证保存在本地，方便下次重连。'
       : 'Enter the Gateway URL and optional bootstrap credentials. PocketClaw will store reusable auth locally so reconnect can work next time.';
@@ -136,8 +130,7 @@ final class AppStrings {
   String get authenticationRequiredDescription => _isZh
       ? 'Gateway 已返回明确的认证阻塞。请检查 token / 密码 / 设备认证状态，或先完成设备批准后再重试。'
       : 'The Gateway reported an explicit authentication blocker. Check the token, password, or device-auth state, or approve this device before retrying.';
-  String get pairingPendingTitle =>
-      _isZh ? '等待配对批准' : 'Pairing pending';
+  String get pairingPendingTitle => _isZh ? '等待配对批准' : 'Pairing pending';
   String get pairingPendingDescription => _isZh
       ? 'Gateway 仍需要设备批准或配对。一旦批准，PocketClaw 应该能自动复用下发的 device token。'
       : 'The Gateway still needs device approval or pairing. Once approved, PocketClaw should be able to reuse the issued device token automatically.';
@@ -175,9 +168,8 @@ final class AppStrings {
   String get remove => _isZh ? '移除' : 'Remove';
   String get cancel => _isZh ? '取消' : 'Cancel';
   String get codeLabel => _isZh ? '代码' : 'Code';
-  String get keepAtLeastOneSession => _isZh
-      ? '请至少在这台设备上保留一个会话。'
-      : 'Keep at least one session on this device.';
+  String get keepAtLeastOneSession =>
+      _isZh ? '请至少在这台设备上保留一个会话。' : 'Keep at least one session on this device.';
   String get home => _isZh ? '主页' : 'Home';
   String agentHomeTitle(String displayName) =>
       _isZh ? '$displayName · 主页' : '$displayName · Home';
@@ -222,9 +214,8 @@ final class AppStrings {
   String get fastMode => _isZh ? '快速模式' : 'Fast mode';
   String get assistantFallback => _isZh ? '助手' : 'Assistant';
   String get gatewayDefault => _isZh ? 'Gateway 默认值' : 'gateway default';
-  String defaultInherit(String defaultLabel) => _isZh
-      ? '默认（继承：$defaultLabel）'
-      : 'Default (inherit: $defaultLabel)';
+  String defaultInherit(String defaultLabel) =>
+      _isZh ? '默认（继承：$defaultLabel）' : 'Default (inherit: $defaultLabel)';
   String defaultValue(String defaultLabel) =>
       _isZh ? '默认（$defaultLabel）' : 'Default ($defaultLabel)';
   String currentValue(String value) =>
@@ -235,15 +226,14 @@ final class AppStrings {
     }
     return value ? 'on' : 'off';
   }
-  String inheritingDefault(String label) => _isZh
-      ? '继承默认值 · $label'
-      : 'Inheriting default · $label';
+
+  String inheritingDefault(String label) =>
+      _isZh ? '继承默认值 · $label' : 'Inheriting default · $label';
   String overrideActive(bool enabled) => _isZh
       ? '已覆盖 · ${boolLabel(enabled)}'
       : 'Override active · ${boolLabel(enabled)}';
-  String useDefaultFastMode(String label) => _isZh
-      ? '使用默认快速模式（$label）'
-      : 'Use default fast mode ($label)';
+  String useDefaultFastMode(String label) =>
+      _isZh ? '使用默认快速模式（$label）' : 'Use default fast mode ($label)';
   String fastModeMapsTo(String summary) => _isZh
       ? '对应 sessions.patch fastMode · $summary'
       : 'Maps to sessions.patch fastMode · $summary';
@@ -257,8 +247,7 @@ final class AppStrings {
   String taskFailed(String label) => _isZh ? '$label 失败' : '$label failed';
   String get savedGatewayConfigurationRestore =>
       _isZh ? '恢复已保存的 Gateway 配置' : 'Saved Gateway configuration restore';
-  String get localSessionRestore =>
-      _isZh ? '恢复本地会话' : 'Local session restore';
+  String get localSessionRestore => _isZh ? '恢复本地会话' : 'Local session restore';
   String get connectFlowPreferenceRestore =>
       _isZh ? '恢复连接流程偏好' : 'Connect flow preference restore';
   String get storedDeviceAuthRefresh =>
@@ -271,12 +260,10 @@ final class AppStrings {
   String get modelListLoad => _isZh ? '模型列表' : 'Model list';
   String get sessionInfoLoad => _isZh ? '会话信息' : 'Session info';
   String get agentListLoad => _isZh ? 'Agent 列表' : 'Agent list';
-  String loadIssue(String label, Object error) => _isZh
-      ? '加载问题：$label：$error'
-      : 'Load issue: $label: $error';
-  String loadFailed(String label, String summary) => _isZh
-      ? '$label 加载失败。$summary'
-      : '$label failed to load. $summary';
+  String loadIssue(String label, Object error) =>
+      _isZh ? '加载问题：$label：$error' : 'Load issue: $label: $error';
+  String loadFailed(String label, String summary) =>
+      _isZh ? '$label 加载失败。$summary' : '$label failed to load. $summary';
 
   String get secureConfigurationRestoreFailed =>
       _isZh ? '恢复安全配置失败' : 'Secure configuration restore failed';
@@ -284,14 +271,12 @@ final class AppStrings {
       _isZh ? '恢复本地会话失败' : 'Local session restore failed';
   String get connectFlowRestoreFailed =>
       _isZh ? '恢复连接流程偏好失败' : 'Connect flow restore failed';
-  String get storedDeviceAuthRefreshFailed => _isZh
-      ? '刷新已保存设备认证状态失败'
-      : 'Stored device auth refresh failed';
+  String get storedDeviceAuthRefreshFailed =>
+      _isZh ? '刷新已保存设备认证状态失败' : 'Stored device auth refresh failed';
   String get savingLocalSessionsFailed =>
       _isZh ? '保存本地会话失败' : 'Saving local sessions failed';
-  String get savingConnectFlowPreferencesFailed => _isZh
-      ? '保存连接流程偏好失败'
-      : 'Saving connect flow preferences failed';
+  String get savingConnectFlowPreferencesFailed =>
+      _isZh ? '保存连接流程偏好失败' : 'Saving connect flow preferences failed';
   String get renameFailed => _isZh ? '重命名失败' : 'Rename failed';
   String get gatewayConfigurationInvalid =>
       _isZh ? 'Gateway 配置无效' : 'Gateway configuration is invalid';
@@ -318,9 +303,8 @@ final class AppStrings {
   String get loopbackWarningMessage => _isZh
       ? '警告：在真机上，127.0.0.1 / localhost 指向的是手机自己。请改用 Gateway 所在主机的 IP、局域网主机名、Tailscale 名称或公网域名。'
       : 'Warning: 127.0.0.1 / localhost points to the phone itself on a real device. Use your Gateway host IP, LAN hostname, Tailscale name, or public domain instead.';
-  String createdLocalSession(String key) => _isZh
-      ? '已创建本地会话 $key'
-      : 'Created local session $key';
+  String createdLocalSession(String key) =>
+      _isZh ? '已创建本地会话 $key' : 'Created local session $key';
   String forgotLocalShortcutFor(String key, String nextTitle) => _isZh
       ? '已忘记 $key 的本地快捷入口。正在加载 $nextTitle…'
       : 'Forgot local shortcut for $key. Loading $nextTitle…';
@@ -329,11 +313,9 @@ final class AppStrings {
       : 'Removed local session $key from this phone. Loading $nextTitle…';
   String get noSupportedImageFilesAdded =>
       _isZh ? '没有添加受支持的图片文件。' : 'No supported image files were added.';
-  String get enterGatewayUrlBeforeConnecting => _isZh
-      ? '请先输入 Gateway 地址再连接。'
-      : 'Enter a Gateway URL before connecting.';
-  String connectedTo(String url) =>
-      _isZh ? '已连接到 $url' : 'Connected to $url';
+  String get enterGatewayUrlBeforeConnecting =>
+      _isZh ? '请先输入 Gateway 地址再连接。' : 'Enter a Gateway URL before connecting.';
+  String connectedTo(String url) => _isZh ? '已连接到 $url' : 'Connected to $url';
   String disconnectedFrom(String url) =>
       _isZh ? '已从 $url 断开连接' : 'Disconnected from $url';
   String get optimisticSingleImage => _isZh ? '[图片]' : '[Image]';

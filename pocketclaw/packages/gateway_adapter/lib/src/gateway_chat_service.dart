@@ -31,7 +31,10 @@ final class GatewayChatService {
       GatewayRequest(
         id: _nextRequestId('history'),
         method: GatewayMethodNames.chatHistory,
-        params: ChatHistoryParams(sessionKey: sessionKey, limit: limit).toJson(),
+        params: ChatHistoryParams(
+          sessionKey: sessionKey,
+          limit: limit,
+        ).toJson(),
       ),
     );
 
@@ -72,10 +75,7 @@ final class GatewayChatService {
     );
   }
 
-  Future<GatewayResponse> abort({
-    required String sessionKey,
-    String? runId,
-  }) {
+  Future<GatewayResponse> abort({required String sessionKey, String? runId}) {
     return _client.request(
       GatewayRequest(
         id: _nextRequestId('abort'),

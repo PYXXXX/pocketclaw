@@ -1,8 +1,5 @@
 final class ModelInfo {
-  const ModelInfo({
-    required this.id,
-    this.provider,
-  });
+  const ModelInfo({required this.id, this.provider});
 
   final String id;
   final String? provider;

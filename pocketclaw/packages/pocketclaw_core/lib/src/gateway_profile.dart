@@ -83,8 +83,7 @@ final class GatewayProfile {
       headers['CF-Access-Client-Id'] = cloudflareAccessClientId.trim();
     }
     if (cloudflareAccessClientSecret.trim().isNotEmpty) {
-      headers['CF-Access-Client-Secret'] =
-          cloudflareAccessClientSecret.trim();
+      headers['CF-Access-Client-Secret'] = cloudflareAccessClientSecret.trim();
     }
     return headers;
   }

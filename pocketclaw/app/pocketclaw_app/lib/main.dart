@@ -89,8 +89,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   final SecureKeyValueStore _secureStore = FlutterSecureKeyValueStore();
   final ChatTimelineController _timelineController = ChatTimelineController();
 
-  late final GatewayProfileStore _profileStore =
-      SecureGatewayProfileStore(_secureStore);
+  late final GatewayProfileStore _profileStore = SecureGatewayProfileStore(
+    _secureStore,
+  );
   late final GatewayDeviceIdentityStore _deviceIdentityStore =
       SecureGatewayDeviceIdentityStore(_secureStore);
   late final GatewayDeviceTokenStore _deviceTokenStore =
@@ -149,7 +150,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _registry = LocalSessionRegistry(
       initialSessions: <LocalSessionEntry>[
         LocalSessionEntry(
-          sessionKey: SessionKey.forClient(agentId: 'main', clientKey: 'pc-home'),
+          sessionKey: SessionKey.forClient(
+            agentId: 'main',
+            clientKey: 'pc-home',
+          ),
           title: _strings.home,
         ),
       ],
@@ -214,24 +218,25 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   Future<void> _bootstrapLocalState() async {
     try {
-      final results = await const SequentialBootstrapRunner().run(<BootstrapTask>[
-        BootstrapTask(
-          label: _strings.savedGatewayConfigurationRestore,
-          action: _restorePersistedGatewayProfile,
-        ),
-        BootstrapTask(
-          label: _strings.localSessionRestore,
-          action: _restorePersistedSessionRegistry,
-        ),
-        BootstrapTask(
-          label: _strings.connectFlowPreferenceRestore,
-          action: _restoreConnectFlowPreferences,
-        ),
-        BootstrapTask(
-          label: _strings.storedDeviceAuthRefresh,
-          action: _refreshStoredDeviceAuthState,
-        ),
-      ]);
+      final results = await const SequentialBootstrapRunner()
+          .run(<BootstrapTask>[
+            BootstrapTask(
+              label: _strings.savedGatewayConfigurationRestore,
+              action: _restorePersistedGatewayProfile,
+            ),
+            BootstrapTask(
+              label: _strings.localSessionRestore,
+              action: _restorePersistedSessionRegistry,
+            ),
+            BootstrapTask(
+              label: _strings.connectFlowPreferenceRestore,
+              action: _restoreConnectFlowPreferences,
+            ),
+            BootstrapTask(
+              label: _strings.storedDeviceAuthRefresh,
+              action: _refreshStoredDeviceAuthState,
+            ),
+          ]);
 
       if (!mounted) {
         return;
@@ -265,8 +270,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _gatewayUrlController.text = profile.url;
     _tokenController.text = profile.token;
     _passwordController.text = profile.password;
-    _cloudflareAccessClientIdController.text =
-        profile.cloudflareAccessClientId;
+    _cloudflareAccessClientIdController.text = profile.cloudflareAccessClientId;
     _cloudflareAccessClientSecretController.text =
         profile.cloudflareAccessClientSecret;
     _customRequestHeadersController.text = profile.customRequestHeadersText;
@@ -498,7 +502,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   void _syncCurrentSessionDraft({bool schedulePersist = true}) {
-    final updated = _currentSession.copyWith(draftText: _messageController.text);
+    final updated = _currentSession.copyWith(
+      draftText: _messageController.text,
+    );
     _registry.replace(updated);
     _currentSession = updated;
     if (schedulePersist) {
@@ -567,7 +573,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _openOrCreateAgentHomeSession(String agentId) async {
-    final homeKey = SessionKey.forClient(agentId: agentId, clientKey: 'pc-home');
+    final homeKey = SessionKey.forClient(
+      agentId: agentId,
+      clientKey: 'pc-home',
+    );
     for (final session in _registry.sessions) {
       if (session.sessionKey.value == homeKey.value) {
         await _selectCurrentSession(session);
@@ -791,7 +800,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   bool _hasUnsavedGatewayConfiguration() {
-    return normalizeGatewayUrl(_gatewayUrlController.text) != _gatewayProfile.url ||
+    return normalizeGatewayUrl(_gatewayUrlController.text) !=
+            _gatewayProfile.url ||
         _tokenController.text != _gatewayProfile.token ||
         _passwordController.text != _gatewayProfile.password ||
         _cloudflareAccessClientIdController.text !=
@@ -817,10 +827,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       url: normalizeGatewayUrl(_gatewayUrlController.text),
       token: _tokenController.text,
       password: _passwordController.text,
-      cloudflareAccessClientId:
-          _cloudflareAccessClientIdController.text.trim(),
-      cloudflareAccessClientSecret:
-          _cloudflareAccessClientSecretController.text.trim(),
+      cloudflareAccessClientId: _cloudflareAccessClientIdController.text.trim(),
+      cloudflareAccessClientSecret: _cloudflareAccessClientSecretController.text
+          .trim(),
       customRequestHeadersText: _customRequestHeadersController.text,
     );
     _applyProfileToControllers(profile);
@@ -857,7 +866,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     try {
       await _profileStore.write(profile);
     } catch (error) {
-      _recordError(error, prefix: _strings.savingEncryptedGatewayConfigurationFailed);
+      _recordError(
+        error,
+        prefix: _strings.savingEncryptedGatewayConfigurationFailed,
+      );
     }
 
     await _persistConnectFlowPreferences();
@@ -897,18 +909,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         label: _strings.assistantIdentityLoad,
         action: _loadAssistantIdentity,
       ),
-      ViewDataTask(
-        label: _strings.modelListLoad,
-        action: _loadModels,
-      ),
-      ViewDataTask(
-        label: _strings.sessionInfoLoad,
-        action: _loadSessionInfo,
-      ),
-      ViewDataTask(
-        label: _strings.agentListLoad,
-        action: _loadAgents,
-      ),
+      ViewDataTask(label: _strings.modelListLoad, action: _loadModels),
+      ViewDataTask(label: _strings.sessionInfoLoad, action: _loadSessionInfo),
+      ViewDataTask(label: _strings.agentListLoad, action: _loadAgents),
     ]);
 
     if (!mounted) {
@@ -926,7 +929,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     final firstFailure = failures.first;
     final firstError =
-        firstFailure.error ?? StateError(_strings.taskFailed(firstFailure.label));
+        firstFailure.error ??
+        StateError(_strings.taskFailed(firstFailure.label));
     final guidance = gatewayErrorGuidanceFor(
       firstError,
       configuredUrl: _gatewayProfile.url,
@@ -1076,9 +1080,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       return;
     }
     final strings = AppStrings.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(strings.copied)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.copied)));
   }
 
   void _appendTimeline(
@@ -1113,7 +1117,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     );
     final entry = LocalSessionEntry(
       sessionKey: sessionKey,
-      title: '${_displayNameForAgent(_selectedAgentId)} ${_registry.sessions.length + 1}',
+      title:
+          '${_displayNameForAgent(_selectedAgentId)} ${_registry.sessions.length + 1}',
     );
 
     setState(() {
@@ -1290,7 +1295,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _connectFlowStage = ConnectFlowStage.ready;
         _selectedDestination = AppDestination.chat;
       });
-      _appendTimeline(ChatTimelineRole.system, _strings.connectedTo(_gatewayProfile.url));
+      _appendTimeline(
+        ChatTimelineRole.system,
+        _strings.connectedTo(_gatewayProfile.url),
+      );
       await _refreshStoredDeviceAuthState();
       await _loadCurrentViewData();
     } catch (error) {
@@ -1310,7 +1318,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _selectedDestination = AppDestination.connect;
       }
     });
-    _appendTimeline(ChatTimelineRole.system, _strings.disconnectedFrom(_gatewayProfile.url));
+    _appendTimeline(
+      ChatTimelineRole.system,
+      _strings.disconnectedFrom(_gatewayProfile.url),
+    );
   }
 
   Future<void> _sendMessage() async {
@@ -1530,8 +1541,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                     _cloudflareAccessClientIdController,
                 cloudflareAccessClientSecretController:
                     _cloudflareAccessClientSecretController,
-                customRequestHeadersController:
-                    _customRequestHeadersController,
+                customRequestHeadersController: _customRequestHeadersController,
                 onApply: _applyGatewayConfiguration,
               ),
               const SizedBox(height: 12),
@@ -1638,20 +1648,20 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 duration: const Duration(milliseconds: 220),
                 child: switch (_selectedDestination) {
                   AppDestination.connect => KeyedSubtree(
-                      key: const ValueKey<String>('connect-pane'),
-                      child: connectPane,
-                    ),
+                    key: const ValueKey<String>('connect-pane'),
+                    child: connectPane,
+                  ),
                   AppDestination.chat when showChatShell => KeyedSubtree(
-                      key: const ValueKey<String>('chat-pane'),
-                      child: chatPane,
-                    ),
+                    key: const ValueKey<String>('chat-pane'),
+                    child: chatPane,
+                  ),
                   AppDestination.chat => KeyedSubtree(
-                      key: const ValueKey<String>('chat-locked'),
-                      child: ChatLockedPlaceholder(
-                        onOpenConnect: () =>
-                            _selectDestination(AppDestination.connect),
-                      ),
+                    key: const ValueKey<String>('chat-locked'),
+                    child: ChatLockedPlaceholder(
+                      onOpenConnect: () =>
+                          _selectDestination(AppDestination.connect),
                     ),
+                  ),
                 },
               ),
             ),
@@ -1672,18 +1682,18 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           body: _isBootstrapping
               ? const Center(child: CircularProgressIndicator())
               : compact
-                  ? mobileBody
-                  : Row(
-                      children: [
-                        SizedBox(width: 420, child: connectPane),
-                        const VerticalDivider(width: 1),
-                        Expanded(
-                          child: showChatShell
-                              ? chatPane
-                              : const ChatLockedPlaceholder(),
-                        ),
-                      ],
+              ? mobileBody
+              : Row(
+                  children: [
+                    SizedBox(width: 420, child: connectPane),
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: showChatShell
+                          ? chatPane
+                          : const ChatLockedPlaceholder(),
                     ),
+                  ],
+                ),
           bottomNavigationBar: _isBootstrapping || !compact
               ? null
               : NavigationBar(

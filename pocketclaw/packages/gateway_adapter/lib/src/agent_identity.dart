@@ -1,9 +1,5 @@
 final class AgentIdentity {
-  const AgentIdentity({
-    required this.name,
-    this.agentId,
-    this.avatar,
-  });
+  const AgentIdentity({required this.name, this.agentId, this.avatar});
 
   final String name;
   final String? agentId;
