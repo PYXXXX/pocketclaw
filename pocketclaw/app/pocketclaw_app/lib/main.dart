@@ -932,7 +932,6 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     setState(() {
       _lastError = 'Load issue: ${firstFailure.label}: $firstError';
-      _lastErrorStage = ConnectFlowStage.ready;
       _lastGuidance = guidance;
       if (_connectionState.phase == GatewayConnectionPhase.connected) {
         _connectFlowStage = ConnectFlowStage.ready;
@@ -1058,7 +1057,6 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     final nextStage = resolveConnectFlowStageForError(error);
     setState(() {
       _lastError = prefix == null ? error.toString() : '$prefix: $error';
-      _lastErrorStage = nextStage;
       _lastGuidance = guidance;
       _connectFlowStage = nextStage;
       _selectedDestination = AppDestination.connect;
@@ -1318,7 +1316,6 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         );
         _activeRunId = response.payload?['runId'] as String?;
         _lastError = null;
-        _lastErrorStage = null;
         _lastGuidance = null;
       });
 
@@ -1674,11 +1671,4 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         return Icons.handyman_outlined;
     }
   }
-}
-ned;
-      case ChatTimelineRole.tool:
-        return Icons.handyman_outlined;
-    }
-  }
-}
 }

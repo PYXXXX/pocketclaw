@@ -7,6 +7,7 @@ import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import '../chat/pending_image_attachment.dart';
+import 'session_info_view_data.dart';
 
 typedef ChatRoleIconBuilder = IconData Function(ChatTimelineRole role);
 
@@ -667,40 +668,12 @@ class SessionInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const defaultModelValue = '__default_model__';
-    const defaultThinkingValue = '__default_thinking__';
-    const defaultVerboseValue = '__default_verbose__';
-    const thinkingChoices = <String>['off', 'minimal', 'low', 'medium', 'high'];
-    const verboseChoices = <String>['off', 'low', 'medium', 'high'];
-
-    final currentModelOverride = sessionInfo?.model;
-    final currentThinkingOverride = sessionInfo?.thinkingLevel;
-    final currentVerboseOverride = sessionInfo?.verboseLevel;
-    final inheritedModel = sessionDefaults?.model;
-    final inheritedThinking = sessionDefaults?.thinkingLevel;
-    final inheritedVerbose = sessionDefaults?.verboseLevel;
-    final inheritedFastMode = sessionDefaults?.fastMode;
-    final modelIds = models.map((model) => model.id).toSet();
-
-    final currentModelValue = currentModelOverride == null
-        ? defaultModelValue
-        : currentModelOverride;
-    final currentThinkingValue = currentThinkingOverride != null &&
-            thinkingChoices.contains(currentThinkingOverride)
-        ? currentThinkingOverride
-        : defaultThinkingValue;
-    final currentVerboseValue = currentVerboseOverride != null &&
-            verboseChoices.contains(currentVerboseOverride)
-        ? currentVerboseOverride
-        : defaultVerboseValue;
-    final fastMode = sessionInfo?.fastMode ?? inheritedFastMode ?? false;
-
-    final modelDefaultLabel = inheritedModel ?? 'gateway default';
-    final thinkingDefaultLabel = inheritedThinking ?? 'gateway default';
-    final verboseDefaultLabel = inheritedVerbose ?? 'gateway default';
-    final fastModeSummary = sessionInfo?.fastMode == null
-        ? 'Inheriting default · ${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'}'
-        : 'Override active · ${fastMode ? 'on' : 'off'}';
+    final viewData = SessionInfoViewData.from(
+      identity: identity,
+      sessionInfo: sessionInfo,
+      sessionDefaults: sessionDefaults,
+      models: models,
+    );
 
     return Card(
       child: Padding(
@@ -709,7 +682,7 @@ class SessionInfoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              identity?.name ?? 'Assistant',
+              viewData.assistantName,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -719,18 +692,18 @@ class SessionInfoCard extends StatelessWidget {
               children: [
                 _SessionSettingChip(
                   label: 'Model',
-                  value: currentModelOverride ?? modelDefaultLabel,
-                  inherited: currentModelOverride == null,
+                  value: viewData.model.displayValue,
+                  inherited: viewData.model.inherited,
                 ),
                 _SessionSettingChip(
                   label: 'Thinking',
-                  value: currentThinkingOverride ?? thinkingDefaultLabel,
-                  inherited: currentThinkingOverride == null,
+                  value: viewData.thinking.displayValue,
+                  inherited: viewData.thinking.inherited,
                 ),
                 _SessionSettingChip(
                   label: 'Verbose',
-                  value: currentVerboseOverride ?? verboseDefaultLabel,
-                  inherited: currentVerboseOverride == null,
+                  value: viewData.verbose.displayValue,
+                  inherited: viewData.verbose.inherited,
                 ),
               ],
             ),
@@ -742,26 +715,16 @@ class SessionInfoCard extends StatelessWidget {
                 SizedBox(
                   width: 280,
                   child: DropdownButtonFormField<String>(
-                    initialValue: currentModelValue,
+                    initialValue: viewData.model.selectedValue,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Model',
                     ),
                     items: [
-                      DropdownMenuItem<String>(
-                        value: defaultModelValue,
-                        child: Text('Default (inherit: $modelDefaultLabel)'),
-                      ),
-                      if (currentModelOverride != null &&
-                          !modelIds.contains(currentModelOverride))
+                      for (final option in viewData.model.options)
                         DropdownMenuItem<String>(
-                          value: currentModelOverride,
-                          child: Text('$currentModelOverride (current)'),
-                        ),
-                      for (final model in models)
-                        DropdownMenuItem<String>(
-                          value: model.id,
-                          child: Text(model.id),
+                          value: option.value,
+                          child: Text(option.label),
                         ),
                     ],
                     onChanged: (value) {
@@ -770,7 +733,9 @@ class SessionInfoCard extends StatelessWidget {
                       }
                       unawaited(
                         onSelectModel(
-                          value == defaultModelValue ? null : value,
+                          value == SessionInfoViewData.defaultModelValue
+                              ? null
+                              : value,
                         ),
                       );
                     },
@@ -779,53 +744,59 @@ class SessionInfoCard extends StatelessWidget {
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    initialValue: currentThinkingValue,
+                    initialValue: viewData.thinking.selectedValue,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Thinking',
                     ),
                     items: [
-                      DropdownMenuItem<String>(
-                        value: defaultThinkingValue,
-                        child: Text('Default ($thinkingDefaultLabel)'),
-                      ),
-                      for (final value in thinkingChoices)
+                      for (final option in viewData.thinking.options)
                         DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
+                          value: option.value,
+                          child: Text(option.label),
                         ),
                     ],
-                    onChanged: (value) => unawaited(
-                      onSelectThinking(
-                        value == defaultThinkingValue ? null : value,
-                      ),
-                    ),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      unawaited(
+                        onSelectThinking(
+                          value == SessionInfoViewData.defaultThinkingValue
+                              ? null
+                              : value,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    initialValue: currentVerboseValue,
+                    initialValue: viewData.verbose.selectedValue,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Verbose',
                     ),
                     items: [
-                      DropdownMenuItem<String>(
-                        value: defaultVerboseValue,
-                        child: Text('Default ($verboseDefaultLabel)'),
-                      ),
-                      for (final value in verboseChoices)
+                      for (final option in viewData.verbose.options)
                         DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
+                          value: option.value,
+                          child: Text(option.label),
                         ),
                     ],
-                    onChanged: (value) => unawaited(
-                      onSelectVerbose(
-                        value == defaultVerboseValue ? null : value,
-                      ),
-                    ),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      unawaited(
+                        onSelectVerbose(
+                          value == SessionInfoViewData.defaultVerboseValue
+                              ? null
+                              : value,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -834,59 +805,19 @@ class SessionInfoCard extends StatelessWidget {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Fast mode'),
-              subtitle: Text('Maps to sessions.patch fastMode · $fastModeSummary'),
-              value: fastMode,
+              subtitle: Text(
+                'Maps to sessions.patch fastMode · ${viewData.fastModeSummary}',
+              ),
+              value: viewData.fastMode,
               onChanged: (value) => unawaited(onToggleFastMode(value)),
             ),
-            if (sessionInfo?.fastMode != null)
+            if (viewData.hasFastModeOverride)
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () => unawaited(onClearFastModeOverride()),
                   icon: const Icon(Icons.keyboard_return),
-                  label: Text(
-                    'Use default fast mode (${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'})',
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-astMode(value)),
-            ),
-            if (sessionInfo?.fastMode != null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => unawaited(onClearFastModeOverride()),
-                  icon: const Icon(Icons.keyboard_return),
-                  label: Text(
-                    'Use default fast mode (${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'})',
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-}
-astMode(value)),
-            ),
-            if (sessionInfo?.fastMode != null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => unawaited(onClearFastModeOverride()),
-                  icon: const Icon(Icons.keyboard_return),
-                  label: Text(
-                    'Use default fast mode (${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'})',
-                  ),
+                  label: Text(viewData.fastModeResetLabel),
                 ),
               ),
           ],

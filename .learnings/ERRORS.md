@@ -122,3 +122,32 @@ Prefer `printf '%s\n' '--- label ---'` or `echo` when printing separator lines t
 - Related Files: .learnings/ERRORS.md
 
 ---
+
+## [ERR-20260321-005] ripgrep-not-installed
+
+**Logged**: 2026-03-21T11:28:00Z
+**Priority**: low
+**Status**: pending
+**Area**: infra
+
+### Summary
+A source-search probe assumed `rg` was available, but this workspace image does not include ripgrep.
+
+### Error
+```text
+/usr/bin/bash: line 1: rg: command not found
+```
+
+### Context
+- Command attempted from `/root/.openclaw/workspace`
+- Probe used while scanning PocketClaw TODOs and next steps
+- Fallback tools available: `grep`, `find`, and `git grep`
+
+### Suggested Fix
+Prefer `git grep` or guarded `command -v rg >/dev/null || ...` fallbacks when searching this host.
+
+### Metadata
+- Reproducible: yes
+- Related Files: .learnings/ERRORS.md, TOOLS.md
+
+---
