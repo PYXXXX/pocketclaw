@@ -8,7 +8,7 @@
 
 *一个使用 Flutter 开发、以手机为优先的 OpenClaw 客户端 —— 纯前端实现，无须额外后端依赖。*
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · [架构文档](./docs/architecture.md) · [路线图](./docs/roadmap.md)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · [架构文档](./docs/architecture.md) · [路线图](./docs/roadmap.md) · [参与贡献](./CONTRIBUTING.md)
 
 ![PocketClaw banner](./assets/pocketclaw-banner.svg)
 
