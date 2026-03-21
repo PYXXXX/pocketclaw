@@ -7,6 +7,7 @@ import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import '../chat/pending_image_attachment.dart';
+import 'current_session_header.dart';
 import 'session_info_view_data.dart';
 
 typedef ChatRoleIconBuilder = IconData Function(ChatTimelineRole role);
@@ -131,73 +132,12 @@ class ChatShell extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
               ],
-              TextField(
-                controller: sessionTitleController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Session title',
-                ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: onSessionTitleSubmitted,
-              ),
-              const SizedBox(height: 12),
-              SelectableText('Session key: ${currentSession.sessionKey.value}'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  Chip(
-                    avatar: Icon(
-                      currentSession.isGatewayBacked
-                          ? Icons.cloud_done_outlined
-                          : Icons.phone_android_outlined,
-                      size: 18,
-                    ),
-                    label: Text(
-                      currentSession.isGatewayBacked
-                          ? 'Gateway session'
-                          : 'Local PocketClaw session',
-                    ),
-                  ),
-                  if (currentSession.gatewayLabel != null &&
-                      currentSession.gatewayLabel!.trim().isNotEmpty)
-                    Chip(
-                      avatar: const Icon(Icons.label_outline, size: 18),
-                      label: Text(currentSession.gatewayLabel!),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: canForgetCurrentSession
-                        ? () => unawaited(
-                            _confirmForgetCurrentSession(
-                              context,
-                              currentSession: currentSession,
-                              onForgetCurrentSession: onForgetCurrentSession,
-                            ),
-                          )
-                        : null,
-                    icon: const Icon(Icons.delete_outline),
-                    label: Text(
-                      currentSession.isGatewayBacked
-                          ? 'Forget local shortcut'
-                          : 'Remove from phone',
-                    ),
-                  ),
-                  if (!canForgetCurrentSession) ...[
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Keep at least one session on this device.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
-                ],
+              CurrentSessionHeader(
+                currentSession: currentSession,
+                canForgetCurrentSession: canForgetCurrentSession,
+                sessionTitleController: sessionTitleController,
+                onSessionTitleSubmitted: onSessionTitleSubmitted,
+                onForgetCurrentSession: onForgetCurrentSession,
               ),
               const SizedBox(height: 12),
               AgentSessionCard(
@@ -399,46 +339,6 @@ class ChatShell extends StatelessWidget {
         );
       },
     );
-  }
-
-  Future<void> _confirmForgetCurrentSession(
-    BuildContext context, {
-    required LocalSessionEntry currentSession,
-    required Future<void> Function() onForgetCurrentSession,
-  }) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(
-            currentSession.isGatewayBacked
-                ? 'Forget this Gateway shortcut?'
-                : 'Remove this local session?',
-          ),
-          content: Text(
-            currentSession.isGatewayBacked
-                ? 'PocketClaw will remove this session from the phone session list, but the Gateway conversation itself will remain available and can be reopened later.'
-                : 'PocketClaw will remove this local session and its unsent draft from the phone. This does not delete anything on the Gateway unless the session already exists there.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(
-                currentSession.isGatewayBacked ? 'Forget shortcut' : 'Remove',
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed == true) {
-      await onForgetCurrentSession();
-    }
   }
 }
 
