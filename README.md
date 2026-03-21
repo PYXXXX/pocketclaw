@@ -149,9 +149,10 @@ See the full timeline on [Star History](https://www.star-history.com/#PYXXXX/poc
 ## Repository layout
 
 - `assets/` — repository banner, UI mockups, and social preview artwork
-- `docs/` — product, architecture, compatibility, and planning documents
-- `app/` — mobile application code
-- `packages/` — reusable protocol, state, and adapter modules
+- `docs/` — repository-facing product, architecture, compatibility, and planning documents
+- `pocketclaw/` — the actual Flutter/Dart workspace for the project
+  - `pocketclaw/app/` — mobile application code
+  - `pocketclaw/packages/` — reusable transport, adapter, and core modules
 
 ## Language policy
 
