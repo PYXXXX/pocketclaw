@@ -340,8 +340,3 @@ final class AppStrings {
   String optimisticImages(int count) =>
       _isZh ? '[图片 × $count]' : '[Images × $count]';
 }
-'已从 $url 断开连接' : 'Disconnected from $url';
-  String get optimisticSingleImage => _isZh ? '[图片]' : '[Image]';
-  String optimisticImages(int count) =>
-      _isZh ? '[图片 × $count]' : '[Images × $count]';
-}
