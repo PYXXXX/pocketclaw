@@ -7,6 +7,7 @@ import 'package:gateway_transport/gateway_transport.dart';
 import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import '../chat/pending_image_attachment.dart';
+import 'agent_session_card_view_data.dart';
 import 'current_session_header.dart';
 import 'session_info_view_data.dart';
 
@@ -80,26 +81,16 @@ class ChatShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleGatewaySessions = [...gatewaySessions]
-      ..sort((left, right) {
-        final leftCurrent = left.key == currentSession.sessionKey.value ? 1 : 0;
-        final rightCurrent = right.key == currentSession.sessionKey.value ? 1 : 0;
-        if (leftCurrent != rightCurrent) {
-          return rightCurrent.compareTo(leftCurrent);
-        }
-        final leftAgentMatch = left.key.startsWith('agent:$selectedAgentId:') ? 1 : 0;
-        final rightAgentMatch = right.key.startsWith('agent:$selectedAgentId:') ? 1 : 0;
-        if (leftAgentMatch != rightAgentMatch) {
-          return rightAgentMatch.compareTo(leftAgentMatch);
-        }
-        final leftLabel = left.label?.trim() ?? left.key;
-        final rightLabel = right.label?.trim() ?? right.key;
-        return leftLabel.compareTo(rightLabel);
-      });
     final selectedSessionIndex = sessions.indexWhere(
       (session) => session.sessionKey.value == currentSession.sessionKey.value,
     );
     final canForgetCurrentSession = sessions.length > 1;
+    final agentSessionCardViewData = AgentSessionCardViewData.from(
+      agents: agents,
+      selectedAgentId: selectedAgentId,
+      gatewaySessions: gatewaySessions,
+      currentSessionKey: currentSession.sessionKey.value,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -141,10 +132,7 @@ class ChatShell extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               AgentSessionCard(
-                agents: agents,
-                selectedAgentId: selectedAgentId,
-                gatewaySessions: visibleGatewaySessions.take(8).toList(),
-                currentSessionKey: currentSession.sessionKey.value,
+                viewData: agentSessionCardViewData,
                 onSelectAgent: onSelectAgent,
                 onOpenGatewaySession: onOpenGatewaySession,
               ),
@@ -345,27 +333,17 @@ class ChatShell extends StatelessWidget {
 class AgentSessionCard extends StatelessWidget {
   const AgentSessionCard({
     super.key,
-    required this.agents,
-    required this.selectedAgentId,
-    required this.gatewaySessions,
-    required this.currentSessionKey,
+    required this.viewData,
     required this.onSelectAgent,
     required this.onOpenGatewaySession,
   });
 
-  final List<AgentSummary> agents;
-  final String selectedAgentId;
-  final List<SessionInfo> gatewaySessions;
-  final String currentSessionKey;
+  final AgentSessionCardViewData viewData;
   final Future<void> Function(String agentId) onSelectAgent;
   final Future<void> Function(SessionInfo session) onOpenGatewaySession;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveAgents = agents.isEmpty
-        ? const <AgentSummary>[AgentSummary(id: 'main', name: 'Main')]
-        : agents;
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -381,19 +359,15 @@ class AgentSessionCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final agent in effectiveAgents)
+                for (final agent in viewData.agents)
                   ChoiceChip(
-                    label: Text(
-                      agent.emoji == null
-                          ? agent.displayName
-                          : '${agent.emoji} ${agent.displayName}',
-                    ),
-                    selected: agent.id == selectedAgentId,
+                    label: Text(agent.label),
+                    selected: agent.selected,
                     onSelected: (_) => unawaited(onSelectAgent(agent.id)),
                   ),
               ],
             ),
-            if (gatewaySessions.isNotEmpty) ...[
+            if (viewData.hasGatewaySessions) ...[
               const SizedBox(height: 12),
               Text(
                 'Existing Gateway sessions',
@@ -409,21 +383,28 @@ class AgentSessionCard extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final session in gatewaySessions)
+                  for (final session in viewData.gatewaySessions)
                     ActionChip(
                       avatar: Icon(
-                        session.key == currentSessionKey
+                        session.isCurrent
                             ? Icons.check_circle_outline
                             : Icons.history,
                         size: 18,
                       ),
-                      label: Text(session.label ?? session.key),
-                      onPressed: session.key == currentSessionKey
+                      label: Text(session.label),
+                      onPressed: session.isCurrent
                           ? null
-                          : () => unawaited(onOpenGatewaySession(session)),
+                          : () => unawaited(onOpenGatewaySession(session.session)),
                     ),
                 ],
               ),
+              if (viewData.hiddenGatewaySessionCount > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '+${viewData.hiddenGatewaySessionCount} more Gateway sessions not shown here yet.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ],
           ],
         ),
