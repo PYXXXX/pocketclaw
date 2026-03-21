@@ -14,6 +14,18 @@ import 'gateway_request_error.dart';
 typedef WebSocketChannelFactory = Future<WebSocketChannel> Function(
     Uri uri, Map<String, String> headers);
 
+final class WebSocketHandshakeTarget {
+  const WebSocketHandshakeTarget({
+    required this.uri,
+    required this.headers,
+    required this.preflightSummary,
+  });
+
+  final Uri uri;
+  final Map<String, String> headers;
+  final String preflightSummary;
+}
+
 final class _PreparedConnectAttempt {
   const _PreparedConnectAttempt({
     required this.request,
@@ -227,55 +239,50 @@ final class GatewayWsClient implements ConnectableGatewayClient {
   }
 
   Future<_PreparedConnectAttempt> _prepareConnectAttempt() async {
-    var connectRequest = config.connectRequest;
     final challenge = _lastChallenge;
-    final deviceAuthProvider = config.deviceAuthProvider;
-
-    Map<String, Object?>? device;
-    if (challenge != null && deviceAuthProvider != null) {
-      device = await deviceAuthProvider.buildDeviceAuth(
-        challenge: challenge,
-        connectRequest: connectRequest,
-      );
+    if (challenge == null) {
+      throw StateError('Missing connect challenge from Gateway.');
     }
 
-    GatewayDeviceToken? storedToken;
-    final deviceId = device?['id'] as String?;
-    if (deviceId != null && config.deviceTokenStore != null) {
-      storedToken = await config.deviceTokenStore!.read(
-        deviceId: deviceId,
-        role: connectRequest.role,
+    final role = config.connectRequest.role;
+    String? deviceId;
+    Map<String, Object?>? deviceAuth;
+    if (config.deviceAuthProvider != null) {
+      deviceAuth = await config.deviceAuthProvider!.buildDeviceAuth(
+        challenge: challenge,
+        connectRequest: config.connectRequest,
       );
-      if (storedToken != null) {
-        final auth = <String, Object?>{
-          ...?connectRequest.auth,
-          'deviceToken': storedToken.token,
-        };
-        connectRequest = connectRequest.copyWith(auth: auth);
+      final rawId = deviceAuth['id'];
+      if (rawId is String && rawId.trim().isNotEmpty) {
+        deviceId = rawId.trim();
       }
     }
 
-    if (device != null) {
-      connectRequest = connectRequest.copyWith(device: device);
+    GatewayDeviceToken? storedDeviceToken;
+    if (deviceId != null && config.deviceTokenStore != null) {
+      storedDeviceToken = await config.deviceTokenStore!.read(
+        deviceId: deviceId,
+        role: role,
+      );
     }
 
-    return _PreparedConnectAttempt(
-      request: connectRequest,
-      deviceId: deviceId,
-      usedStoredDeviceToken: storedToken != null,
-      hasBootstrapAuth: _hasBootstrapAuth(config.connectRequest.auth),
-    );
-  }
+    final auth = <String, Object?>{
+      ...?config.connectRequest.auth,
+      if (storedDeviceToken != null &&
+          storedDeviceToken.token.trim().isNotEmpty)
+        'deviceToken': storedDeviceToken.token,
+    };
 
-  Future<GatewayResponse> _performConnectRequest(
-    ConnectRequest connectRequest,
-  ) {
-    return request(
-      GatewayRequest(
-        id: _nextRequestId('connect'),
-        method: 'connect',
-        params: connectRequest.toParams(),
-      ),
+    final request = config.connectRequest.copyWith(
+      auth: auth.isEmpty ? null : auth,
+      device: deviceAuth,
+    );
+
+    return _PreparedConnectAttempt(
+      request: request,
+      deviceId: deviceId,
+      usedStoredDeviceToken: storedDeviceToken != null,
+      hasBootstrapAuth: _hasBootstrapAuth(config.connectRequest.auth),
     );
   }
 
@@ -283,77 +290,63 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     _PreparedConnectAttempt attempt,
   ) async {
     try {
-      return await _performConnectRequest(attempt.request);
+      return await _sendConnect(attempt.request);
     } on GatewayRequestError catch (error) {
-      if (!_shouldRetryWithoutStoredDeviceToken(error, attempt)) {
+      final code = error.detailsCode ?? error.code;
+      final shouldRetryWithoutDeviceToken =
+          code == GatewayErrorCodes.authDeviceTokenMismatch &&
+              attempt.usedStoredDeviceToken &&
+              attempt.hasBootstrapAuth;
+      if (!shouldRetryWithoutDeviceToken) {
         rethrow;
       }
 
-      _emitState(
-        const GatewayConnectionState(
-          phase: GatewayConnectionPhase.connecting,
-          message:
-              'Stored device token was rejected. Retrying with bootstrap auth…',
-        ),
+      final auth = Map<String, Object?>.from(
+          config.connectRequest.auth ?? const <String, Object?>{});
+      final retryRequest = attempt.request.copyWith(
+        auth: auth.isEmpty ? null : auth,
       );
-
-      final fallbackAuth = Map<String, Object?>.from(
-        config.connectRequest.auth ?? const <String, Object?>{},
-      );
-      final fallbackRequest = attempt.request.copyWith(
-        auth: fallbackAuth.isEmpty ? null : fallbackAuth,
-      );
-      return _performConnectRequest(fallbackRequest);
+      return _sendConnect(retryRequest);
     }
   }
 
-  bool _shouldRetryWithoutStoredDeviceToken(
-    GatewayRequestError error,
-    _PreparedConnectAttempt attempt,
-  ) {
-    final code = error.detailsCode ?? error.code;
-    return attempt.usedStoredDeviceToken &&
-        attempt.hasBootstrapAuth &&
-        code == GatewayErrorCodes.authDeviceTokenMismatch;
+  Future<GatewayResponse> _sendConnect(ConnectRequest request) {
+    final gatewayRequest = GatewayRequest(
+      id: _nextRequestId('connect'),
+      method: 'connect',
+      params: request.toParams(),
+    );
+    return this.request(gatewayRequest);
   }
 
   Future<void> _persistDeviceTokenIfPresent(
     Map<String, Object?>? payload,
     String? deviceId,
-    String requestedRole,
+    String role,
   ) async {
-    final store = config.deviceTokenStore;
-    if (store == null || payload == null || deviceId == null) {
+    final tokenStore = config.deviceTokenStore;
+    if (tokenStore == null || deviceId == null || deviceId.isEmpty) {
       return;
     }
 
-    final auth = payload['auth'];
-    if (auth is! Map<String, Object?>) {
+    final auth = payload?['auth'];
+    if (auth is! Map) {
       return;
     }
 
-    final deviceToken = auth['deviceToken'];
-    if (deviceToken is! String || deviceToken.isEmpty) {
+    final authMap = Map<String, Object?>.from(auth);
+    final token = authMap['deviceToken'];
+    if (token is! String || token.trim().isEmpty) {
       return;
     }
 
-    final role = auth['role'] as String? ?? requestedRole;
-    final scopes = <String>[];
-    final rawScopes = auth['scopes'];
-    if (rawScopes is List<Object?>) {
-      for (final item in rawScopes) {
-        if (item is String) {
-          scopes.add(item);
-        }
-      }
-    }
-
-    await store.write(
+    await tokenStore.write(
       GatewayDeviceToken(
         deviceId: deviceId,
         role: role,
-        token: deviceToken,
-        scopes: scopes,
+        token: token.trim(),
+        scopes: (authMap['scopes'] as List?)?.whereType<String>().toList() ??
+            const <String>[],
       ),
     );
   }
@@ -413,37 +406,22 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     Uri uri,
     Map<String, String> headers,
   ) async {
-    final effectiveHeaders = await _prepareHandshakeHeaders(uri, headers);
-    return IOWebSocketChannel.connect(
-      uri.toString(),
-      headers: effectiveHeaders.isEmpty ? null : effectiveHeaders,
+    final target = await prepareWebSocketHandshakeTarget(uri, headers);
+    final channel = IOWebSocketChannel.connect(
+      target.uri.toString(),
+      headers: target.headers.isEmpty ? null : target.headers,
     );
-  }
-
-  static Future<Map<String, String>> _prepareHandshakeHeaders(
-    Uri uri,
-    Map<String, String> headers,
-  ) async {
-    if (!_hasCloudflareAccessHeaders(headers)) {
-      return headers;
+    try {
+      await channel.ready;
+      return channel;
+    } catch (error) {
+      throw StateError(
+        'WebSocket connect failed. Configured URI: $uri; '
+        'effective URI: ${target.uri}; '
+        'preflight: ${target.preflightSummary}; '
+        'original error: $error',
+      );
     }
-
-    final cookieHeader = await _preflightCloudflareAccessCookie(uri, headers);
-    if (cookieHeader == null || cookieHeader.isEmpty) {
-      return headers;
-    }
-
-    final effective = Map<String, String>.from(headers);
-    final existingCookie = effective['Cookie'];
-    effective['Cookie'] = existingCookie == null || existingCookie.isEmpty
-        ? cookieHeader
-        : '$existingCookie; $cookieHeader';
-    return effective;
-  }
-
-  static bool _hasCloudflareAccessHeaders(Map<String, String> headers) {
-    return (headers['CF-Access-Client-Id']?.trim().isNotEmpty ?? false) &&
-        (headers['CF-Access-Client-Secret']?.trim().isNotEmpty ?? false);
   }
 
   static bool _hasBootstrapAuth(Map<String, Object?>? auth) {
@@ -460,56 +438,183 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     }
     return false;
   }
+}
 
-  static Future<String?> _preflightCloudflareAccessCookie(
-    Uri uri,
-    Map<String, String> headers,
-  ) async {
-    if (uri.scheme != 'ws' && uri.scheme != 'wss') {
-      return null;
-    }
-
-    final preflightUri = uri.replace(
-      scheme: uri.scheme == 'wss' ? 'https' : 'http',
-      path: uri.path.isEmpty ? '/' : uri.path,
+Future<WebSocketHandshakeTarget> prepareWebSocketHandshakeTarget(
+  Uri uri,
+  Map<String, String> headers,
+) async {
+  if (uri.scheme != 'ws' && uri.scheme != 'wss') {
+    return WebSocketHandshakeTarget(
+      uri: uri,
+      headers: Map<String, String>.from(headers),
+      preflightSummary: 'skipped (non-websocket scheme)',
     );
+  }
 
-    final client = HttpClient();
-    try {
-      final request = await client.getUrl(preflightUri);
+  final initialPreflightUri = uri.replace(
+    scheme: uri.scheme == 'wss' ? 'https' : 'http',
+    path: uri.path.isEmpty ? '/' : uri.path,
+  );
+
+  final client = HttpClient();
+  final cookies = <String, String>{
+    ..._parseCookieHeader(headers['Cookie']),
+  };
+  final visited = <Uri>[initialPreflightUri];
+  var currentPreflightUri = initialPreflightUri;
+  HttpClientResponse? lastResponse;
+
+  try {
+    for (var redirects = 0; redirects <= 5; redirects += 1) {
+      final request = await client.getUrl(currentPreflightUri);
       request.followRedirects = false;
       for (final entry in headers.entries) {
+        if (entry.key.toLowerCase() == 'cookie') {
+          continue;
+        }
         request.headers.set(entry.key, entry.value);
+      }
+      final cookieHeader = _formatCookieHeader(cookies);
+      if (cookieHeader.isNotEmpty) {
+        request.headers.set(HttpHeaders.cookieHeader, cookieHeader);
       }
 
       final response = await request.close();
+      lastResponse = response;
+      for (final cookie in response.cookies) {
+        cookies[cookie.name] = cookie.value;
+      }
+
       final location = response.headers.value(HttpHeaders.locationHeader);
-      if (response.statusCode >= 300 && response.statusCode < 400) {
-        final redirectLocation = location ?? '';
-        if (redirectLocation.contains('cloudflareaccess.com')) {
+      final isRedirect =
+          response.statusCode >= 300 && response.statusCode < 400;
+      if (!isRedirect) {
+        if (response.statusCode == HttpStatus.forbidden &&
+            _hasCloudflareAccessHeadersForPreflight(headers)) {
           throw StateError(
-            'Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade. Verify the service token policy or exempt this host/path from Access.',
+            'Cloudflare Access rejected the provided service token before the WebSocket upgrade. '
+            'Preflight GET $currentPreflightUri returned HTTP ${response.statusCode}.',
           );
         }
+        break;
+      }
+
+      if (location == null || location.trim().isEmpty) {
         throw StateError(
-          'The WebSocket preflight was redirected before connecting. Check the reverse proxy and WebSocket upgrade path.',
+          'The WebSocket preflight was redirected before connecting, but the '
+          'response did not include a Location header. '
+          'Preflight GET $currentPreflightUri returned HTTP ${response.statusCode}.',
         );
       }
 
-      if (response.statusCode == HttpStatus.forbidden) {
+      final resolvedLocation = currentPreflightUri.resolve(location.trim());
+      if (resolvedLocation.host
+          .toLowerCase()
+          .contains('cloudflareaccess.com')) {
         throw StateError(
-          'Cloudflare Access rejected the provided service token before the WebSocket upgrade.',
+          'Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade. '
+          'Preflight GET $currentPreflightUri returned HTTP ${response.statusCode} '
+          'with Location: $resolvedLocation. Verify the service token policy or exempt this host/path from Access.',
         );
       }
 
-      if (response.cookies.isEmpty) {
-        return null;
+      currentPreflightUri = _normalizePreflightRedirectUri(resolvedLocation);
+      visited.add(currentPreflightUri);
+
+      if (redirects == 5) {
+        throw StateError(
+          'The WebSocket preflight followed too many redirects before connecting. '
+          'Last redirect target: $currentPreflightUri.',
+        );
       }
-      return response.cookies
-          .map((cookie) => '${cookie.name}=${cookie.value}')
-          .join('; ');
-    } finally {
-      client.close(force: true);
     }
+  } finally {
+    client.close(force: true);
   }
+
+  final effectiveHeaders = Map<String, String>.from(headers);
+  final effectiveCookieHeader = _formatCookieHeader(cookies);
+  if (effectiveCookieHeader.isNotEmpty) {
+    effectiveHeaders[HttpHeaders.cookieHeader] = effectiveCookieHeader;
+  }
+
+  final effectiveUri = currentPreflightUri.replace(
+    scheme: currentPreflightUri.scheme == 'https' ? 'wss' : 'ws',
+  );
+
+  return WebSocketHandshakeTarget(
+    uri: effectiveUri,
+    headers: effectiveHeaders,
+    preflightSummary: _buildPreflightSummary(
+      visited: visited,
+      statusCode: lastResponse?.statusCode,
+      finalUri: currentPreflightUri,
+      cookieNames: cookies.keys.toList(),
+    ),
+  );
+}
+
+Map<String, String> _parseCookieHeader(String? rawCookieHeader) {
+  if (rawCookieHeader == null || rawCookieHeader.trim().isEmpty) {
+    return const <String, String>{};
+  }
+
+  final result = <String, String>{};
+  for (final segment in rawCookieHeader.split(';')) {
+    final trimmed = segment.trim();
+    if (trimmed.isEmpty) {
+      continue;
+    }
+    final separator = trimmed.indexOf('=');
+    if (separator <= 0) {
+      continue;
+    }
+    result[trimmed.substring(0, separator).trim()] =
+        trimmed.substring(separator + 1).trim();
+  }
+  return result;
+}
+
+bool _hasCloudflareAccessHeadersForPreflight(Map<String, String> headers) {
+  return (headers['CF-Access-Client-Id']?.trim().isNotEmpty ?? false) &&
+      (headers['CF-Access-Client-Secret']?.trim().isNotEmpty ?? false);
+}
+
+String _formatCookieHeader(Map<String, String> cookies) {
+  if (cookies.isEmpty) {
+    return '';
+  }
+  return cookies.entries
+      .map((entry) => '${entry.key}=${entry.value}')
+      .join('; ');
+}
+
+Uri _normalizePreflightRedirectUri(Uri uri) {
+  if (uri.scheme == 'ws' || uri.scheme == 'wss') {
+    return uri.replace(path: uri.path.isEmpty ? '/' : uri.path);
+  }
+  if (uri.scheme == 'http' || uri.scheme == 'https') {
+    return uri.replace(path: uri.path.isEmpty ? '/' : uri.path);
+  }
+  throw StateError(
+    'The WebSocket preflight redirected to an unsupported scheme: ${uri.scheme}. '
+    'Resolved redirect target: $uri.',
+  );
+}
+
+String _buildPreflightSummary({
+  required List<Uri> visited,
+  required int? statusCode,
+  required Uri finalUri,
+  required List<String> cookieNames,
+}) {
+  final parts = <String>[
+    'GET ${visited.first}',
+    if (visited.length > 1) 'redirects: ${visited.skip(1).join(' -> ')}',
+    if (statusCode != null) 'finalStatus: $statusCode',
+    'finalUri: $finalUri',
+    if (cookieNames.isNotEmpty) 'cookies: ${cookieNames.join(', ')}',
+  ];
+  return parts.join('; ');
 }

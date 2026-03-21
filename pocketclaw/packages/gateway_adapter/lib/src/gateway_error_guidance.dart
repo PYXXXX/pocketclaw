@@ -122,12 +122,33 @@ GatewayErrorGuidance gatewayErrorGuidanceFor(
     );
   }
 
+  if (lower.contains('websocket connect failed.') &&
+      lower.contains('effective uri:') &&
+      lower.contains('preflight:')) {
+    return const GatewayErrorGuidance(
+      summary:
+          'The WebSocket handshake failed after PocketClaw completed an HTTP preflight.',
+      action:
+          'Open Raw error to inspect the configured URI, effective URI, redirect chain, and final preflight status. This usually means the server, proxy, or runtime rejected the upgrade even though the URL field itself was parsed successfully.',
+    );
+  }
+
+  if (lower.contains('preflight was redirected before connecting') ||
+      lower.contains('too many redirects')) {
+    return const GatewayErrorGuidance(
+      summary:
+          'The HTTP preflight redirected before PocketClaw could upgrade to WebSocket.',
+      action:
+          'Inspect Raw error for the redirect target and final path. A reverse proxy or edge rule may be rewriting the WebSocket route.',
+    );
+  }
+
   if (lower.contains('unsupported url scheme')) {
     return const GatewayErrorGuidance(
       summary:
           'PocketClaw rejected the configured WebSocket URL before connecting.',
       action:
-          'Use a full ws:// or wss:// URL. If you already entered wss://..., the server or proxy may be redirecting the WebSocket handshake to a non-WebSocket URL such as an interactive login page.',
+          'Use a full ws:// or wss:// URL. If you already entered wss://..., the server, proxy, or runtime may be rewriting the WebSocket handshake to a non-WebSocket URL such as an interactive login page.',
     );
   }
 

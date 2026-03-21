@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:gateway_adapter/gateway_adapter.dart';
 import 'package:gateway_transport/gateway_transport.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:test/test.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   group('GatewayWsClient', () {
@@ -256,6 +257,125 @@ void main() {
         role: 'operator',
       );
       expect(stored?.token, 'issued-device-token');
+    });
+
+    test(
+        'follows preflight redirects and forwards cookies into websocket upgrade',
+        () async {
+      final server = await HttpServer.bind('localhost', 0);
+      addTearDown(server.close);
+      String? upgradeCookieHeader;
+
+      server.listen((request) async {
+        if (request.uri.path == '/' &&
+            !WebSocketTransformer.isUpgradeRequest(request)) {
+          request.response.statusCode = HttpStatus.movedTemporarily;
+          request.response.headers.set(HttpHeaders.locationHeader, '/gateway');
+          request.response.cookies.add(Cookie('cf_clearance', 'clear-1'));
+          await request.response.close();
+          return;
+        }
+
+        if (request.uri.path == '/gateway' &&
+            !WebSocketTransformer.isUpgradeRequest(request)) {
+          request.response.statusCode = HttpStatus.noContent;
+          request.response.cookies.add(Cookie('session', 'abc-2'));
+          await request.response.close();
+          return;
+        }
+
+        if (request.uri.path == '/gateway' &&
+            WebSocketTransformer.isUpgradeRequest(request)) {
+          upgradeCookieHeader = request.headers.value(HttpHeaders.cookieHeader);
+          final socket = await WebSocketTransformer.upgrade(request);
+          socket.add(
+            jsonEncode(<String, Object?>{
+              'type': 'event',
+              'event': 'connect.challenge',
+              'payload': <String, Object?>{'nonce': 'nonce-1'},
+            }),
+          );
+          final rawRequest = await socket.first as String;
+          final parsed = jsonDecode(rawRequest) as Map<String, Object?>;
+          socket.add(
+            jsonEncode(<String, Object?>{
+              'type': 'res',
+              'id': parsed['id'] as String,
+              'ok': true,
+              'payload': <String, Object?>{'hello': true},
+            }),
+          );
+          await socket.close();
+          return;
+        }
+
+        request.response.statusCode = HttpStatus.notFound;
+        await request.response.close();
+      });
+
+      final client = GatewayWsClient(
+        config: GatewayConnectionConfig(
+          url: 'ws://localhost:${server.port}',
+          connectRequest: const GatewayConnectRequestFactory().build(
+            token: 'abc',
+          ),
+        ),
+      );
+
+      await client.connect();
+
+      expect(upgradeCookieHeader, contains('cf_clearance=clear-1'));
+      expect(upgradeCookieHeader, contains('session=abc-2'));
+    });
+
+    test('wraps websocket handshake failures with configured and effective uri',
+        () async {
+      final server = await HttpServer.bind('localhost', 0);
+      addTearDown(server.close);
+
+      server.listen((request) async {
+        if (request.uri.path == '/' &&
+            !WebSocketTransformer.isUpgradeRequest(request)) {
+          request.response.statusCode = HttpStatus.movedTemporarily;
+          request.response.headers.set(HttpHeaders.locationHeader, '/gateway');
+          await request.response.close();
+          return;
+        }
+
+        if (request.uri.path == '/gateway' &&
+            !WebSocketTransformer.isUpgradeRequest(request)) {
+          request.response.statusCode = HttpStatus.noContent;
+          await request.response.close();
+          return;
+        }
+
+        request.response.statusCode = HttpStatus.ok;
+        request.response.write('not a websocket');
+        await request.response.close();
+      });
+
+      final client = GatewayWsClient(
+        config: GatewayConnectionConfig(
+          url: 'ws://localhost:${server.port}',
+          connectRequest: const GatewayConnectRequestFactory().build(),
+          connectTimeout: const Duration(seconds: 2),
+        ),
+      );
+
+      await expectLater(
+        client.connect(),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.toString(),
+            'message',
+            allOf(
+              contains('Configured URI: ws://localhost:${server.port}/'),
+              contains('effective URI: ws://localhost:${server.port}/gateway'),
+              contains('preflight: GET http://localhost:${server.port}/'),
+            ),
+          ),
+        ),
+      );
     });
   });
 }
