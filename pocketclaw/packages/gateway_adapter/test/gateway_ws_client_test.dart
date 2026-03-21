@@ -101,6 +101,83 @@ void main() {
       expect(capturedHeaders?['CF-Access-Client-Secret'], 'client-secret');
     });
 
+    test('retries with bootstrap auth when stored device token is rejected', () async {
+      final incoming = StreamController<Object?>();
+      final outgoing = <String>[];
+      final fakeChannel = _TestWebSocketChannel(
+        stream: incoming.stream,
+        onAdd: (data) => outgoing.add(data as String),
+      );
+      final tokenStore = MemoryGatewayDeviceTokenStore();
+      await tokenStore.write(
+        const GatewayDeviceToken(
+          deviceId: 'device-1',
+          role: 'operator',
+          token: 'stale-device-token',
+        ),
+      );
+
+      final client = GatewayWsClient(
+        config: GatewayConnectionConfig(
+          url: 'ws://127.0.0.1:18789',
+          connectRequest: const GatewayConnectRequestFactory().build(token: 'bootstrap-token'),
+          deviceAuthProvider: _StaticDeviceAuthProvider(),
+          deviceTokenStore: tokenStore,
+        ),
+        channelFactory: (_, __) async => fakeChannel,
+      );
+
+      final connectFuture = client.connect();
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'event',
+        'event': 'connect.challenge',
+        'payload': <String, Object?>{'nonce': 'nonce-1'},
+      }));
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final firstRequest = jsonDecode(outgoing.first) as Map<String, Object?>;
+      expect(
+        (firstRequest['params'] as Map<String, Object?>)['auth'],
+        <String, Object?>{
+          'token': 'bootstrap-token',
+          'deviceToken': 'stale-device-token',
+        },
+      );
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'res',
+        'id': firstRequest['id'] as String,
+        'ok': false,
+        'error': <String, Object?>{
+          'code': 'UNAVAILABLE',
+          'message': 'request failed',
+          'details': <String, Object?>{
+            'code': GatewayErrorCodes.authDeviceTokenMismatch,
+          },
+        },
+      }));
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(outgoing, hasLength(2));
+      final secondRequest = jsonDecode(outgoing[1]) as Map<String, Object?>;
+      expect(
+        (secondRequest['params'] as Map<String, Object?>)['auth'],
+        <String, Object?>{
+          'token': 'bootstrap-token',
+        },
+      );
+
+      incoming.add(jsonEncode(<String, Object?>{
+        'type': 'res',
+        'id': secondRequest['id'] as String,
+        'ok': true,
+        'payload': <String, Object?>{'hello': true},
+      }));
+
+      await connectFuture;
+    });
+
     test('persists issued device token from hello payload', () async {
       final incoming = StreamController<Object?>();
       final outgoing = <String>[];

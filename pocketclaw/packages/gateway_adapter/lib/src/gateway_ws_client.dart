@@ -8,12 +8,27 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'connectable_gateway_client.dart';
 import 'gateway_connection_config.dart';
 import 'gateway_device_token.dart';
+import 'gateway_error_codes.dart';
 import 'gateway_request_error.dart';
 
 typedef WebSocketChannelFactory = Future<WebSocketChannel> Function(
   Uri uri,
   Map<String, String> headers,
 );
+
+final class _PreparedConnectAttempt {
+  const _PreparedConnectAttempt({
+    required this.request,
+    required this.deviceId,
+    required this.usedStoredDeviceToken,
+    required this.hasBootstrapAuth,
+  });
+
+  final ConnectRequest request;
+  final String? deviceId;
+  final bool usedStoredDeviceToken;
+  final bool hasBootstrapAuth;
+}
 
 final class GatewayWsClient implements ConnectableGatewayClient {
   GatewayWsClient({
@@ -180,46 +195,14 @@ final class GatewayWsClient implements ConnectableGatewayClient {
 
   Future<void> _sendConnectRequest() async {
     try {
-      var connectRequest = config.connectRequest;
-      final challenge = _lastChallenge;
-      final deviceAuthProvider = config.deviceAuthProvider;
+      final attempt = await _prepareConnectAttempt();
+      final response = await _connectWithFallbackIfNeeded(attempt);
 
-      Map<String, Object?>? device;
-      if (challenge != null && deviceAuthProvider != null) {
-        device = await deviceAuthProvider.buildDeviceAuth(
-          challenge: challenge,
-          connectRequest: connectRequest,
-        );
-      }
-
-      final deviceId = device?['id'] as String?;
-      if (deviceId != null && config.deviceTokenStore != null) {
-        final stored = await config.deviceTokenStore!.read(
-          deviceId: deviceId,
-          role: connectRequest.role,
-        );
-        if (stored != null) {
-          final auth = <String, Object?>{
-            ...?connectRequest.auth,
-            'deviceToken': stored.token,
-          };
-          connectRequest = connectRequest.copyWith(auth: auth);
-        }
-      }
-
-      if (device != null) {
-        connectRequest = connectRequest.copyWith(device: device);
-      }
-
-      final response = await request(
-        GatewayRequest(
-          id: _nextRequestId('connect'),
-          method: 'connect',
-          params: connectRequest.toParams(),
-        ),
+      await _persistDeviceTokenIfPresent(
+        response.payload,
+        attempt.deviceId,
+        attempt.request.role,
       );
-
-      await _persistDeviceTokenIfPresent(response.payload, deviceId, connectRequest.role);
 
       _connectTimeoutTimer?.cancel();
       _connectTimeoutTimer = null;
@@ -243,6 +226,96 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         _connectCompleter?.completeError(error);
       }
     }
+  }
+
+  Future<_PreparedConnectAttempt> _prepareConnectAttempt() async {
+    var connectRequest = config.connectRequest;
+    final challenge = _lastChallenge;
+    final deviceAuthProvider = config.deviceAuthProvider;
+
+    Map<String, Object?>? device;
+    if (challenge != null && deviceAuthProvider != null) {
+      device = await deviceAuthProvider.buildDeviceAuth(
+        challenge: challenge,
+        connectRequest: connectRequest,
+      );
+    }
+
+    GatewayDeviceToken? storedToken;
+    final deviceId = device?['id'] as String?;
+    if (deviceId != null && config.deviceTokenStore != null) {
+      storedToken = await config.deviceTokenStore!.read(
+        deviceId: deviceId,
+        role: connectRequest.role,
+      );
+      if (storedToken != null) {
+        final auth = <String, Object?>{
+          ...?connectRequest.auth,
+          'deviceToken': storedToken.token,
+        };
+        connectRequest = connectRequest.copyWith(auth: auth);
+      }
+    }
+
+    if (device != null) {
+      connectRequest = connectRequest.copyWith(device: device);
+    }
+
+    return _PreparedConnectAttempt(
+      request: connectRequest,
+      deviceId: deviceId,
+      usedStoredDeviceToken: storedToken != null,
+      hasBootstrapAuth: _hasBootstrapAuth(config.connectRequest.auth),
+    );
+  }
+
+  Future<GatewayResponse> _performConnectRequest(
+    ConnectRequest connectRequest,
+  ) {
+    return request(
+      GatewayRequest(
+        id: _nextRequestId('connect'),
+        method: 'connect',
+        params: connectRequest.toParams(),
+      ),
+    );
+  }
+
+  Future<GatewayResponse> _connectWithFallbackIfNeeded(
+    _PreparedConnectAttempt attempt,
+  ) async {
+    try {
+      return await _performConnectRequest(attempt.request);
+    } on GatewayRequestError catch (error) {
+      if (!_shouldRetryWithoutStoredDeviceToken(error, attempt)) {
+        rethrow;
+      }
+
+      _emitState(
+        const GatewayConnectionState(
+          phase: GatewayConnectionPhase.connecting,
+          message: 'Stored device token was rejected. Retrying with bootstrap auth…',
+        ),
+      );
+
+      final fallbackAuth = Map<String, Object?>.from(
+        config.connectRequest.auth ?? const <String, Object?>{},
+      );
+      final fallbackRequest = attempt.request.copyWith(
+        auth: fallbackAuth.isEmpty ? null : fallbackAuth,
+      );
+      return _performConnectRequest(fallbackRequest);
+    }
+  }
+
+  bool _shouldRetryWithoutStoredDeviceToken(
+    GatewayRequestError error,
+    _PreparedConnectAttempt attempt,
+  ) {
+    final code = error.detailsCode ?? error.code;
+    return attempt.usedStoredDeviceToken &&
+        attempt.hasBootstrapAuth &&
+        code == GatewayErrorCodes.authDeviceTokenMismatch;
   }
 
   Future<void> _persistDeviceTokenIfPresent(
@@ -373,6 +446,21 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         (headers['CF-Access-Client-Secret']?.trim().isNotEmpty ?? false);
   }
 
+  static bool _hasBootstrapAuth(Map<String, Object?>? auth) {
+    if (auth == null) {
+      return false;
+    }
+    final token = auth['token'];
+    if (token is String && token.trim().isNotEmpty) {
+      return true;
+    }
+    final password = auth['password'];
+    if (password is String && password.trim().isNotEmpty) {
+      return true;
+    }
+    return false;
+  }
+
   static Future<String?> _preflightCloudflareAccessCookie(
     Uri uri,
     Map<String, String> headers,
@@ -401,6 +489,60 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         if (redirectLocation.contains('cloudflareaccess.com')) {
           throw StateError(
             'Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade. Verify the service token policy or exempt this host/path from Access.',
+          );
+        }
+        throw StateError(
+          'The WebSocket preflight was redirected before connecting. Check the reverse proxy and WebSocket upgrade path.',
+        );
+      }
+
+      if (response.statusCode == HttpStatus.forbidden) {
+        throw StateError(
+          'Cloudflare Access rejected the provided service token before the WebSocket upgrade.',
+        );
+      }
+
+      if (response.cookies.isEmpty) {
+        return null;
+      }
+      return response.cookies
+          .map((cookie) => '${cookie.name}=${cookie.value}')
+          .join('; ');
+    } finally {
+      client.close(force: true);
+    }
+  }
+}
+close(force: true);
+    }
+  }
+}
+redirected the request to an interactive login flow before the WebSocket upgrade. Verify the service token policy or exempt this host/path from Access.',
+          );
+        }
+        throw StateError(
+          'The WebSocket preflight was redirected before connecting. Check the reverse proxy and WebSocket upgrade path.',
+        );
+      }
+
+      if (response.statusCode == HttpStatus.forbidden) {
+        throw StateError(
+          'Cloudflare Access rejected the provided service token before the WebSocket upgrade.',
+        );
+      }
+
+      if (response.cookies.isEmpty) {
+        return null;
+      }
+      return response.cookies
+          .map((cookie) => '${cookie.name}=${cookie.value}')
+          .join('; ');
+    } finally {
+      client.close(force: true);
+    }
+  }
+}
+redirected the request to an interactive login flow before the WebSocket upgrade. Verify the service token policy or exempt this host/path from Access.',
           );
         }
         throw StateError(
