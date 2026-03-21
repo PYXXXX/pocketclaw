@@ -92,3 +92,33 @@ WebSocketChannelException: SocketException: Connection refused (OS Error: Connec
 - Related Files: pocketclaw/packages/pocketclaw_core/lib/src/gateway_profile.dart, pocketclaw/app/pocketclaw_app/lib/main.dart, pocketclaw/app/pocketclaw_app/lib/src/app_shell/connect_surface.dart, .github/workflows/flutter-ci.yml
 
 ---
+
+## [ERR-20260321-004] shell-printf-leading-dash
+
+**Logged**: 2026-03-21T05:41:30Z
+**Priority**: low
+**Status**: pending
+**Area**: infra
+
+### Summary
+A shell probe command failed because `printf` received a format string beginning with `--`, which bash treated as an invalid option in this environment.
+
+### Error
+```text
+/usr/bin/bash: line 1: printf: --: invalid option
+printf: usage: printf [-v var] format [arguments]
+```
+
+### Context
+- Command attempted from `/root/.openclaw/workspace`
+- Verification step for the PocketClaw Star History link
+- Used `printf '--- star history image HEAD ---\n'` inside a shell pipeline
+
+### Suggested Fix
+Prefer `printf '%s\n' '--- label ---'` or `echo` when printing separator lines that begin with dashes.
+
+### Metadata
+- Reproducible: yes
+- Related Files: .learnings/ERRORS.md
+
+---

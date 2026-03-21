@@ -8,7 +8,7 @@
 
 *一个使用 Flutter 开发、以手机为优先的 OpenClaw 客户端 —— 纯前端实现，无须额外后端依赖。*
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · [架构文档](./docs/architecture.md) · [路线图](./docs/roadmap.md) · [参与贡献](./CONTRIBUTING.md)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · [文档导航](./docs/zh-CN/README.md) · [架构文档](./docs/architecture.md) · [路线图](./docs/roadmap.md) · [参与贡献](./CONTRIBUTING.md)
 
 ![PocketClaw banner](./assets/pocketclaw-banner.svg)
 
@@ -139,9 +139,11 @@ packages/
 - archive restore API
 - 通过 WebView 套壳来实现产品
 
-## Star History
+## 社区关注
 
-[![Star History Chart](https://api.star-history.com/svg?repos=PYXXXX/pocketclaw&type=Date)](https://star-history.com/#PYXXXX/pocketclaw&Date)
+[![GitHub Repo stars](https://img.shields.io/github/stars/PYXXXX/pocketclaw?style=social)](https://github.com/PYXXXX/pocketclaw/stargazers)
+
+完整趋势可在 [Star History](https://www.star-history.com/#PYXXXX/pocketclaw&Date) 查看。
 
 ## 仓库结构
 

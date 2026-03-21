@@ -8,7 +8,7 @@
 
 *A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.*
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md) · [Contributing](./CONTRIBUTING.md)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · [Docs](./docs/README.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md) · [Contributing](./CONTRIBUTING.md)
 
 ![PocketClaw banner](./assets/pocketclaw-banner.svg)
 
@@ -102,6 +102,7 @@ PocketClaw is a mobile-first companion surface, not a claim that every OpenClaw 
 
 | Area | Purpose |
 | --- | --- |
+| [`docs/README.md`](./docs/README.md) | documentation entry point and scope guide |
 | [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md) | overall client layering and module direction |
 | [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md) | near-term and medium-term direction |
 | [`docs/mvp-scope.md`](./docs/mvp-scope.md) | current chat MVP scope |
@@ -139,9 +140,11 @@ For the current phase, PocketClaw does **not** assume:
 - archive restore APIs
 - a WebView-first product strategy
 
-## Star History
+## Community
 
-[![Star History Chart](https://api.star-history.com/svg?repos=PYXXXX/pocketclaw&type=Date)](https://star-history.com/#PYXXXX/pocketclaw&Date)
+[![GitHub Repo stars](https://img.shields.io/github/stars/PYXXXX/pocketclaw?style=social)](https://github.com/PYXXXX/pocketclaw/stargazers)
+
+See the full timeline on [Star History](https://www.star-history.com/#PYXXXX/pocketclaw&Date).
 
 ## Repository layout
 
