@@ -1,109 +1,88 @@
 <div align="center">
 
-# PocketClaw
+# PocketClaw Workspace
 
-**Connect to your OpenClaw lobster 🦞 from your phone.**
+**Flutter/Dart workspace for the PocketClaw mobile client.**
 
-*A Flutter-built, mobile-first client for existing OpenClaw Gateway deployments — pure frontend, with no extra backend dependencies.*
+*If you are looking for the project overview, repository docs, contribution guide, or support entry points, start from the repository root instead.*
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · [Architecture](./docs/architecture.md) · [Roadmap](./docs/roadmap.md)
+[Repo Overview](../README.md) · [简体中文](./README.zh-CN.md) · [Local Setup](./docs/local-setup.md) · [CI / CD](./docs/ci-cd.md) · [Architecture](./docs/architecture.md)
 
 ![Status](https://img.shields.io/badge/status-active%20prototype-7c3aed)
-![Frontend](https://img.shields.io/badge/architecture-pure%20frontend-0f766e)
-![Stack](https://img.shields.io/badge/built%20with-Flutter-02569B?logo=flutter&logoColor=white)
-![Gateway](https://img.shields.io/badge/OpenClaw-compatible-black)
+![Workspace](https://img.shields.io/badge/workspace-Flutter%20%2B%20Dart-02569B?logo=flutter&logoColor=white)
+![Monorepo](https://img.shields.io/badge/managed%20with-Melos-4B32C3)
 
 </div>
 
-## Highlights
+## What this README is for
 
-- **Native mobile first** — built for a real phone experience, not a browser wrapper.
-- **Works with today’s Gateway** — no Gateway modifications, no private patches.
-- **Pure frontend** — no custom backend, no extra service layer.
-- **Multi-session aware** — switch or create sessions with client-controlled `sessionKey` values.
-- **Future-friendly** — the core architecture can later extend toward compact and wearable surfaces.
+This README is the **implementation-facing guide** for the code under `pocketclaw/`.
 
-## Why PocketClaw exists
+Use the **root README** for:
 
-OpenClaw already has a capable Gateway, but the existing surfaces are not designed first for a native mobile experience.
-PocketClaw exists to make OpenClaw feel natural on a phone **without changing server-side behavior**.
+- project positioning
+- repository-facing docs
+- contribution and support entry points
+- public collaboration guidance
 
-The idea is deliberately simple:
+Use this README for:
 
-- keep the deployment model unchanged
-- keep the client truly mobile-native
-- keep the architecture clean enough to scale beyond a one-off app shell
+- local workspace setup
+- package and app layout
+- implementation-oriented docs
+- Flutter/Dart validation commands
 
-## Current status
+## Workspace quick start
 
-> **Active prototype** — architecture and compatibility boundaries are in place.
-
-The current focus is the **chat MVP**:
-
-- connection, authentication, and pairing
-- chat history and sending
-- streaming assistant output
-- tool call rendering
-- session switching and client-created sessions
-- image sending
-- basic session overrides (`model`, `thinking`, `fast`, `verbose`)
-
-## Design principles
-
-- **Gateway-compatible first** — work with current OpenClaw Gateway behavior.
-- **No custom backend** — connect directly to the Gateway transport surface.
-- **Mobile-first** — optimize for phones before expanding into broader control surfaces.
-- **Encrypted local credentials** — keep profiles and device auth material in OS-backed secure storage.
-- **Client-controlled multi-session** — support multiple conversations without changing Gateway semantics.
-- **Wearable-aware** — keep the core reusable for future watch-focused clients such as `WristClaw`.
-- **Vibe coded, but disciplined** — move fast, keep compatibility strict.
-
-## What PocketClaw is not
-
-For the current phase, PocketClaw does **not** assume:
-
-- Gateway-side feature development
-- private storage hacks
-- archive restore APIs
-- a WebView-first product strategy
-
-## Architecture direction
-
-PocketClaw keeps **protocol**, **state**, and **UI** concerns separate so the app does not collapse into Gateway-specific payload glue.
-
-Suggested module direction:
-
-```text
-app/
-  mobile_ui/
-packages/
-  gateway_transport/
-  gateway_auth/
-  gateway_adapter/
-  pocketclaw_core/
+```bash
+cd pocketclaw
+flutter pub get
+~/.pub-cache/bin/melos run analyze
+~/.pub-cache/bin/melos run test
 ```
 
-Read more in [`docs/architecture.md`](./docs/architecture.md).
+If Flutter/Dart tooling is unavailable locally, rely on the repository GitHub Actions baseline documented in [`../docs/ci-cd.md`](../docs/ci-cd.md).
 
-## Repository layout
+## Workspace layout
 
-- `docs/` — product, architecture, compatibility, and planning documents
-- `app/` — mobile application code
-- `packages/` — reusable protocol, state, and adapter modules
+- `app/pocketclaw_app/` — Flutter application shell and app-facing UI code
+- `packages/gateway_transport/` — Gateway transport primitives
+- `packages/gateway_adapter/` — compatibility adapter around the current OpenClaw Gateway surface
+- `packages/pocketclaw_core/` — shared domain logic and session-related primitives
+- `docs/` — implementation-facing notes for setup, CI/CD, stack choices, and next steps
+- `melos.yaml` — workspace scripts and package orchestration
+- `pubspec.yaml` — Dart workspace definition
 
-## Key documents
+## Common workspace commands
 
-- [`docs/architecture.md`](./docs/architecture.md)
-- [`docs/mvp-scope.md`](./docs/mvp-scope.md)
-- [`docs/compatibility.md`](./docs/compatibility.md)
-- [`docs/session-key-strategy.md`](./docs/session-key-strategy.md)
-- [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md)
-- [`docs/development-workflow.md`](./docs/development-workflow.md)
-- [`docs/official-android-reference.md`](./docs/official-android-reference.md)
-- [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md)
-- [`docs/roadmap.md`](./docs/roadmap.md)
+```bash
+cd pocketclaw
+flutter pub get
+~/.pub-cache/bin/melos run analyze
+~/.pub-cache/bin/melos run test
+```
 
-## Language policy
+Useful direct paths:
 
-English is the primary language for repository content.
-Chinese versions may be added alongside English where useful.
+- app entry: `app/pocketclaw_app/lib/main.dart`
+- app tests: `app/pocketclaw_app/test/`
+- package tests: `packages/*/test/`
+
+## Workspace documents
+
+- [`docs/local-setup.md`](./docs/local-setup.md) — local development notes
+- [`docs/ci-cd.md`](./docs/ci-cd.md) — workspace-facing CI/CD details
+- [`docs/tech-stack.md`](./docs/tech-stack.md) — implementation stack choices
+- [`docs/next-steps.md`](./docs/next-steps.md) — active implementation follow-ups
+- [`docs/repo-plan.md`](./docs/repo-plan.md) — repo/workspace organization notes
+- [`docs/architecture.md`](./docs/architecture.md) — client layering and module direction
+- [`docs/roadmap.md`](./docs/roadmap.md) — roadmap context mirrored in the workspace
+
+## Scope reminder
+
+This workspace follows the same core project boundaries as the root repository:
+
+- mobile-first OpenClaw client
+- compatibility with today’s Gateway surface
+- no custom backend by default
+- small, reviewable changes over broad rewrites

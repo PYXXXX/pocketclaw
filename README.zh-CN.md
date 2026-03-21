@@ -151,6 +151,7 @@ packages/
 - `assets/` —— 仓库 banner、UI mockup 与社交分享图素材
 - `docs/` —— 面向仓库门面的产品、架构、兼容性与规划文档
 - `pocketclaw/` —— 项目实际的 Flutter/Dart 工作区
+  - [`pocketclaw/README.md`](./pocketclaw/README.md) —— 本地开发与实现层文档入口
   - `pocketclaw/app/` —— 移动端应用代码
   - `pocketclaw/packages/` —— 可复用的传输、适配与核心模块
 

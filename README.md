@@ -152,6 +152,7 @@ See the full timeline on [Star History](https://www.star-history.com/#PYXXXX/poc
 - `assets/` — repository banner, UI mockups, and social preview artwork
 - `docs/` — repository-facing product, architecture, compatibility, and planning documents
 - `pocketclaw/` — the actual Flutter/Dart workspace for the project
+  - [`pocketclaw/README.md`](./pocketclaw/README.md) — workspace guide for local development and implementation-facing docs
   - `pocketclaw/app/` — mobile application code
   - `pocketclaw/packages/` — reusable transport, adapter, and core modules
 
