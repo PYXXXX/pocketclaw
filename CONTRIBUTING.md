@@ -124,3 +124,8 @@ This is a preference, not a hard rule.
 ## Need to discuss first?
 
 If a change is likely to affect project direction, repository structure, or compatibility promises, open an issue or draft PR before implementing the full change.
+
+## Conduct
+
+Please keep collaboration respectful, specific, and scoped.
+See [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md).

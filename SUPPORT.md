@@ -35,6 +35,8 @@ A useful support request usually includes:
 
 PocketClaw is intentionally narrow in scope.
 
+For collaboration norms and unacceptable behavior, see [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md).
+
 Please do not assume by default that support requests imply:
 
 - a new backend service

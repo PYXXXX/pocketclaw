@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Code of conduct
+    url: https://github.com/PYXXXX/pocketclaw/blob/main/CODE_OF_CONDUCT.md
+    about: Read the collaboration norms for issues, pull requests, and reviews.
   - name: Security policy
     url: https://github.com/PYXXXX/pocketclaw/blob/main/SECURITY.md
     about: Read before posting any security-sensitive issue or disclosure.
