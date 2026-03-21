@@ -102,6 +102,7 @@ PocketClaw 更像一个面向移动端的 companion surface，而不是说所有
 
 | 区域 | 说明 |
 | --- | --- |
+| [`CHANGELOG.md`](./CHANGELOG.md) | 重要仓库维护改动的汇总 |
 | [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md) | 客户端分层和模块方向 |
 | [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md) | 近期与中期路线 |
 | [`docs/mvp-scope.md`](./docs/mvp-scope.md) | 当前 chat MVP 范围 |

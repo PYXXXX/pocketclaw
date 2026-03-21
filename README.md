@@ -102,6 +102,7 @@ PocketClaw is a mobile-first companion surface, not a claim that every OpenClaw 
 
 | Area | Purpose |
 | --- | --- |
+| [`CHANGELOG.md`](./CHANGELOG.md) | curated summary of notable repository-facing changes |
 | [`docs/README.md`](./docs/README.md) | documentation entry point and scope guide |
 | [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md) | overall client layering and module direction |
 | [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md) | near-term and medium-term direction |

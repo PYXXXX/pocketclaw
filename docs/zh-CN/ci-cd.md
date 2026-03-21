@@ -47,6 +47,9 @@ PocketClaw 当前把 **GitHub Actions 作为主要验证环境**。
 - 准备 Android app scaffold
 - 构建拆分后的 Android release APK
 - 作为 GitHub Release 资产发布
+- 在 tag release 时自动生成 GitHub release notes
+
+如果要看一份更适合人阅读的仓库级变更摘要，也可以参考 [`../../CHANGELOG.md`](../../CHANGELOG.md)。
 
 ## 当前 CI 比较可靠覆盖的内容
 

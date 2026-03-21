@@ -47,6 +47,9 @@ Current responsibilities:
 - prepare the Android app scaffold
 - build split Android release APKs
 - publish them as GitHub release assets
+- generate GitHub release notes automatically for tagged releases
+
+For a curated repository-facing summary of notable changes, also see [`../CHANGELOG.md`](../CHANGELOG.md).
 
 ## What CI currently checks well
 
