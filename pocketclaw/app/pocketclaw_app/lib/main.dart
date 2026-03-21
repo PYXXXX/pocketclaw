@@ -864,22 +864,69 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       return;
     }
 
-    try {
-      await Future.wait<void>([
-        _loadHistoryForCurrentSession(),
-        _loadAssistantAndModels(),
-        _loadSessionInfo(),
-        _loadAgents(),
-      ]);
-      if (!mounted) {
-        return;
-      }
+    final results = await const CurrentViewDataLoader().run(<ViewDataTask>[
+      ViewDataTask(
+        label: 'Chat history',
+        action: _loadHistoryForCurrentSession,
+      ),
+      ViewDataTask(
+        label: 'Assistant identity',
+        action: _loadAssistantIdentity,
+      ),
+      ViewDataTask(
+        label: 'Model list',
+        action: _loadModels,
+      ),
+      ViewDataTask(
+        label: 'Session info',
+        action: _loadSessionInfo,
+      ),
+      ViewDataTask(
+        label: 'Agent list',
+        action: _loadAgents,
+      ),
+    ]);
+
+    if (!mounted) {
+      return;
+    }
+
+    final failures = results.where((result) => result.didFail).toList();
+    if (failures.isEmpty) {
       setState(() {
         _lastError = null;
         _lastGuidance = null;
       });
-    } catch (error) {
-      _recordError(error, prefix: 'Load failed');
+      return;
+    }
+
+    final firstFailure = failures.first;
+    final firstError = firstFailure.error ?? StateError('${firstFailure.label} failed');
+    final guidance = gatewayErrorGuidanceFor(
+      firstError,
+      configuredUrl: _gatewayProfile.url,
+    );
+
+    setState(() {
+      _lastError = 'Load issue: ${firstFailure.label}: $firstError';
+      _lastGuidance = guidance;
+      if (_connectionState.phase == GatewayConnectionPhase.connected) {
+        _connectFlowStage = ConnectFlowStage.ready;
+      }
+    });
+
+    for (final failure in failures) {
+      final error = failure.error;
+      final summary = gatewayErrorGuidanceFor(
+        error ?? StateError('${failure.label} failed'),
+        configuredUrl: _gatewayProfile.url,
+      ).summary;
+      _appendTimeline(
+        ChatTimelineRole.system,
+        '${failure.label} failed to load. $summary',
+        status: 'warning',
+        details: error?.toString(),
+      );
     }
   }
 
@@ -897,18 +944,27 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     });
   }
 
-  Future<void> _loadAssistantAndModels() async {
-    final results = await Future.wait<Object?>([
-      _agentService.getIdentity(sessionKey: _currentSession.sessionKey.value),
-      _agentService.listModels(),
-    ]);
+  Future<void> _loadAssistantIdentity() async {
+    final identity = await _agentService.getIdentity(
+      sessionKey: _currentSession.sessionKey.value,
+    );
 
     if (!mounted) {
       return;
     }
     setState(() {
-      _assistantIdentity = results[0] as AgentIdentity;
-      _models = results[1] as List<ModelInfo>;
+      _assistantIdentity = identity;
+    });
+  }
+
+  Future<void> _loadModels() async {
+    final models = await _agentService.listModels();
+
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _models = models;
     });
   }
 
