@@ -19,13 +19,13 @@
 
 </div>
 
-## Highlights
+## At a glance
 
-- **Native mobile first** — built for a real phone experience, not a browser wrapper.
-- **Works with today’s Gateway** — no Gateway modifications, no private patches.
+- **Phone-native on purpose** — built for a real mobile experience, not a browser wrapper.
+- **Compatible with today’s Gateway** — no Gateway modifications, no private patches.
 - **Pure frontend** — no custom backend, no extra service layer.
-- **Multi-session aware** — switch or create sessions with client-controlled `sessionKey` values.
-- **Future-friendly** — the core architecture can later extend toward compact and wearable surfaces.
+- **Chat MVP first** — focused on connect, chat, streaming, tools, and session switching.
+- **Structured to grow carefully** — the core can later extend toward compact and wearable surfaces.
 
 ## Preview direction
 
@@ -55,9 +55,9 @@ The idea is deliberately simple:
 
 ## Current status
 
-> **Active prototype** — architecture and compatibility boundaries are in place.
+> **Active prototype** — the architecture direction is set, and the current work is about making the mobile chat surface practical.
 
-The current focus is the **chat MVP**:
+Current Chat MVP focus:
 
 - connection, authentication, and pairing
 - chat history and sending
@@ -69,13 +69,12 @@ The current focus is the **chat MVP**:
 
 ## Design principles
 
-- **Gateway-compatible first** — work with current OpenClaw Gateway behavior.
+- **Compatibility first** — work with current OpenClaw Gateway behavior rather than inventing new server assumptions.
 - **No custom backend** — connect directly to the Gateway transport surface.
 - **Mobile-first** — optimize for phones before expanding into broader control surfaces.
-- **Encrypted local credentials** — keep profiles and device auth material in OS-backed secure storage.
-- **Client-controlled multi-session** — support multiple conversations without changing Gateway semantics.
-- **Wearable-aware** — keep the core reusable for future watch-focused clients such as `WristClaw`.
-- **Vibe coded, but disciplined** — move fast, keep compatibility strict.
+- **Secure local credentials** — keep profiles and device auth material in OS-backed secure storage.
+- **Client-controlled sessions** — support multiple conversations without changing Gateway semantics.
+- **Move fast, stay disciplined** — keep iteration quick without letting compatibility boundaries drift.
 
 ## FAQ
 
