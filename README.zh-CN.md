@@ -100,19 +100,27 @@ PocketClaw 更像一个面向移动端的 companion surface，而不是说所有
 
 ## 项目地图
 
-| 区域 | 说明 |
-| --- | --- |
-| [`CHANGELOG.md`](./CHANGELOG.md) | 重要仓库维护改动的汇总 |
-| [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md) | 客户端分层和模块方向 |
-| [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md) | 近期与中期路线 |
-| [`docs/mvp-scope.md`](./docs/mvp-scope.md) | 当前 chat MVP 范围 |
-| [`docs/compatibility.md`](./docs/compatibility.md) | 与现有 Gateway 的兼容边界 |
-| [`docs/session-key-strategy.md`](./docs/session-key-strategy.md) | 基于客户端 sessionKey 的多会话策略 |
-| [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md) | 当前 Gateway 方法与能力映射 |
-| [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md) | 连接与 pairing 交互规划 |
-| [`docs/development-workflow.md`](./docs/development-workflow.md) | 开发方式与迭代原则 |
-| [`docs/zh-CN/ci-cd.md`](./docs/zh-CN/ci-cd.md) | 当前 GitHub Actions 的验证与发布行为 |
-| [`docs/official-android-reference.md`](./docs/official-android-reference.md) | Android 侧交互参考 |
+如果你只想先抓住几个主要入口，建议从这里开始：
+
+- [`docs/zh-CN/README.md`](./docs/zh-CN/README.md) —— 完整文档导航
+- [`CHANGELOG.md`](./CHANGELOG.md) —— 重要仓库维护改动汇总
+- [`pocketclaw/README.md`](./pocketclaw/README.md) —— 本地开发与实现层说明入口
+
+核心产品与仓库文档：
+
+- [`docs/architecture.md`](./docs/architecture.md) · [中文](./docs/zh-CN/architecture.md)
+- [`docs/roadmap.md`](./docs/roadmap.md) · [中文](./docs/zh-CN/roadmap.md)
+- [`docs/mvp-scope.md`](./docs/mvp-scope.md)
+- [`docs/compatibility.md`](./docs/compatibility.md)
+
+实现与协作上下文：
+
+- [`docs/session-key-strategy.md`](./docs/session-key-strategy.md)
+- [`docs/gateway-surface-map.md`](./docs/gateway-surface-map.md)
+- [`docs/connect-flow-plan.md`](./docs/connect-flow-plan.md)
+- [`docs/development-workflow.md`](./docs/development-workflow.md)
+- [`docs/zh-CN/ci-cd.md`](./docs/zh-CN/ci-cd.md)
+- [`docs/official-android-reference.md`](./docs/official-android-reference.md)
 
 ## 架构方向
 
