@@ -25,6 +25,8 @@ Please first check:
 
 If your change conflicts with those documents, update the docs as part of the same PR or explain why the existing docs should change.
 
+For security-sensitive issues or disclosures, follow [`SECURITY.md`](./SECURITY.md) instead of posting raw secrets or private environment details in a PR.
+
 ## What kinds of contributions fit best
 
 High-value contributions usually improve one of these areas:

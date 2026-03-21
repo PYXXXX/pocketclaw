@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Security policy
+    url: https://github.com/PYXXXX/pocketclaw/blob/main/SECURITY.md
+    about: Read before posting any security-sensitive issue or disclosure.
   - name: Support guide
     url: https://github.com/PYXXXX/pocketclaw/blob/main/SUPPORT.md
     about: Start here if you are not sure whether you need docs, an issue, or a pull request.

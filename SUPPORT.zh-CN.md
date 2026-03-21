@@ -49,6 +49,6 @@ PocketClaw 当前是一个**刻意保持克制**的项目。
 
 ## 安全提醒
 
-如果涉及敏感安全问题，不要在公开 issue 中贴出 secret、token、私有 endpoint 或内部凭据。
+如果涉及安全敏感问题，请遵循 [`SECURITY.zh-CN.md`](./SECURITY.zh-CN.md)。
 
-如果仓库后续补充了专门的安全上报路径，应优先使用那个入口。
+简而言之：不要在公开 issue 中贴出 secret、token、私有 endpoint、内部主机名或内部凭据。

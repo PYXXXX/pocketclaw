@@ -49,6 +49,6 @@ Please do not assume by default that support requests imply:
 
 ## Security
 
-For sensitive security issues, avoid posting secrets, tokens, private endpoints, or internal credentials in public issues.
+For security-sensitive issues, follow [`SECURITY.md`](./SECURITY.md).
 
-If the repository later adds a dedicated security reporting path, use that instead of a public bug report.
+In short: do not post secrets, tokens, private endpoints, internal hostnames, or internal credentials in public issues.
