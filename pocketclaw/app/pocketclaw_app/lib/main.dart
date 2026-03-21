@@ -211,22 +211,38 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   Future<void> _bootstrapLocalState() async {
     try {
-      await _runBootstrapStep(
-        label: 'Saved Gateway configuration restore',
-        action: _restorePersistedGatewayProfile,
-      );
-      await _runBootstrapStep(
-        label: 'Local session restore',
-        action: _restorePersistedSessionRegistry,
-      );
-      await _runBootstrapStep(
-        label: 'Connect flow preference restore',
-        action: _restoreConnectFlowPreferences,
-      );
-      await _runBootstrapStep(
-        label: 'Stored device auth refresh',
-        action: _refreshStoredDeviceAuthState,
-      );
+      final results = await const SequentialBootstrapRunner().run(<BootstrapTask>[
+        BootstrapTask(
+          label: 'Saved Gateway configuration restore',
+          action: _restorePersistedGatewayProfile,
+        ),
+        BootstrapTask(
+          label: 'Local session restore',
+          action: _restorePersistedSessionRegistry,
+        ),
+        BootstrapTask(
+          label: 'Connect flow preference restore',
+          action: _restoreConnectFlowPreferences,
+        ),
+        BootstrapTask(
+          label: 'Stored device auth refresh',
+          action: _refreshStoredDeviceAuthState,
+        ),
+      ]);
+
+      if (!mounted) {
+        return;
+      }
+      for (final result in results) {
+        if (!result.didTimeout) {
+          continue;
+        }
+        _appendTimeline(
+          ChatTimelineRole.system,
+          '${result.label} timed out during startup. PocketClaw skipped that restore step so the app can still open.',
+          status: 'warning',
+        );
+      }
     } finally {
       if (!mounted) {
         return;
@@ -239,25 +255,6 @@ class _PocketClawHomeState extends State<PocketClawHome> {
             ? AppDestination.chat
             : AppDestination.connect;
       });
-    }
-  }
-
-  Future<void> _runBootstrapStep({
-    required String label,
-    required Future<void> Function() action,
-    Duration timeout = const Duration(seconds: 2),
-  }) async {
-    try {
-      await action().timeout(timeout);
-    } on TimeoutException {
-      if (!mounted) {
-        return;
-      }
-      _appendTimeline(
-        ChatTimelineRole.system,
-        '$label timed out during startup. PocketClaw skipped that restore step so the app can still open.',
-        status: 'warning',
-      );
     }
   }
 
@@ -1567,6 +1564,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         return Icons.person_outline;
       case ChatTimelineRole.assistant:
         return Icons.smart_toy_outlined;
+      case ChatTimelineRole.tool:
+        return Icons.handyman_outlined;
+    }
+  }
+}
+ned;
       case ChatTimelineRole.tool:
         return Icons.handyman_outlined;
     }
