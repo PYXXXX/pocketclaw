@@ -76,10 +76,22 @@ class ChatShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentAgentGatewaySessions = gatewaySessions
-        .where((session) => session.key.startsWith('agent:$selectedAgentId:'))
-        .take(8)
-        .toList();
+    final visibleGatewaySessions = [...gatewaySessions]
+      ..sort((left, right) {
+        final leftCurrent = left.key == currentSession.sessionKey.value ? 1 : 0;
+        final rightCurrent = right.key == currentSession.sessionKey.value ? 1 : 0;
+        if (leftCurrent != rightCurrent) {
+          return rightCurrent.compareTo(leftCurrent);
+        }
+        final leftAgentMatch = left.key.startsWith('agent:$selectedAgentId:') ? 1 : 0;
+        final rightAgentMatch = right.key.startsWith('agent:$selectedAgentId:') ? 1 : 0;
+        if (leftAgentMatch != rightAgentMatch) {
+          return rightAgentMatch.compareTo(leftAgentMatch);
+        }
+        final leftLabel = left.label?.trim() ?? left.key;
+        final rightLabel = right.label?.trim() ?? right.key;
+        return leftLabel.compareTo(rightLabel);
+      });
     final selectedSessionIndex = sessions.indexWhere(
       (session) => session.sessionKey.value == currentSession.sessionKey.value,
     );
@@ -126,11 +138,38 @@ class ChatShell extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               SelectableText('Session key: ${currentSession.sessionKey.value}'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      currentSession.isGatewayBacked
+                          ? Icons.cloud_done_outlined
+                          : Icons.phone_android_outlined,
+                      size: 18,
+                    ),
+                    label: Text(
+                      currentSession.isGatewayBacked
+                          ? 'Gateway session'
+                          : 'Local PocketClaw session',
+                    ),
+                  ),
+                  if (currentSession.gatewayLabel != null &&
+                      currentSession.gatewayLabel!.trim().isNotEmpty)
+                    Chip(
+                      avatar: const Icon(Icons.label_outline, size: 18),
+                      label: Text(currentSession.gatewayLabel!),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               AgentSessionCard(
                 agents: agents,
                 selectedAgentId: selectedAgentId,
-                gatewaySessions: currentAgentGatewaySessions,
+                gatewaySessions: visibleGatewaySessions.take(8).toList(),
+                currentSessionKey: currentSession.sessionKey.value,
                 onSelectAgent: onSelectAgent,
                 onOpenGatewaySession: onOpenGatewaySession,
               ),
@@ -334,6 +373,7 @@ class AgentSessionCard extends StatelessWidget {
     required this.agents,
     required this.selectedAgentId,
     required this.gatewaySessions,
+    required this.currentSessionKey,
     required this.onSelectAgent,
     required this.onOpenGatewaySession,
   });
@@ -341,6 +381,7 @@ class AgentSessionCard extends StatelessWidget {
   final List<AgentSummary> agents;
   final String selectedAgentId;
   final List<SessionInfo> gatewaySessions;
+  final String currentSessionKey;
   final Future<void> Function(String agentId) onSelectAgent;
   final Future<void> Function(SessionInfo session) onOpenGatewaySession;
 
@@ -383,6 +424,11 @@ class AgentSessionCard extends StatelessWidget {
                 'Existing Gateway sessions',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              const SizedBox(height: 4),
+              Text(
+                'Open an existing session when you want to continue a Gateway-visible thread, matching the current Web UI flow more closely.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -390,9 +436,16 @@ class AgentSessionCard extends StatelessWidget {
                 children: [
                   for (final session in gatewaySessions)
                     ActionChip(
-                      avatar: const Icon(Icons.history, size: 18),
+                      avatar: Icon(
+                        session.key == currentSessionKey
+                            ? Icons.check_circle_outline
+                            : Icons.history,
+                        size: 18,
+                      ),
                       label: Text(session.label ?? session.key),
-                      onPressed: () => unawaited(onOpenGatewaySession(session)),
+                      onPressed: session.key == currentSessionKey
+                          ? null
+                          : () => unawaited(onOpenGatewaySession(session)),
                     ),
                 ],
               ),
@@ -784,6 +837,46 @@ class SessionInfoCard extends StatelessWidget {
               subtitle: Text('Maps to sessions.patch fastMode · $fastModeSummary'),
               value: fastMode,
               onChanged: (value) => unawaited(onToggleFastMode(value)),
+            ),
+            if (sessionInfo?.fastMode != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => unawaited(onClearFastModeOverride()),
+                  icon: const Icon(Icons.keyboard_return),
+                  label: Text(
+                    'Use default fast mode (${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'})',
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+astMode(value)),
+            ),
+            if (sessionInfo?.fastMode != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => unawaited(onClearFastModeOverride()),
+                  icon: const Icon(Icons.keyboard_return),
+                  label: Text(
+                    'Use default fast mode (${inheritedFastMode == null ? 'gateway default' : inheritedFastMode ? 'on' : 'off'})',
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+}
+astMode(value)),
             ),
             if (sessionInfo?.fastMode != null)
               Align(

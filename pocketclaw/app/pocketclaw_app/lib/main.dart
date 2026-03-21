@@ -356,6 +356,21 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     return session.key;
   }
 
+  LocalSessionEntry _localEntryForGatewaySession(
+    SessionInfo session, {
+    LocalSessionEntry? existing,
+  }) {
+    final label = session.label?.trim();
+    final effectiveLabel = label != null && label.isNotEmpty ? label : null;
+    return LocalSessionEntry(
+      sessionKey: SessionKey.fromValue(session.key),
+      title: effectiveLabel ?? existing?.title ?? session.key,
+      draftText: existing?.draftText ?? '',
+      origin: LocalSessionOrigin.gateway,
+      gatewayLabel: effectiveLabel,
+    );
+  }
+
   Future<void> _restorePersistedGatewayProfile() async {
     try {
       final storedProfile = await _profileStore.read();
@@ -567,10 +582,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _openGatewaySession(SessionInfo session) async {
-    final entry = LocalSessionEntry(
-      sessionKey: SessionKey.fromValue(session.key),
-      title: _titleForGatewaySession(session),
-    );
+    final existing = _registry.findBySessionKey(session.key);
+    final entry = _localEntryForGatewaySession(session, existing: existing);
     _registry.replace(entry);
     await _persistSessionRegistry();
     await _selectCurrentSession(entry);
@@ -983,12 +996,30 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     final result = await _sessionService.list();
     final targetKey = _currentSession.sessionKey.value;
     SessionInfo? info;
+    var registryChanged = false;
+
     for (final session in result.sessions) {
       if (session.key == targetKey) {
         info = session;
-        break;
+      }
+      final existing = _registry.findBySessionKey(session.key);
+      if (existing == null || !existing.isGatewayBacked) {
+        continue;
+      }
+      final synced = _localEntryForGatewaySession(session, existing: existing);
+      if (synced.title != existing.title ||
+          synced.gatewayLabel != existing.gatewayLabel ||
+          synced.draftText != existing.draftText ||
+          synced.origin != existing.origin) {
+        _registry.replace(synced);
+        if (_currentSession.sessionKey.value == synced.sessionKey.value) {
+          _currentSession = synced;
+          _applySessionTitle(synced.title);
+        }
+        registryChanged = true;
       }
     }
+
     if (!mounted) {
       return;
     }
@@ -997,6 +1028,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       _currentSessionInfo = info;
       _sessionDefaults = result.defaults;
     });
+
+    if (registryChanged) {
+      await _persistSessionRegistry();
+    }
   }
 
   Future<void> _loadAgents() async {
