@@ -11,8 +11,8 @@ import 'gateway_device_token.dart';
 import 'gateway_error_codes.dart';
 import 'gateway_request_error.dart';
 
-typedef WebSocketChannelFactory =
-    Future<WebSocketChannel> Function(Uri uri, Map<String, String> headers);
+typedef WebSocketChannelFactory = Future<WebSocketChannel> Function(
+    Uri uri, Map<String, String> headers);
 
 final class _PreparedConnectAttempt {
   const _PreparedConnectAttempt({
@@ -33,9 +33,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     required this.config,
     GatewayFrameCodec? codec,
     WebSocketChannelFactory? channelFactory,
-  }) : _codec = codec ?? GatewayFrameCodec(),
-       _parser = const GatewayParser(),
-       _channelFactory = channelFactory ?? _defaultChannelFactory;
+  })  : _codec = codec ?? GatewayFrameCodec(),
+        _parser = const GatewayParser(),
+        _channelFactory = channelFactory ?? _defaultChannelFactory;
 
   final GatewayConnectionConfig config;
   final GatewayFrameCodec _codec;

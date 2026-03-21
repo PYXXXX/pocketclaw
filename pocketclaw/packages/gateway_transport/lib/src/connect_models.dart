@@ -59,21 +59,21 @@ final class ConnectRequest {
   }
 
   Map<String, Object?> toParams() => <String, Object?>{
-    'minProtocol': 3,
-    'maxProtocol': 3,
-    'client': <String, Object?>{
-      'id': client.id,
-      'version': client.version,
-      'platform': client.platform,
-      'mode': client.mode,
-      if (client.instanceId != null) 'instanceId': client.instanceId,
-    },
-    'role': role,
-    'scopes': scopes,
-    'caps': caps,
-    if (auth != null) 'auth': auth,
-    if (device != null) 'device': device,
-    if (locale != null) 'locale': locale,
-    if (userAgent != null) 'userAgent': userAgent,
-  };
+        'minProtocol': 3,
+        'maxProtocol': 3,
+        'client': <String, Object?>{
+          'id': client.id,
+          'version': client.version,
+          'platform': client.platform,
+          'mode': client.mode,
+          if (client.instanceId != null) 'instanceId': client.instanceId,
+        },
+        'role': role,
+        'scopes': scopes,
+        'caps': caps,
+        if (auth != null) 'auth': auth,
+        if (device != null) 'device': device,
+        if (locale != null) 'locale': locale,
+        if (userAgent != null) 'userAgent': userAgent,
+      };
 }

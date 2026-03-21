@@ -46,9 +46,8 @@ final class LocalSessionEntry {
       title: title ?? this.title,
       draftText: draftText ?? this.draftText,
       origin: origin ?? this.origin,
-      gatewayLabel: clearGatewayLabel
-          ? null
-          : (gatewayLabel ?? this.gatewayLabel),
+      gatewayLabel:
+          clearGatewayLabel ? null : (gatewayLabel ?? this.gatewayLabel),
     );
   }
 

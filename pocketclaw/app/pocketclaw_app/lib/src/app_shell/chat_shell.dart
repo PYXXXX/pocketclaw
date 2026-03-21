@@ -106,9 +106,8 @@ class ChatShell extends StatelessWidget {
             children: [
               if (compact) ...[
                 DropdownButtonFormField<int>(
-                  initialValue: selectedSessionIndex >= 0
-                      ? selectedSessionIndex
-                      : 0,
+                  initialValue:
+                      selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     labelText: strings.sessionLabel,
@@ -246,8 +245,7 @@ class ChatShell extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     OutlinedButton.icon(
-                      onPressed:
-                          connectionState.phase ==
+                      onPressed: connectionState.phase ==
                               GatewayConnectionPhase.connected
                           ? () => unawaited(onPickImages())
                           : null,
@@ -255,8 +253,7 @@ class ChatShell extends StatelessWidget {
                       label: Text(strings.image),
                     ),
                     FilledButton(
-                      onPressed:
-                          connectionState.phase ==
+                      onPressed: connectionState.phase ==
                               GatewayConnectionPhase.connected
                           ? onSendMessage
                           : null,
@@ -273,8 +270,7 @@ class ChatShell extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     IconButton(
-                      onPressed:
-                          connectionState.phase ==
+                      onPressed: connectionState.phase ==
                               GatewayConnectionPhase.connected
                           ? () => unawaited(onPickImages())
                           : null,
@@ -298,8 +294,7 @@ class ChatShell extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed:
-                          connectionState.phase ==
+                      onPressed: connectionState.phase ==
                               GatewayConnectionPhase.connected
                           ? onSendMessage
                           : null,
@@ -323,9 +318,8 @@ class ChatShell extends StatelessWidget {
         return Row(
           children: [
             NavigationRail(
-              selectedIndex: selectedSessionIndex >= 0
-                  ? selectedSessionIndex
-                  : 0,
+              selectedIndex:
+                  selectedSessionIndex >= 0 ? selectedSessionIndex : 0,
               onDestinationSelected: onDestinationSelected,
               labelType: NavigationRailLabelType.all,
               destinations: [
@@ -412,8 +406,8 @@ class AgentSessionCard extends StatelessWidget {
                       onPressed: session.isCurrent
                           ? null
                           : () => unawaited(
-                              onOpenGatewaySession(session.session),
-                            ),
+                                onOpenGatewaySession(session.session),
+                              ),
                     ),
                 ],
               ),
@@ -458,21 +452,20 @@ class TimelineEntryCard extends StatelessWidget {
     final backgroundColor = isUser
         ? colorScheme.primaryContainer
         : isTool
-        ? colorScheme.tertiaryContainer
-        : isSystem
-        ? colorScheme.surfaceContainerHighest
-        : colorScheme.surfaceContainerLow;
+            ? colorScheme.tertiaryContainer
+            : isSystem
+                ? colorScheme.surfaceContainerHighest
+                : colorScheme.surfaceContainerLow;
     final foregroundColor = isUser
         ? colorScheme.onPrimaryContainer
         : isTool
-        ? colorScheme.onTertiaryContainer
-        : isSystem
-        ? colorScheme.onSurfaceVariant
-        : colorScheme.onSurface;
+            ? colorScheme.onTertiaryContainer
+            : isSystem
+                ? colorScheme.onSurfaceVariant
+                : colorScheme.onSurface;
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
     final maxWidth = compact ? double.infinity : 560.0;
-    final title =
-        item.title ??
+    final title = item.title ??
         switch (item.role) {
           ChatTimelineRole.system => strings.systemTitle,
           ChatTimelineRole.user => strings.youTitle,
@@ -482,8 +475,8 @@ class TimelineEntryCard extends StatelessWidget {
     final badgeLabel = item.status != null
         ? strings.timelineStatus(item.status!)
         : item.isStreaming
-        ? strings.streaming
-        : null;
+            ? strings.streaming
+            : null;
 
     return Align(
       alignment: alignment,

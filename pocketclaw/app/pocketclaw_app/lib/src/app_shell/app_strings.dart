@@ -76,13 +76,13 @@ final class AppStrings {
       ? 'Gateway 状态：${connectionPhase(state)}'
       : 'Gateway state: ${connectionPhase(state)}';
   String connectionPhase(String phase) => switch (phase) {
-    'connected' => _isZh ? '已连接' : 'connected',
-    'disconnected' => _isZh ? '未连接' : 'disconnected',
-    'connecting' => _isZh ? '连接中' : 'connecting',
-    'error' => _isZh ? '错误' : 'error',
-    'challengeReceived' => _isZh ? '收到挑战' : 'challenge received',
-    _ => phase,
-  };
+        'connected' => _isZh ? '已连接' : 'connected',
+        'disconnected' => _isZh ? '未连接' : 'disconnected',
+        'connecting' => _isZh ? '连接中' : 'connecting',
+        'error' => _isZh ? '错误' : 'error',
+        'challengeReceived' => _isZh ? '收到挑战' : 'challenge received',
+        _ => phase,
+      };
   String flowStage(String stage) {
     final label = switch (stage) {
       'welcome' => _isZh ? '欢迎' : 'Welcome',
@@ -203,10 +203,10 @@ final class AppStrings {
   String get detailsTitle => _isZh ? '详情' : 'Details';
   String get streaming => _isZh ? '流式返回中' : 'streaming';
   String timelineStatus(String status) => switch (status) {
-    'sending' => _isZh ? '发送中' : 'sending',
-    'warning' => _isZh ? '警告' : 'warning',
-    _ => status,
-  };
+        'sending' => _isZh ? '发送中' : 'sending',
+        'warning' => _isZh ? '警告' : 'warning',
+        _ => status,
+      };
 
   String get model => _isZh ? '模型' : 'Model';
   String get thinking => _isZh ? '思考强度' : 'Thinking';

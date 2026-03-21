@@ -29,7 +29,7 @@ final class SharedPreferencesLocalSessionRegistryStore
   SharedPreferencesLocalSessionRegistryStore({
     Future<SharedPreferences>? sharedPreferences,
   }) : _sharedPreferencesFuture =
-           sharedPreferences ?? SharedPreferences.getInstance();
+            sharedPreferences ?? SharedPreferences.getInstance();
 
   static const String registryStorageKey = 'pocketclaw.local_session_registry';
   static const String currentSessionStorageKey =

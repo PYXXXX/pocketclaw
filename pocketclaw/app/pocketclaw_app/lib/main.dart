@@ -218,25 +218,25 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   Future<void> _bootstrapLocalState() async {
     try {
-      final results = await const SequentialBootstrapRunner()
-          .run(<BootstrapTask>[
-            BootstrapTask(
-              label: _strings.savedGatewayConfigurationRestore,
-              action: _restorePersistedGatewayProfile,
-            ),
-            BootstrapTask(
-              label: _strings.localSessionRestore,
-              action: _restorePersistedSessionRegistry,
-            ),
-            BootstrapTask(
-              label: _strings.connectFlowPreferenceRestore,
-              action: _restoreConnectFlowPreferences,
-            ),
-            BootstrapTask(
-              label: _strings.storedDeviceAuthRefresh,
-              action: _refreshStoredDeviceAuthState,
-            ),
-          ]);
+      final results =
+          await const SequentialBootstrapRunner().run(<BootstrapTask>[
+        BootstrapTask(
+          label: _strings.savedGatewayConfigurationRestore,
+          action: _restorePersistedGatewayProfile,
+        ),
+        BootstrapTask(
+          label: _strings.localSessionRestore,
+          action: _restorePersistedSessionRegistry,
+        ),
+        BootstrapTask(
+          label: _strings.connectFlowPreferenceRestore,
+          action: _restoreConnectFlowPreferences,
+        ),
+        BootstrapTask(
+          label: _strings.storedDeviceAuthRefresh,
+          action: _refreshStoredDeviceAuthState,
+        ),
+      ]);
 
       if (!mounted) {
         return;
@@ -828,8 +828,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       token: _tokenController.text,
       password: _passwordController.text,
       cloudflareAccessClientId: _cloudflareAccessClientIdController.text.trim(),
-      cloudflareAccessClientSecret: _cloudflareAccessClientSecretController.text
-          .trim(),
+      cloudflareAccessClientSecret:
+          _cloudflareAccessClientSecretController.text.trim(),
       customRequestHeadersText: _customRequestHeadersController.text,
     );
     _applyProfileToControllers(profile);
@@ -928,8 +928,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
 
     final firstFailure = failures.first;
-    final firstError =
-        firstFailure.error ??
+    final firstError = firstFailure.error ??
         StateError(_strings.taskFailed(firstFailure.label));
     final guidance = gatewayErrorGuidanceFor(
       firstError,
@@ -1637,7 +1636,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 gatewayUrl: _gatewayProfile.url,
                 hasBootstrapCredentials:
                     _gatewayProfile.token.trim().isNotEmpty ||
-                    _gatewayProfile.password.trim().isNotEmpty,
+                        _gatewayProfile.password.trim().isNotEmpty,
                 hasStoredDeviceIdentity: _hasStoredDeviceIdentity,
                 hasStoredDeviceToken: _hasStoredDeviceToken,
               ),
@@ -1648,20 +1647,20 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 duration: const Duration(milliseconds: 220),
                 child: switch (_selectedDestination) {
                   AppDestination.connect => KeyedSubtree(
-                    key: const ValueKey<String>('connect-pane'),
-                    child: connectPane,
-                  ),
-                  AppDestination.chat when showChatShell => KeyedSubtree(
-                    key: const ValueKey<String>('chat-pane'),
-                    child: chatPane,
-                  ),
-                  AppDestination.chat => KeyedSubtree(
-                    key: const ValueKey<String>('chat-locked'),
-                    child: ChatLockedPlaceholder(
-                      onOpenConnect: () =>
-                          _selectDestination(AppDestination.connect),
+                      key: const ValueKey<String>('connect-pane'),
+                      child: connectPane,
                     ),
-                  ),
+                  AppDestination.chat when showChatShell => KeyedSubtree(
+                      key: const ValueKey<String>('chat-pane'),
+                      child: chatPane,
+                    ),
+                  AppDestination.chat => KeyedSubtree(
+                      key: const ValueKey<String>('chat-locked'),
+                      child: ChatLockedPlaceholder(
+                        onOpenConnect: () =>
+                            _selectDestination(AppDestination.connect),
+                      ),
+                    ),
                 },
               ),
             ),
@@ -1682,18 +1681,18 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           body: _isBootstrapping
               ? const Center(child: CircularProgressIndicator())
               : compact
-              ? mobileBody
-              : Row(
-                  children: [
-                    SizedBox(width: 420, child: connectPane),
-                    const VerticalDivider(width: 1),
-                    Expanded(
-                      child: showChatShell
-                          ? chatPane
-                          : const ChatLockedPlaceholder(),
+                  ? mobileBody
+                  : Row(
+                      children: [
+                        SizedBox(width: 420, child: connectPane),
+                        const VerticalDivider(width: 1),
+                        Expanded(
+                          child: showChatShell
+                              ? chatPane
+                              : const ChatLockedPlaceholder(),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
           bottomNavigationBar: _isBootstrapping || !compact
               ? null
               : NavigationBar(

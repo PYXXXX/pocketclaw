@@ -27,20 +27,17 @@ final class AgentSessionCardViewData {
         ? <AgentSummary>[AgentSummary(id: 'main', name: strings.mainAgentLabel)]
         : agents;
 
-    final sortedGatewaySessions = [...gatewaySessions]
-      ..sort((left, right) {
+    final sortedGatewaySessions = [...gatewaySessions]..sort((left, right) {
         final leftCurrent = left.key == currentSessionKey ? 1 : 0;
         final rightCurrent = right.key == currentSessionKey ? 1 : 0;
         if (leftCurrent != rightCurrent) {
           return rightCurrent.compareTo(leftCurrent);
         }
 
-        final leftAgentMatch = left.key.startsWith('agent:$selectedAgentId:')
-            ? 1
-            : 0;
-        final rightAgentMatch = right.key.startsWith('agent:$selectedAgentId:')
-            ? 1
-            : 0;
+        final leftAgentMatch =
+            left.key.startsWith('agent:$selectedAgentId:') ? 1 : 0;
+        final rightAgentMatch =
+            right.key.startsWith('agent:$selectedAgentId:') ? 1 : 0;
         if (leftAgentMatch != rightAgentMatch) {
           return rightAgentMatch.compareTo(leftAgentMatch);
         }
@@ -50,9 +47,8 @@ final class AgentSessionCardViewData {
         return leftLabel.compareTo(rightLabel);
       });
 
-    final visibleSessions = sortedGatewaySessions
-        .take(maxGatewaySessions)
-        .toList();
+    final visibleSessions =
+        sortedGatewaySessions.take(maxGatewaySessions).toList();
     return AgentSessionCardViewData(
       agents: effectiveAgents
           .map(
@@ -78,8 +74,8 @@ final class AgentSessionCardViewData {
           .toList(),
       hiddenGatewaySessionCount:
           sortedGatewaySessions.length > maxGatewaySessions
-          ? sortedGatewaySessions.length - maxGatewaySessions
-          : 0,
+              ? sortedGatewaySessions.length - maxGatewaySessions
+              : 0,
       hasGatewaySessions: sortedGatewaySessions.isNotEmpty,
     );
   }

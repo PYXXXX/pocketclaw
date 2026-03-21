@@ -44,13 +44,11 @@ final class CurrentSessionHeaderViewData {
           ? strings.gatewaySession
           : strings.localPocketClawSession,
       isGatewayBacked: isGatewayBacked,
-      gatewayLabel: gatewayLabel != null && gatewayLabel.isNotEmpty
-          ? gatewayLabel
-          : null,
+      gatewayLabel:
+          gatewayLabel != null && gatewayLabel.isNotEmpty ? gatewayLabel : null,
       hasLocalDraft: hasLocalDraft,
-      draftStatusLabel: hasLocalDraft
-          ? strings.draftSavedLocally
-          : strings.noLocalDraft,
+      draftStatusLabel:
+          hasLocalDraft ? strings.draftSavedLocally : strings.noLocalDraft,
       forgetActionLabel: isGatewayBacked
           ? strings.forgetLocalShortcut
           : strings.removeFromPhone,
@@ -60,12 +58,10 @@ final class CurrentSessionHeaderViewData {
       forgetDialogMessage: isGatewayBacked
           ? strings.forgetGatewayShortcutMessage
           : strings.removeLocalSessionMessage,
-      forgetConfirmLabel: isGatewayBacked
-          ? strings.forgetShortcut
-          : strings.remove,
-      cannotForgetHint: canForgetCurrentSession
-          ? null
-          : strings.keepAtLeastOneSession,
+      forgetConfirmLabel:
+          isGatewayBacked ? strings.forgetShortcut : strings.remove,
+      cannotForgetHint:
+          canForgetCurrentSession ? null : strings.keepAtLeastOneSession,
     );
   }
 }

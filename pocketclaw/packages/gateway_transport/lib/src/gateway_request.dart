@@ -10,9 +10,9 @@ final class GatewayRequest extends GatewayMessage {
 
 extension GatewayRequestEncoding on GatewayRequest {
   Map<String, Object?> toJson() => <String, Object?>{
-    'type': 'req',
-    'id': id,
-    'method': method,
-    'params': params ?? const <String, Object?>{},
-  };
+        'type': 'req',
+        'id': id,
+        'method': method,
+        'params': params ?? const <String, Object?>{},
+      };
 }

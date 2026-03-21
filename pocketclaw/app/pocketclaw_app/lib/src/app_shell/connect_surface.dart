@@ -33,17 +33,15 @@ class AppStatusBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
-    final gatewayLabel = hasGatewayUrl
-        ? gatewayUrl.trim()
-        : strings.noGatewayConfigured;
-    final bootstrapLabel = hasBootstrapCredentials
-        ? strings.bootstrapSaved
-        : strings.noBootstrap;
+    final gatewayLabel =
+        hasGatewayUrl ? gatewayUrl.trim() : strings.noGatewayConfigured;
+    final bootstrapLabel =
+        hasBootstrapCredentials ? strings.bootstrapSaved : strings.noBootstrap;
     final reconnectLabel = hasStoredDeviceToken
         ? strings.reconnectTokenAvailable
         : hasStoredDeviceIdentity
-        ? strings.deviceIdentitySaved
-        : strings.firstPairingLikely;
+            ? strings.deviceIdentitySaved
+            : strings.firstPairingLikely;
     final usesLoopback = gatewayUrlUsesLoopback(gatewayUrl);
 
     return Card(
@@ -210,8 +208,8 @@ class GatewayConfigCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final showAdvancedOptions =
         cloudflareAccessClientIdController.text.trim().isNotEmpty ||
-        cloudflareAccessClientSecretController.text.trim().isNotEmpty ||
-        customRequestHeadersController.text.trim().isNotEmpty;
+            cloudflareAccessClientSecretController.text.trim().isNotEmpty ||
+            customRequestHeadersController.text.trim().isNotEmpty;
 
     return Card(
       child: Padding(
@@ -332,8 +330,7 @@ class ConnectionStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final canConnect =
-        state.phase == GatewayConnectionPhase.disconnected ||
+    final canConnect = state.phase == GatewayConnectionPhase.disconnected ||
         state.phase == GatewayConnectionPhase.error;
     final canDisconnect = state.phase != GatewayConnectionPhase.disconnected;
 
