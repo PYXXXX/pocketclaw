@@ -15,7 +15,8 @@ class AppStatusBanner extends StatelessWidget {
     super.key,
     required this.snapshot,
     required this.connectionState,
-    required this.gatewayUrl,
+    required this.savedGatewayUrl,
+    required this.liveGatewayUrl,
     required this.hasBootstrapCredentials,
     required this.hasStoredDeviceIdentity,
     required this.hasStoredDeviceToken,
@@ -23,7 +24,8 @@ class AppStatusBanner extends StatelessWidget {
 
   final ConnectFlowSnapshot snapshot;
   final GatewayConnectionState connectionState;
-  final String gatewayUrl;
+  final String savedGatewayUrl;
+  final String liveGatewayUrl;
   final bool hasBootstrapCredentials;
   final bool hasStoredDeviceIdentity;
   final bool hasStoredDeviceToken;
@@ -33,9 +35,14 @@ class AppStatusBanner extends StatelessWidget {
     final strings = AppStrings.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final hasGatewayUrl = gatewayUrl.trim().isNotEmpty;
-    final gatewayLabel =
-        hasGatewayUrl ? gatewayUrl.trim() : strings.noGatewayConfigured;
+    final hasLiveGatewayUrl = liveGatewayUrl.trim().isNotEmpty;
+    final liveGatewayLabel = hasLiveGatewayUrl
+        ? liveGatewayUrl.trim()
+        : strings.liveGatewayClientNotReady;
+    final hasSavedGatewayUrl = savedGatewayUrl.trim().isNotEmpty;
+    final savedGatewayLabel = hasSavedGatewayUrl
+        ? savedGatewayUrl.trim()
+        : strings.noGatewayConfigured;
     final bootstrapLabel =
         hasBootstrapCredentials ? strings.bootstrapSaved : strings.noBootstrap;
     final reconnectLabel = hasStoredDeviceToken
@@ -43,7 +50,9 @@ class AppStatusBanner extends StatelessWidget {
         : hasStoredDeviceIdentity
             ? strings.deviceIdentitySaved
             : strings.firstPairingLikely;
-    final usesLoopback = gatewayUrlUsesLoopback(gatewayUrl);
+    final usesLoopback = gatewayUrlUsesLoopback(
+      hasLiveGatewayUrl ? liveGatewayUrl : savedGatewayUrl,
+    );
 
     return Card(
       color: snapshot.requiresAttention
@@ -79,8 +88,17 @@ class AppStatusBanner extends StatelessWidget {
               children: [
                 Chip(
                   avatar: const Icon(Icons.hub_outlined, size: 18),
-                  label: Text(gatewayLabel),
+                  label: Text(
+                    '${strings.liveGatewayClientLabel}: $liveGatewayLabel',
+                  ),
                 ),
+                if (hasSavedGatewayUrl && savedGatewayUrl != liveGatewayUrl)
+                  Chip(
+                    avatar: const Icon(Icons.save_outlined, size: 18),
+                    label: Text(
+                      '${strings.savedGatewayConfigLabel}: $savedGatewayLabel',
+                    ),
+                  ),
                 Chip(
                   avatar: const Icon(Icons.sync_outlined, size: 18),
                   label: Text(

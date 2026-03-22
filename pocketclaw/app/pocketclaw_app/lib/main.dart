@@ -18,6 +18,7 @@ import 'src/app_shell/connect_flow_stage_resolver.dart';
 import 'src/app_shell/connect_surface.dart';
 import 'src/app_shell/current_session_forget_plan.dart';
 import 'src/app_shell/gateway_configuration_apply_controller.dart';
+import 'src/app_shell/gateway_connection_diagnostics.dart';
 import 'src/app_shell/gateway_url_input.dart';
 import 'src/bootstrap/startup_bootstrap.dart';
 import 'src/chat/current_view_data_loader.dart';
@@ -112,6 +113,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   late LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
   late GatewayProfile _gatewayProfile;
+  late GatewayProfile _liveGatewayClientProfile;
   late ConnectableGatewayClient _gatewayClient;
   late GatewayChatService _chatService;
   late GatewaySessionService _sessionService;
@@ -195,6 +197,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _selectedAgentId = _agentIdForSession(_currentSession.sessionKey.value);
     _applySessionTitle(_currentSession.title);
 
+    _liveGatewayClientProfile = _gatewayProfile;
     _gatewayClient = _buildGatewayClient(_gatewayProfile);
     _chatService = GatewayChatService(_gatewayClient);
     _sessionService = GatewaySessionService(_gatewayClient);
@@ -416,7 +419,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _gatewayProfile = storedProfile;
       });
 
-      await _replaceGatewayClientTracked(_buildGatewayClient(storedProfile));
+      await _replaceGatewayClientTracked(storedProfile);
     } catch (error) {
       _recordError(error, prefix: _strings.secureConfigurationRestoreFailed);
     }
@@ -688,8 +691,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
   bool get _isRefreshingGatewayClient => _gatewayClientRefreshFuture != null;
 
-  Future<void> _replaceGatewayClientTracked(ConnectableGatewayClient client) {
-    final refreshFuture = _replaceGatewayClient(client);
+  Future<void> _replaceGatewayClientTracked(GatewayProfile profile) {
+    final refreshFuture = _replaceGatewayClient(
+      _buildGatewayClient(profile),
+      profile,
+    );
     _gatewayClientRefreshFuture = refreshFuture;
     if (mounted) {
       setState(() {});
@@ -705,13 +711,17 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     return refreshFuture;
   }
 
-  Future<void> _replaceGatewayClient(ConnectableGatewayClient client) async {
+  Future<void> _replaceGatewayClient(
+    ConnectableGatewayClient client,
+    GatewayProfile profile,
+  ) async {
     await _connectionSubscription?.cancel();
     await _eventSubscription?.cancel();
     await _chatSubscription?.cancel();
     await _gatewayClient.disconnect();
 
     _gatewayClient = client;
+    _liveGatewayClientProfile = profile;
     _chatService = GatewayChatService(_gatewayClient);
     _sessionService = GatewaySessionService(_gatewayClient);
     _agentService = GatewayAgentService(_gatewayClient);
@@ -745,7 +755,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     if (!_onboardingCompleted) {
       return ConnectFlowStage.welcome;
     }
-    final hasManualConfig = _gatewayUrlController.text.trim().isNotEmpty;
+    final hasManualConfig = _effectiveGatewayUrlInput().trim().isNotEmpty;
     if (_connectMethod == ConnectMethod.setupCode) {
       return ConnectFlowStage.chooseMethod;
     }
@@ -864,6 +874,40 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     );
   }
 
+  GatewayProfile _draftGatewayProfile() {
+    return _gatewayProfile.copyWith(
+      url: normalizeGatewayUrl(_gatewayUrlController.text),
+      token: _tokenController.text,
+      password: _passwordController.text,
+      cloudflareAccessClientId: _cloudflareAccessClientIdController.text.trim(),
+      cloudflareAccessClientSecret:
+          _cloudflareAccessClientSecretController.text.trim(),
+      customRequestHeadersText: _customRequestHeadersController.text,
+    );
+  }
+
+  String _gatewayConnectionDiagnosticsText() {
+    final draftProfile = _draftGatewayProfile();
+    return formatGatewayConnectionDiagnostics(
+      draftUrl: draftProfile.url,
+      savedUrl: _gatewayProfile.url,
+      liveClientUrl: _liveGatewayClientProfile.url,
+      isBootstrapping: _isBootstrapping,
+      isApplyingConfiguration: _isApplyingGatewayConfiguration,
+      isRefreshingClient: _isRefreshingGatewayClient,
+      hasDraftToken: draftProfile.token.trim().isNotEmpty,
+      hasSavedToken: _gatewayProfile.token.trim().isNotEmpty,
+      hasLiveClientToken: _liveGatewayClientProfile.token.trim().isNotEmpty,
+      hasDraftPassword: draftProfile.password.trim().isNotEmpty,
+      hasSavedPassword: _gatewayProfile.password.trim().isNotEmpty,
+      hasLiveClientPassword:
+          _liveGatewayClientProfile.password.trim().isNotEmpty,
+      draftHeaderCount: draftProfile.webSocketHeaders.length,
+      savedHeaderCount: _gatewayProfile.webSocketHeaders.length,
+      liveClientHeaderCount: _liveGatewayClientProfile.webSocketHeaders.length,
+    );
+  }
+
   bool get _isApplyingGatewayConfiguration =>
       _gatewayConfigurationApplyController.isApplying;
 
@@ -940,7 +984,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
 
       await _persistConnectFlowPreferences();
-      await _replaceGatewayClientTracked(_buildGatewayClient(profile));
+      await _replaceGatewayClientTracked(profile);
       return true;
     });
 
@@ -1138,9 +1182,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
     final guidance = gatewayErrorGuidanceFor(
       error,
-      configuredUrl: _gatewayProfile.url.isNotEmpty
-          ? _gatewayProfile.url
-          : normalizeGatewayUrl(_effectiveGatewayUrlInput()),
+      configuredUrl: _liveGatewayClientProfile.url.isNotEmpty
+          ? _liveGatewayClientProfile.url
+          : (_gatewayProfile.url.isNotEmpty
+              ? _gatewayProfile.url
+              : normalizeGatewayUrl(_effectiveGatewayUrlInput())),
     );
     final nextStage = resolveConnectFlowStageForError(error);
     setState(() {
@@ -1412,7 +1458,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       });
       _appendTimeline(
         ChatTimelineRole.system,
-        _strings.connectedTo(_gatewayProfile.url),
+        _strings.connectedTo(_liveGatewayClientProfile.url),
       );
       await _refreshStoredDeviceAuthState();
       await _loadCurrentViewData();
@@ -1435,7 +1481,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     });
     _appendTimeline(
       ChatTimelineRole.system,
-      _strings.disconnectedFrom(_gatewayProfile.url),
+      _strings.disconnectedFrom(_liveGatewayClientProfile.url),
     );
   }
 
@@ -1629,6 +1675,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final connectSnapshot = _snapshotForConnectFlow();
+    final connectionDiagnosticsText = _gatewayConnectionDiagnosticsText();
     final sessions = _registry.sessions;
     final showChatShell = _connectFlowStage == ConnectFlowStage.ready;
 
@@ -1679,7 +1726,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 Card(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onLongPress: () => unawaited(_copyToClipboard(_lastError!)),
+                    onLongPress: () => unawaited(
+                      _copyToClipboard(
+                        '${_lastError!}\n\n$connectionDiagnosticsText',
+                      ),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -1696,6 +1747,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                               color: Theme.of(context).colorScheme.error,
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          Text(
+                            strings.connectionDiagnosticsTitle,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          SelectableText(connectionDiagnosticsText),
                           const SizedBox(height: 8),
                           Text(
                             strings.longPressToCopy,
@@ -1753,7 +1811,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
               child: AppStatusBanner(
                 snapshot: connectSnapshot,
                 connectionState: _connectionState,
-                gatewayUrl: _gatewayProfile.url,
+                savedGatewayUrl: _gatewayProfile.url,
+                liveGatewayUrl: _liveGatewayClientProfile.url,
                 hasBootstrapCredentials:
                     _gatewayProfile.token.trim().isNotEmpty ||
                         _gatewayProfile.password.trim().isNotEmpty,

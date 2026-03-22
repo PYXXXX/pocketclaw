@@ -19,6 +19,10 @@ final class AppStrings {
   String get longPressToCopy => _isZh ? '长按可复制' : 'Long press to copy';
   String get noGatewayConfigured =>
       _isZh ? '尚未配置 Gateway' : 'No Gateway configured yet';
+  String get liveGatewayClientLabel => _isZh ? 'Live 客户端' : 'Live client';
+  String get savedGatewayConfigLabel => _isZh ? '已保存配置' : 'Saved config';
+  String get liveGatewayClientNotReady =>
+      _isZh ? 'Live 客户端尚未就绪' : 'Live client not ready yet';
   String get bootstrapSaved =>
       _isZh ? '已保存引导凭据' : 'Bootstrap credentials saved';
   String get noBootstrap => _isZh ? '未配置引导凭据' : 'No bootstrap credentials';
@@ -119,6 +123,8 @@ final class AppStrings {
       : 'PocketClaw keeps the chat shell behind a usable Gateway setup so the app does not feel like a debug screen before it can reconnect cleanly.';
   String get openConnect => _isZh ? '打开连接页' : 'Open connect';
   String get rawErrorTitle => _isZh ? '原始错误' : 'Raw error';
+  String get connectionDiagnosticsTitle =>
+      _isZh ? '连接诊断' : 'Connection diagnostics';
   String get stateLabel => _isZh ? '状态' : 'State';
   String get welcomeTitle => _isZh ? '欢迎' : 'Welcome';
   String get welcomeDescription => _isZh
