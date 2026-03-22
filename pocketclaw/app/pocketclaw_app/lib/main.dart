@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -1133,7 +1134,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     final entry = LocalSessionEntry(
       sessionKey: sessionKey,
       title:
-          '${_displayNameForAgent(_selectedAgentId)} ${_registry.sessions.length + 1}',
+          '${_displayNameForAgent(_selectedAgentId)} '
+          '${_registry.sessions.length + 1}',
     );
 
     setState(() {
