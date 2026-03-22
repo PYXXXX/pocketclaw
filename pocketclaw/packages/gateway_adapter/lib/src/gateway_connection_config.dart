@@ -1,4 +1,5 @@
 import 'package:gateway_transport/gateway_transport.dart';
+import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import 'gateway_device_auth_provider.dart';
 import 'gateway_device_token_store.dart';
@@ -20,11 +21,5 @@ final class GatewayConnectionConfig {
   final GatewayDeviceTokenStore? deviceTokenStore;
   final Duration connectTimeout;
 
-  Uri get uri {
-    final parsed = Uri.parse(url);
-    if (parsed.path.isEmpty) {
-      return parsed.replace(path: '/');
-    }
-    return parsed;
-  }
+  Uri get uri => parseGatewayWebSocketUri(url);
 }

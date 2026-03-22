@@ -12,6 +12,40 @@ bool gatewayUrlUsesLoopback(String rawUrl) {
       host == '0.0.0.0';
 }
 
+Uri parseGatewayWebSocketUri(String rawUrl) {
+  final normalized = normalizeGatewayUrl(rawUrl);
+  if (normalized.isEmpty) {
+    throw const FormatException(
+      'Gateway URL is empty. Enter a ws:// or wss:// Gateway URL before connecting.',
+    );
+  }
+
+  final uri = Uri.tryParse(normalized);
+  if (uri == null) {
+    throw FormatException(
+      'Gateway URL is invalid and could not be parsed: $rawUrl',
+    );
+  }
+
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme != 'ws' && scheme != 'wss') {
+    throw FormatException(
+      'Gateway URL must resolve to ws:// or wss://. Got: $normalized',
+    );
+  }
+
+  if (uri.host.trim().isEmpty) {
+    throw FormatException(
+      'Gateway URL must include a host. Got: $normalized',
+    );
+  }
+
+  if (uri.path.isEmpty) {
+    return uri.replace(path: '/');
+  }
+  return uri;
+}
+
 String normalizeGatewayUrl(String rawUrl) {
   final trimmed = rawUrl.trim();
   if (trimmed.isEmpty) {

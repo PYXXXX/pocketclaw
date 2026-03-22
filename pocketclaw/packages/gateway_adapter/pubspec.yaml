@@ -11,6 +11,7 @@ resolution: workspace
 dependencies:
   cryptography: ^2.7.0
   gateway_transport: any
+  pocketclaw_core: any
   web_socket_channel: ^3.0.1
 
 dev_dependencies:

@@ -829,19 +829,20 @@ class _PocketClawHomeState extends State<PocketClawHome> {
             _gatewayProfile.customRequestHeadersText;
   }
 
-  Future<void> _applyGatewayConfiguration({bool announce = true}) async {
+  Future<bool> _applyGatewayConfiguration({bool announce = true}) async {
     try {
       parseGatewayRequestHeadersText(
         _customRequestHeadersController.text,
         strict: true,
       );
+      parseGatewayWebSocketUri(_gatewayUrlController.text);
     } on FormatException catch (error) {
       _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
-      return;
+      return false;
     }
 
     final profile = _gatewayProfile.copyWith(
-      url: normalizeGatewayUrl(_gatewayUrlController.text),
+      url: parseGatewayWebSocketUri(_gatewayUrlController.text).toString(),
       token: _tokenController.text,
       password: _passwordController.text,
       cloudflareAccessClientId: _cloudflareAccessClientIdController.text.trim(),
@@ -891,6 +892,11 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     await _persistConnectFlowPreferences();
     await _replaceGatewayClient(_buildGatewayClient(profile));
+    return true;
+  }
+
+  Future<void> _saveGatewayConfiguration() async {
+    await _applyGatewayConfiguration();
   }
 
   void _handleChatStreamEvent(ChatStreamEvent event) {
@@ -1074,7 +1080,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
     final guidance = gatewayErrorGuidanceFor(
       error,
-      configuredUrl: _gatewayProfile.url,
+      configuredUrl: _gatewayProfile.url.isNotEmpty
+          ? _gatewayProfile.url
+          : normalizeGatewayUrl(_gatewayUrlController.text),
     );
     final nextStage = resolveConnectFlowStageForError(error);
     setState(() {
@@ -1280,12 +1288,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _connect() async {
-    final configuredUrl = normalizeGatewayUrl(_gatewayUrlController.text);
-    if (configuredUrl.isEmpty) {
-      _appendTimeline(
-        ChatTimelineRole.system,
-        _strings.enterGatewayUrlBeforeConnecting,
-      );
+    try {
+      parseGatewayWebSocketUri(_gatewayUrlController.text);
+    } on FormatException catch (error) {
+      _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
       setState(() {
         _connectFlowStage = ConnectFlowStage.manualConfig;
       });
@@ -1293,7 +1299,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
 
     if (_hasUnsavedGatewayConfiguration()) {
-      await _applyGatewayConfiguration(announce: false);
+      final applied = await _applyGatewayConfiguration(announce: false);
+      if (!applied) {
+        setState(() {
+          _connectFlowStage = ConnectFlowStage.manualConfig;
+        });
+        return;
+      }
     }
 
     setState(() {
@@ -1558,7 +1570,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 cloudflareAccessClientSecretController:
                     _cloudflareAccessClientSecretController,
                 customRequestHeadersController: _customRequestHeadersController,
-                onApply: _applyGatewayConfiguration,
+                onApply: _saveGatewayConfiguration,
               ),
               const SizedBox(height: 12),
               ConnectionStatusCard(

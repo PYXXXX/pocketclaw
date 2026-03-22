@@ -32,6 +32,41 @@ void main() {
     });
   });
 
+  group('parseGatewayWebSocketUri', () {
+    test('normalizes bare hostnames into usable websocket uris', () {
+      expect(
+        parseGatewayWebSocketUri('gateway.example.com').toString(),
+        'wss://gateway.example.com/',
+      );
+    });
+
+    test('rejects empty gateway urls with a clear error', () {
+      expect(
+        () => parseGatewayWebSocketUri('   '),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('Gateway URL is empty'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects hostless websocket urls with a clear error', () {
+      expect(
+        () => parseGatewayWebSocketUri('ws:///'),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('must include a host'),
+          ),
+        ),
+      );
+    });
+  });
+
   group('gatewayUrlUsesLoopback', () {
     test('detects localhost and loopback urls', () {
       expect(gatewayUrlUsesLoopback('ws://127.0.0.1:18789'), isTrue);

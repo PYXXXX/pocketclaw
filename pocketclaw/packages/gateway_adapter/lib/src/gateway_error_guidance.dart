@@ -143,7 +143,24 @@ GatewayErrorGuidance gatewayErrorGuidanceFor(
     );
   }
 
-  if (lower.contains('unsupported url scheme')) {
+  if (lower.contains('gateway url is empty')) {
+    return const GatewayErrorGuidance(
+      summary: 'No Gateway URL is currently configured.',
+      action:
+          'Enter the Gateway host or full ws:// / wss:// URL, save the connection settings, then connect again.',
+    );
+  }
+
+  if (lower.contains('gateway url must include a host')) {
+    return const GatewayErrorGuidance(
+      summary: 'The configured Gateway URL is missing a host.',
+      action:
+          'Use a real host such as 192.168.1.20:18789, gateway.example.com, ws://host:port, or wss://host/path.',
+    );
+  }
+
+  if (lower.contains('unsupported url scheme') ||
+      lower.contains('must resolve to ws:// or wss://')) {
     return const GatewayErrorGuidance(
       summary:
           'PocketClaw rejected the configured WebSocket URL before connecting.',
