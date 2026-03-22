@@ -192,6 +192,7 @@ class GatewayConfigCard extends StatelessWidget {
     required this.cloudflareAccessClientIdController,
     required this.cloudflareAccessClientSecretController,
     required this.customRequestHeadersController,
+    required this.isApplyingConfiguration,
     required this.onApply,
   });
 
@@ -201,6 +202,7 @@ class GatewayConfigCard extends StatelessWidget {
   final TextEditingController cloudflareAccessClientIdController;
   final TextEditingController cloudflareAccessClientSecretController;
   final TextEditingController customRequestHeadersController;
+  final bool isApplyingConfiguration;
   final Future<void> Function() onApply;
 
   @override
@@ -303,8 +305,12 @@ class GatewayConfigCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: onApply,
-              child: Text(strings.saveConnectionSettings),
+              onPressed: isApplyingConfiguration ? null : onApply,
+              child: Text(
+                isApplyingConfiguration
+                    ? strings.applyingConnectionSettings
+                    : strings.saveConnectionSettings,
+              ),
             ),
           ],
         ),
@@ -318,20 +324,23 @@ class ConnectionStatusCard extends StatelessWidget {
     super.key,
     required this.state,
     required this.connectFlowStage,
+    required this.isApplyingConfiguration,
     required this.onConnect,
     required this.onDisconnect,
   });
 
   final GatewayConnectionState state;
   final ConnectFlowStage connectFlowStage;
+  final bool isApplyingConfiguration;
   final Future<void> Function() onConnect;
   final Future<void> Function() onDisconnect;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final canConnect = state.phase == GatewayConnectionPhase.disconnected ||
-        state.phase == GatewayConnectionPhase.error;
+    final canConnect = !isApplyingConfiguration &&
+        (state.phase == GatewayConnectionPhase.disconnected ||
+            state.phase == GatewayConnectionPhase.error);
     final canDisconnect = state.phase != GatewayConnectionPhase.disconnected;
 
     return Card(
@@ -349,6 +358,10 @@ class ConnectionStatusCard extends StatelessWidget {
             if (state.message != null) ...[
               const SizedBox(height: 8),
               Text(state.message!),
+            ],
+            if (isApplyingConfiguration) ...[
+              const SizedBox(height: 8),
+              Text(strings.applyingConnectionSettingsHelp),
             ],
             const SizedBox(height: 12),
             Wrap(

@@ -17,6 +17,7 @@ import 'src/app_shell/connect_flow_models.dart';
 import 'src/app_shell/connect_flow_stage_resolver.dart';
 import 'src/app_shell/connect_surface.dart';
 import 'src/app_shell/current_session_forget_plan.dart';
+import 'src/app_shell/gateway_configuration_apply_controller.dart';
 import 'src/app_shell/gateway_url_input.dart';
 import 'src/bootstrap/startup_bootstrap.dart';
 import 'src/chat/current_view_data_loader.dart';
@@ -160,6 +161,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   GatewayErrorGuidance? _lastGuidance;
   bool _applyingComposerDraft = false;
   bool _onboardingCompleted = false;
+  final GatewayConfigurationApplyController
+      _gatewayConfigurationApplyController =
+      GatewayConfigurationApplyController();
   bool _hasStoredDeviceIdentity = false;
   bool _hasStoredDeviceToken = false;
   bool _isBootstrapping = true;
@@ -837,70 +841,93 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     );
   }
 
-  Future<bool> _applyGatewayConfiguration({bool announce = true}) async {
-    try {
-      parseGatewayRequestHeadersText(
-        _customRequestHeadersController.text,
-        strict: true,
-      );
-      parseGatewayWebSocketUri(_gatewayUrlController.text);
-    } on FormatException catch (error) {
-      _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
-      return false;
+  bool get _isApplyingGatewayConfiguration =>
+      _gatewayConfigurationApplyController.isApplying;
+
+  Future<bool> _applyGatewayConfiguration({bool announce = true}) {
+    final existing = _gatewayConfigurationApplyController.inFlight;
+    if (existing != null) {
+      return existing;
     }
 
-    final profile = _gatewayProfile.copyWith(
-      url: parseGatewayWebSocketUri(_gatewayUrlController.text).toString(),
-      token: _tokenController.text,
-      password: _passwordController.text,
-      cloudflareAccessClientId: _cloudflareAccessClientIdController.text.trim(),
-      cloudflareAccessClientSecret:
-          _cloudflareAccessClientSecretController.text.trim(),
-      customRequestHeadersText: _customRequestHeadersController.text,
-    );
-    _applyProfileToControllers(profile);
+    if (mounted) {
+      setState(() {});
+    }
 
-    setState(() {
-      _gatewayProfile = profile;
-      _lastError = null;
-      _lastGuidance = null;
-      _assistantIdentity = null;
-      _models = const <ModelInfo>[];
-      _currentSessionInfo = null;
-      _sessionDefaults = null;
-      _connectMethod = ConnectMethod.manual;
-      _connectFlowStage = ConnectFlowStage.manualConfig;
-      _selectedDestination = AppDestination.connect;
-      if (announce) {
-        _setTimelineItems(<ChatTimelineItem>[
-          ChatTimelineItem(
-            role: ChatTimelineRole.system,
-            text: _strings.appliedGatewayConfiguration(profile.url),
-            createdAt: DateTime.now().toUtc(),
-          ),
-          if (gatewayUrlUsesLoopback(profile.url))
+    final applyFuture = _gatewayConfigurationApplyController.run(() async {
+      try {
+        parseGatewayRequestHeadersText(
+          _customRequestHeadersController.text,
+          strict: true,
+        );
+        parseGatewayWebSocketUri(_gatewayUrlController.text);
+      } on FormatException catch (error) {
+        _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
+        return false;
+      }
+
+      final profile = _gatewayProfile.copyWith(
+        url: parseGatewayWebSocketUri(_gatewayUrlController.text).toString(),
+        token: _tokenController.text,
+        password: _passwordController.text,
+        cloudflareAccessClientId:
+            _cloudflareAccessClientIdController.text.trim(),
+        cloudflareAccessClientSecret:
+            _cloudflareAccessClientSecretController.text.trim(),
+        customRequestHeadersText: _customRequestHeadersController.text,
+      );
+      _applyProfileToControllers(profile);
+
+      setState(() {
+        _gatewayProfile = profile;
+        _lastError = null;
+        _lastGuidance = null;
+        _assistantIdentity = null;
+        _models = const <ModelInfo>[];
+        _currentSessionInfo = null;
+        _sessionDefaults = null;
+        _connectMethod = ConnectMethod.manual;
+        _connectFlowStage = ConnectFlowStage.manualConfig;
+        _selectedDestination = AppDestination.connect;
+        if (announce) {
+          _setTimelineItems(<ChatTimelineItem>[
             ChatTimelineItem(
               role: ChatTimelineRole.system,
-              text: _strings.loopbackWarningMessage,
+              text: _strings.appliedGatewayConfiguration(profile.url),
               createdAt: DateTime.now().toUtc(),
-              status: 'warning',
             ),
-        ]);
+            if (gatewayUrlUsesLoopback(profile.url))
+              ChatTimelineItem(
+                role: ChatTimelineRole.system,
+                text: _strings.loopbackWarningMessage,
+                createdAt: DateTime.now().toUtc(),
+                status: 'warning',
+              ),
+          ]);
+        }
+      });
+
+      try {
+        await _profileStore.write(profile);
+      } catch (error) {
+        _recordError(
+          error,
+          prefix: _strings.savingEncryptedGatewayConfigurationFailed,
+        );
+      }
+
+      await _persistConnectFlowPreferences();
+      await _replaceGatewayClient(_buildGatewayClient(profile));
+      return true;
+    });
+
+    applyFuture.whenComplete(() {
+      if (mounted) {
+        setState(() {});
       }
     });
 
-    try {
-      await _profileStore.write(profile);
-    } catch (error) {
-      _recordError(
-        error,
-        prefix: _strings.savingEncryptedGatewayConfigurationFailed,
-      );
-    }
-
-    await _persistConnectFlowPreferences();
-    await _replaceGatewayClient(_buildGatewayClient(profile));
-    return true;
+    return applyFuture;
   }
 
   Future<void> _saveGatewayConfiguration() async {
@@ -1296,6 +1323,19 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _connect() async {
+    final pendingApply = _gatewayConfigurationApplyController.inFlight;
+    if (pendingApply != null) {
+      final applied = await pendingApply;
+      if (!applied) {
+        if (mounted) {
+          setState(() {
+            _connectFlowStage = ConnectFlowStage.manualConfig;
+          });
+        }
+        return;
+      }
+    }
+
     final gatewayUrlInput = _effectiveGatewayUrlInput();
     if (_gatewayUrlController.text.trim().isEmpty &&
         _gatewayProfile.url.trim().isNotEmpty) {
@@ -1584,12 +1624,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 cloudflareAccessClientSecretController:
                     _cloudflareAccessClientSecretController,
                 customRequestHeadersController: _customRequestHeadersController,
+                isApplyingConfiguration: _isApplyingGatewayConfiguration,
                 onApply: _saveGatewayConfiguration,
               ),
               const SizedBox(height: 12),
               ConnectionStatusCard(
                 state: _connectionState,
                 connectFlowStage: _connectFlowStage,
+                isApplyingConfiguration: _isApplyingGatewayConfiguration,
                 onConnect: _connect,
                 onDisconnect: _disconnect,
               ),

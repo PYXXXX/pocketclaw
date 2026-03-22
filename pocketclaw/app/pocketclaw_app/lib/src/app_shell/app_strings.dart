@@ -72,6 +72,11 @@ final class AppStrings {
       : 'Use this for Cloudflare, Zero Trust, reverse proxies, or other edge cases. Each line must be "Header-Name: value". Blank lines and # comments are ignored.';
   String get saveConnectionSettings =>
       _isZh ? '保存连接设置' : 'Save connection settings';
+  String get applyingConnectionSettings =>
+      _isZh ? '正在应用连接设置…' : 'Applying connection settings…';
+  String get applyingConnectionSettingsHelp => _isZh
+      ? 'PocketClaw 正在把已保存配置真正切换到连接客户端。完成前会暂时禁用 Connect，避免继续拿旧配置去连。'
+      : 'PocketClaw is still swapping the saved configuration into the live connection client. Connect stays disabled until that finishes so it cannot race against stale settings.';
   String gatewayState(String state) => _isZh
       ? 'Gateway 状态：${connectionPhase(state)}'
       : 'Gateway state: ${connectionPhase(state)}';
