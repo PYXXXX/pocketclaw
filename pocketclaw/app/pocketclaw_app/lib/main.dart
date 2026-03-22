@@ -167,6 +167,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   bool _hasStoredDeviceIdentity = false;
   bool _hasStoredDeviceToken = false;
   bool _isBootstrapping = true;
+  Future<void>? _bootstrapFuture;
+  Future<void>? _gatewayClientRefreshFuture;
   ConnectMethod _connectMethod = ConnectMethod.manual;
   ConnectFlowStage _connectFlowStage = ConnectFlowStage.welcome;
   AppDestination _selectedDestination = AppDestination.connect;
@@ -209,7 +211,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
 
     _messageController.addListener(_handleComposerChanged);
 
-    unawaited(_bootstrapLocalState());
+    _bootstrapFuture = _bootstrapLocalState();
+    unawaited(_bootstrapFuture);
   }
 
   @override
@@ -287,6 +290,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         final nextStage = _deriveConnectFlowStage();
         setState(() {
           _isBootstrapping = false;
+          _bootstrapFuture = null;
           _connectFlowStage = nextStage;
           _selectedDestination = nextStage == ConnectFlowStage.ready
               ? AppDestination.chat
@@ -412,7 +416,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _gatewayProfile = storedProfile;
       });
 
-      await _replaceGatewayClient(_buildGatewayClient(storedProfile));
+      await _replaceGatewayClientTracked(_buildGatewayClient(storedProfile));
     } catch (error) {
       _recordError(error, prefix: _strings.secureConfigurationRestoreFailed);
     }
@@ -682,6 +686,25 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     _chatSubscription = _chatService.stream.listen(_handleChatStreamEvent);
   }
 
+  bool get _isRefreshingGatewayClient => _gatewayClientRefreshFuture != null;
+
+  Future<void> _replaceGatewayClientTracked(ConnectableGatewayClient client) {
+    final refreshFuture = _replaceGatewayClient(client);
+    _gatewayClientRefreshFuture = refreshFuture;
+    if (mounted) {
+      setState(() {});
+    }
+    refreshFuture.whenComplete(() {
+      if (identical(_gatewayClientRefreshFuture, refreshFuture)) {
+        _gatewayClientRefreshFuture = null;
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    });
+    return refreshFuture;
+  }
+
   Future<void> _replaceGatewayClient(ConnectableGatewayClient client) async {
     await _connectionSubscription?.cancel();
     await _eventSubscription?.cancel();
@@ -917,7 +940,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
 
       await _persistConnectFlowPreferences();
-      await _replaceGatewayClient(_buildGatewayClient(profile));
+      await _replaceGatewayClientTracked(_buildGatewayClient(profile));
       return true;
     });
 
@@ -1323,6 +1346,16 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _connect() async {
+    final bootstrapFuture = _bootstrapFuture;
+    if (bootstrapFuture != null) {
+      await bootstrapFuture;
+    }
+
+    final pendingRefresh = _gatewayClientRefreshFuture;
+    if (pendingRefresh != null) {
+      await pendingRefresh;
+    }
+
     final pendingApply = _gatewayConfigurationApplyController.inFlight;
     if (pendingApply != null) {
       final applied = await pendingApply;
@@ -1631,7 +1664,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
               ConnectionStatusCard(
                 state: _connectionState,
                 connectFlowStage: _connectFlowStage,
+                isBootstrapping: _isBootstrapping,
                 isApplyingConfiguration: _isApplyingGatewayConfiguration,
+                isRefreshingClient: _isRefreshingGatewayClient,
                 onConnect: _connect,
                 onDisconnect: _disconnect,
               ),

@@ -77,6 +77,12 @@ final class AppStrings {
   String get applyingConnectionSettingsHelp => _isZh
       ? 'PocketClaw 正在把已保存配置真正切换到连接客户端。完成前会暂时禁用 Connect，避免继续拿旧配置去连。'
       : 'PocketClaw is still swapping the saved configuration into the live connection client. Connect stays disabled until that finishes so it cannot race against stale settings.';
+  String get restoringSavedConfigurationHelp => _isZh
+      ? 'PocketClaw 启动后仍在恢复本地保存的 Gateway 配置和会话状态。恢复完成前会暂时禁用 Connect，避免启动时继续拿空配置去连。'
+      : 'PocketClaw is still restoring the saved Gateway configuration and session state after launch. Connect stays disabled until that finishes so startup cannot race against an empty initial client.';
+  String get refreshingLiveConnectionClientHelp => _isZh
+      ? 'PocketClaw 正在刷新 live 连接客户端，使其真正使用最新的 Gateway 配置。'
+      : 'PocketClaw is refreshing the live connection client so it actually uses the latest Gateway configuration.';
   String gatewayState(String state) => _isZh
       ? 'Gateway 状态：${connectionPhase(state)}'
       : 'Gateway state: ${connectionPhase(state)}';

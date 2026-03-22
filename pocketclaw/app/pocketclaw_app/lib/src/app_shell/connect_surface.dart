@@ -8,6 +8,7 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 
 import 'app_strings.dart';
 import 'connect_flow_models.dart';
+import 'gateway_connection_availability.dart';
 
 class AppStatusBanner extends StatelessWidget {
   const AppStatusBanner({
@@ -324,23 +325,30 @@ class ConnectionStatusCard extends StatelessWidget {
     super.key,
     required this.state,
     required this.connectFlowStage,
+    required this.isBootstrapping,
     required this.isApplyingConfiguration,
+    required this.isRefreshingClient,
     required this.onConnect,
     required this.onDisconnect,
   });
 
   final GatewayConnectionState state;
   final ConnectFlowStage connectFlowStage;
+  final bool isBootstrapping;
   final bool isApplyingConfiguration;
+  final bool isRefreshingClient;
   final Future<void> Function() onConnect;
   final Future<void> Function() onDisconnect;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final canConnect = !isApplyingConfiguration &&
-        (state.phase == GatewayConnectionPhase.disconnected ||
-            state.phase == GatewayConnectionPhase.error);
+    final canConnect = canAttemptGatewayConnect(
+      phase: state.phase,
+      isBootstrapping: isBootstrapping,
+      isApplyingConfiguration: isApplyingConfiguration,
+      isRefreshingClient: isRefreshingClient,
+    );
     final canDisconnect = state.phase != GatewayConnectionPhase.disconnected;
 
     return Card(
@@ -358,6 +366,14 @@ class ConnectionStatusCard extends StatelessWidget {
             if (state.message != null) ...[
               const SizedBox(height: 8),
               Text(state.message!),
+            ],
+            if (isBootstrapping) ...[
+              const SizedBox(height: 8),
+              Text(strings.restoringSavedConfigurationHelp),
+            ],
+            if (isRefreshingClient) ...[
+              const SizedBox(height: 8),
+              Text(strings.refreshingLiveConnectionClientHelp),
             ],
             if (isApplyingConfiguration) ...[
               const SizedBox(height: 8),
