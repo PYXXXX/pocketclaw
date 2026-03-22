@@ -1133,8 +1133,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     );
     final entry = LocalSessionEntry(
       sessionKey: sessionKey,
-      title:
-          '${_displayNameForAgent(_selectedAgentId)} '
+      title: '${_displayNameForAgent(_selectedAgentId)} '
           '${_registry.sessions.length + 1}',
     );
 
