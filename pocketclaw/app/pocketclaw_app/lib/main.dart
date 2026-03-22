@@ -14,9 +14,10 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 import 'src/app_shell/app_strings.dart';
 import 'src/app_shell/chat_shell.dart';
 import 'src/app_shell/connect_flow_models.dart';
-import 'src/app_shell/current_session_forget_plan.dart';
 import 'src/app_shell/connect_flow_stage_resolver.dart';
 import 'src/app_shell/connect_surface.dart';
+import 'src/app_shell/current_session_forget_plan.dart';
+import 'src/app_shell/gateway_url_input.dart';
 import 'src/bootstrap/startup_bootstrap.dart';
 import 'src/chat/current_view_data_loader.dart';
 import 'src/chat/pending_image_attachment.dart';
@@ -817,7 +818,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   bool _hasUnsavedGatewayConfiguration() {
-    return normalizeGatewayUrl(_gatewayUrlController.text) !=
+    return normalizeGatewayUrl(_effectiveGatewayUrlInput()) !=
             _gatewayProfile.url ||
         _tokenController.text != _gatewayProfile.token ||
         _passwordController.text != _gatewayProfile.password ||
@@ -827,6 +828,13 @@ class _PocketClawHomeState extends State<PocketClawHome> {
             _gatewayProfile.cloudflareAccessClientSecret ||
         _customRequestHeadersController.text !=
             _gatewayProfile.customRequestHeadersText;
+  }
+
+  String _effectiveGatewayUrlInput() {
+    return effectiveGatewayUrlInput(
+      draftUrl: _gatewayUrlController.text,
+      savedUrl: _gatewayProfile.url,
+    );
   }
 
   Future<bool> _applyGatewayConfiguration({bool announce = true}) async {
@@ -1082,7 +1090,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       error,
       configuredUrl: _gatewayProfile.url.isNotEmpty
           ? _gatewayProfile.url
-          : normalizeGatewayUrl(_gatewayUrlController.text),
+          : normalizeGatewayUrl(_effectiveGatewayUrlInput()),
     );
     final nextStage = resolveConnectFlowStageForError(error);
     setState(() {
@@ -1288,8 +1296,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   Future<void> _connect() async {
+    final gatewayUrlInput = _effectiveGatewayUrlInput();
+    if (_gatewayUrlController.text.trim().isEmpty &&
+        _gatewayProfile.url.trim().isNotEmpty) {
+      _gatewayUrlController.text = _gatewayProfile.url;
+    }
+
     try {
-      parseGatewayWebSocketUri(_gatewayUrlController.text);
+      parseGatewayWebSocketUri(gatewayUrlInput);
     } on FormatException catch (error) {
       _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
       setState(() {
