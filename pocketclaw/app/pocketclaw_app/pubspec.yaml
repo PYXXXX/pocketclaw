@@ -14,6 +14,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   file_picker: ^8.1.2
+  flutter_local_notifications: ^19.0.0
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.2
   gateway_transport: any

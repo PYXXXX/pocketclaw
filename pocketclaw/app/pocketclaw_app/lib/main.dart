@@ -25,6 +25,8 @@ import 'src/app_shell/gateway_url_input.dart';
 import 'src/bootstrap/startup_bootstrap.dart';
 import 'src/chat/current_view_data_loader.dart';
 import 'src/chat/pending_image_attachment.dart';
+import 'src/notifications/local_notification_service.dart';
+import 'src/notifications/reply_notification_summary.dart';
 import 'src/storage/connect_flow_preferences_store.dart';
 import 'src/storage/local_session_registry_store.dart';
 import 'src/storage/secure_gateway_device_identity_store.dart';
@@ -78,7 +80,8 @@ class PocketClawHome extends StatefulWidget {
   State<PocketClawHome> createState() => _PocketClawHomeState();
 }
 
-class _PocketClawHomeState extends State<PocketClawHome> {
+class _PocketClawHomeState extends State<PocketClawHome>
+    with WidgetsBindingObserver {
   final SessionKeyFactory _sessionKeyFactory = const SessionKeyFactory();
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _gatewayUrlController = TextEditingController();
@@ -120,6 +123,8 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   late GatewayChatService _chatService;
   late GatewaySessionService _sessionService;
   late GatewayAgentService _agentService;
+  final LocalNotificationService _localNotificationService =
+      LocalNotificationService();
 
   static String _gatewayClientIdForPlatform(TargetPlatform platform) {
     return switch (platform) {
@@ -171,6 +176,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   bool _hasStoredDeviceIdentity = false;
   bool _hasStoredDeviceToken = false;
   bool _isBootstrapping = true;
+  AppLifecycleState? _appLifecycleState;
   Future<void>? _bootstrapFuture;
   Future<void>? _gatewayClientRefreshFuture;
   ConnectMethod _connectMethod = ConnectMethod.manual;
@@ -181,6 +187,9 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _appLifecycleState = WidgetsBinding.instance.lifecycleState;
+    unawaited(_initializeNotifications());
     _gatewayProfile = const GatewayProfile();
     _applyProfileToControllers(_gatewayProfile);
 
@@ -220,8 +229,19 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     unawaited(_bootstrapFuture);
   }
 
+  Future<void> _initializeNotifications() async {
+    await _localNotificationService.initialize();
+    await _localNotificationService.requestPermissions();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appLifecycleState = state;
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _draftPersistTimer?.cancel();
     _connectionSubscription?.cancel();
     _eventSubscription?.cancel();
@@ -992,6 +1012,61 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     await _applyGatewayConfiguration();
   }
 
+  String _notificationSessionTitleFor(String sessionKey) {
+    final currentLabel = _currentSessionInfo?.label?.trim();
+    if (_currentSession.sessionKey.value == sessionKey &&
+        currentLabel != null &&
+        currentLabel.isNotEmpty) {
+      return currentLabel;
+    }
+    final localEntry = _registry.findBySessionKey(sessionKey);
+    final localTitle = localEntry?.title.trim();
+    if (localTitle != null && localTitle.isNotEmpty) {
+      return localTitle;
+    }
+    for (final session in _gatewaySessions) {
+      if (session.key != sessionKey) {
+        continue;
+      }
+      final label = session.label?.trim();
+      if (label != null && label.isNotEmpty) {
+        return label;
+      }
+      break;
+    }
+    return sessionKey;
+  }
+
+  String _notificationAgentNameFor(String sessionKey) {
+    final currentAgentName = _assistantIdentity?.name;
+    if (_currentSession.sessionKey.value == sessionKey &&
+        currentAgentName != null &&
+        currentAgentName.trim().isNotEmpty) {
+      return currentAgentName.trim();
+    }
+    return _displayNameForAgent(_agentIdForSession(sessionKey));
+  }
+
+  Future<void> _maybeShowReplyNotification(ChatStreamEvent event) async {
+    if (!shouldNotifyForReply(
+      event: event,
+      appLifecycleState: _appLifecycleState,
+    )) {
+      return;
+    }
+    final message = event.message;
+    if (message == null) {
+      return;
+    }
+    final summary = buildReplyNotificationSummary(
+      sessionTitle: _notificationSessionTitleFor(event.sessionKey),
+      agentName: _notificationAgentNameFor(event.sessionKey),
+      replyText: message.text,
+      runId: event.runId,
+    );
+    await _localNotificationService.showReplyNotification(summary);
+  }
+
   void _handleChatStreamEvent(ChatStreamEvent event) {
     if (event.sessionKey != _currentSession.sessionKey.value || !mounted) {
       return;
@@ -1009,6 +1084,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
         _activeRunId = null;
       }
     });
+    unawaited(_maybeShowReplyNotification(event));
   }
 
   Future<void> _loadCurrentViewData() async {
