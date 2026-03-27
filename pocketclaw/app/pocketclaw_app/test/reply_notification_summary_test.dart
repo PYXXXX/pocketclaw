@@ -19,6 +19,8 @@ void main() {
         shouldNotifyForReply(
           event: assistantFinal,
           appLifecycleState: AppLifecycleState.resumed,
+          notificationsEnabled: true,
+          mutedSessionKeys: const <String>{},
         ),
         isFalse,
       );
@@ -30,6 +32,8 @@ void main() {
         shouldNotifyForReply(
           event: assistantFinal,
           appLifecycleState: AppLifecycleState.paused,
+          notificationsEnabled: true,
+          mutedSessionKeys: const <String>{},
         ),
         isTrue,
       );
@@ -44,6 +48,8 @@ void main() {
             message: ChatMessage(role: ChatMessageRole.user, text: 'echo'),
           ),
           appLifecycleState: AppLifecycleState.paused,
+          notificationsEnabled: true,
+          mutedSessionKeys: const <String>{},
         ),
         isFalse,
       );
@@ -55,6 +61,31 @@ void main() {
             message: ChatMessage(role: ChatMessageRole.assistant, text: ' \n '),
           ),
           appLifecycleState: AppLifecycleState.paused,
+          notificationsEnabled: true,
+          mutedSessionKeys: const <String>{},
+        ),
+        isFalse,
+      );
+    });
+
+    test(
+        'does not notify when notifications are disabled or the session is muted',
+        () {
+      expect(
+        shouldNotifyForReply(
+          event: assistantFinal,
+          appLifecycleState: AppLifecycleState.paused,
+          notificationsEnabled: false,
+          mutedSessionKeys: const <String>{},
+        ),
+        isFalse,
+      );
+      expect(
+        shouldNotifyForReply(
+          event: assistantFinal,
+          appLifecycleState: AppLifecycleState.paused,
+          notificationsEnabled: true,
+          mutedSessionKeys: const <String>{'agent:main:pc-home'},
         ),
         isFalse,
       );
@@ -68,6 +99,8 @@ void main() {
         sessionTitle: 'Daily Ops',
         agentName: 'Main Agent',
         replyText: 'Done.',
+        includeReplyBody: true,
+        hiddenBodyText: 'Open PocketClaw to read the reply',
         runId: 'run-1',
       );
 
@@ -84,9 +117,24 @@ void main() {
         sessionTitle: 'Daily Ops',
         agentName: 'Main Agent',
         replyText: '  Line 1\n\n   Line 2   \n',
+        includeReplyBody: true,
+        hiddenBodyText: 'Open PocketClaw to read the reply',
       );
 
       expect(summary.body, 'Line 1\nLine 2');
+    });
+
+    test('can hide the reply body when previews are disabled', () {
+      final summary = buildReplyNotificationSummary(
+        sessionKey: 'agent:main:pc-home',
+        sessionTitle: 'Daily Ops',
+        agentName: 'Main Agent',
+        replyText: 'Sensitive content',
+        includeReplyBody: false,
+        hiddenBodyText: 'Open PocketClaw to read the reply',
+      );
+
+      expect(summary.body, 'Open PocketClaw to read the reply');
     });
   });
 }

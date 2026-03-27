@@ -42,6 +42,12 @@ class ChatShell extends StatelessWidget {
     required this.onSelectVerbose,
     required this.onToggleFastMode,
     required this.onClearFastModeOverride,
+    required this.notificationsEnabled,
+    required this.showNotificationBody,
+    required this.currentSessionNotificationsMuted,
+    required this.onSetNotificationsEnabled,
+    required this.onSetShowNotificationBody,
+    required this.onToggleCurrentSessionNotificationMute,
     required this.onPickImages,
     required this.onRemoveAttachment,
     required this.onSendMessage,
@@ -74,6 +80,13 @@ class ChatShell extends StatelessWidget {
   final Future<void> Function(String? verboseLevel) onSelectVerbose;
   final Future<void> Function(bool enabled) onToggleFastMode;
   final Future<void> Function() onClearFastModeOverride;
+  final bool notificationsEnabled;
+  final bool showNotificationBody;
+  final bool currentSessionNotificationsMuted;
+  final Future<void> Function(bool enabled) onSetNotificationsEnabled;
+  final Future<void> Function(bool enabled) onSetShowNotificationBody;
+  final Future<void> Function(bool muted)
+      onToggleCurrentSessionNotificationMute;
   final Future<void> Function() onPickImages;
   final void Function(String id) onRemoveAttachment;
   final Future<void> Function() onSendMessage;
@@ -151,6 +164,17 @@ class ChatShell extends StatelessWidget {
                 onSelectVerbose: onSelectVerbose,
                 onToggleFastMode: onToggleFastMode,
                 onClearFastModeOverride: onClearFastModeOverride,
+              ),
+              const SizedBox(height: 12),
+              NotificationSettingsCard(
+                notificationsEnabled: notificationsEnabled,
+                showNotificationBody: showNotificationBody,
+                currentSessionNotificationsMuted:
+                    currentSessionNotificationsMuted,
+                onSetNotificationsEnabled: onSetNotificationsEnabled,
+                onSetShowNotificationBody: onSetShowNotificationBody,
+                onToggleCurrentSessionNotificationMute:
+                    onToggleCurrentSessionNotificationMute,
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -610,6 +634,74 @@ class _SessionSettingChip extends StatelessWidget {
     return Chip(
       avatar: Icon(inherited ? Icons.keyboard_return : Icons.tune, size: 18),
       label: Text('$label: $value'),
+    );
+  }
+}
+
+class NotificationSettingsCard extends StatelessWidget {
+  const NotificationSettingsCard({
+    super.key,
+    required this.notificationsEnabled,
+    required this.showNotificationBody,
+    required this.currentSessionNotificationsMuted,
+    required this.onSetNotificationsEnabled,
+    required this.onSetShowNotificationBody,
+    required this.onToggleCurrentSessionNotificationMute,
+  });
+
+  final bool notificationsEnabled;
+  final bool showNotificationBody;
+  final bool currentSessionNotificationsMuted;
+  final Future<void> Function(bool enabled) onSetNotificationsEnabled;
+  final Future<void> Function(bool enabled) onSetShowNotificationBody;
+  final Future<void> Function(bool muted)
+      onToggleCurrentSessionNotificationMute;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.notificationSettingsTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(strings.notificationSettingsDescription),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.replyNotificationsEnabled),
+              subtitle: Text(strings.replyNotificationsEnabledHelp),
+              value: notificationsEnabled,
+              onChanged: (value) => unawaited(onSetNotificationsEnabled(value)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.showReplyPreview),
+              subtitle: Text(strings.showReplyPreviewHelp),
+              value: showNotificationBody,
+              onChanged: notificationsEnabled
+                  ? (value) => unawaited(onSetShowNotificationBody(value))
+                  : null,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.muteCurrentSessionNotifications),
+              subtitle: Text(strings.muteCurrentSessionNotificationsHelp),
+              value: currentSessionNotificationsMuted,
+              onChanged: notificationsEnabled
+                  ? (value) =>
+                      unawaited(onToggleCurrentSessionNotificationMute(value))
+                  : null,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

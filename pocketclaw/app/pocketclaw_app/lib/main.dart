@@ -30,6 +30,7 @@ import 'src/notifications/reply_notification_payload.dart';
 import 'src/notifications/reply_notification_summary.dart';
 import 'src/storage/connect_flow_preferences_store.dart';
 import 'src/storage/local_session_registry_store.dart';
+import 'src/storage/notification_preferences_store.dart';
 import 'src/storage/secure_gateway_device_identity_store.dart';
 import 'src/storage/secure_gateway_device_token_store.dart';
 import 'src/storage/secure_gateway_profile_store.dart';
@@ -115,6 +116,8 @@ class _PocketClawHomeState extends State<PocketClawHome>
       SharedPreferencesLocalSessionRegistryStore();
   late final ConnectFlowPreferencesStore _connectFlowPreferencesStore =
       SharedPreferencesConnectFlowPreferencesStore();
+  late final NotificationPreferencesStore _notificationPreferencesStore =
+      SharedPreferencesNotificationPreferencesStore();
 
   late LocalSessionRegistry _registry;
   late LocalSessionEntry _currentSession;
@@ -176,6 +179,9 @@ class _PocketClawHomeState extends State<PocketClawHome>
       GatewayConfigurationApplyController();
   bool _hasStoredDeviceIdentity = false;
   bool _hasStoredDeviceToken = false;
+  bool _notificationsEnabled = true;
+  bool _showNotificationBody = true;
+  Set<String> _mutedNotificationSessionKeys = <String>{};
   bool _isBootstrapping = true;
   AppLifecycleState? _appLifecycleState;
   Future<void>? _bootstrapFuture;
@@ -293,6 +299,10 @@ class _PocketClawHomeState extends State<PocketClawHome>
         BootstrapTask(
           label: _strings.connectFlowPreferenceRestore,
           action: _restoreConnectFlowPreferences,
+        ),
+        BootstrapTask(
+          label: _strings.notificationPreferenceRestore,
+          action: _restoreNotificationPreferences,
         ),
         BootstrapTask(
           label: _strings.storedDeviceAuthRefresh,
@@ -499,6 +509,23 @@ class _PocketClawHomeState extends State<PocketClawHome>
     }
   }
 
+  Future<void> _restoreNotificationPreferences() async {
+    try {
+      final stored = await _notificationPreferencesStore.read();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _notificationsEnabled = stored.notificationsEnabled;
+        _showNotificationBody = stored.showReplyBody;
+        _mutedNotificationSessionKeys = stored.mutedSessionKeys.toSet();
+      });
+    } catch (error) {
+      _recordError(error,
+          prefix: _strings.notificationPreferencesRestoreFailed);
+    }
+  }
+
   Future<void> _refreshStoredDeviceAuthState() async {
     try {
       final identity = await _deviceIdentityStore.read();
@@ -543,6 +570,18 @@ class _PocketClawHomeState extends State<PocketClawHome>
       );
     } catch (error) {
       _recordError(error, prefix: _strings.savingConnectFlowPreferencesFailed);
+    }
+  }
+
+  Future<void> _persistNotificationPreferences() async {
+    try {
+      await _notificationPreferencesStore.write(
+        notificationsEnabled: _notificationsEnabled,
+        showReplyBody: _showNotificationBody,
+        mutedSessionKeys: _mutedNotificationSessionKeys.toList(),
+      );
+    } catch (error) {
+      _recordError(error, prefix: _strings.savingNotificationPreferencesFailed);
     }
   }
 
@@ -1050,6 +1089,35 @@ class _PocketClawHomeState extends State<PocketClawHome>
     await _selectCurrentSession(entry);
   }
 
+  bool _isSessionMutedForNotifications(String sessionKey) {
+    return _mutedNotificationSessionKeys.contains(sessionKey);
+  }
+
+  Future<void> _setNotificationsEnabled(bool enabled) async {
+    setState(() {
+      _notificationsEnabled = enabled;
+    });
+    await _persistNotificationPreferences();
+  }
+
+  Future<void> _setShowNotificationBody(bool enabled) async {
+    setState(() {
+      _showNotificationBody = enabled;
+    });
+    await _persistNotificationPreferences();
+  }
+
+  Future<void> _toggleCurrentSessionNotificationMute(bool muted) async {
+    setState(() {
+      if (muted) {
+        _mutedNotificationSessionKeys.add(_currentSession.sessionKey.value);
+      } else {
+        _mutedNotificationSessionKeys.remove(_currentSession.sessionKey.value);
+      }
+    });
+    await _persistNotificationPreferences();
+  }
+
   String _notificationSessionTitleFor(String sessionKey) {
     final currentLabel = _currentSessionInfo?.label?.trim();
     if (_currentSession.sessionKey.value == sessionKey &&
@@ -1089,6 +1157,8 @@ class _PocketClawHomeState extends State<PocketClawHome>
     if (!shouldNotifyForReply(
       event: event,
       appLifecycleState: _appLifecycleState,
+      notificationsEnabled: _notificationsEnabled,
+      mutedSessionKeys: _mutedNotificationSessionKeys,
     )) {
       return;
     }
@@ -1101,6 +1171,8 @@ class _PocketClawHomeState extends State<PocketClawHome>
       sessionTitle: _notificationSessionTitleFor(event.sessionKey),
       agentName: _notificationAgentNameFor(event.sessionKey),
       replyText: message.text,
+      includeReplyBody: _showNotificationBody,
+      hiddenBodyText: _strings.openPocketClawToReadReply,
       runId: event.runId,
     );
     await _localNotificationService.showReplyNotification(summary);
@@ -1913,6 +1985,15 @@ class _PocketClawHomeState extends State<PocketClawHome>
           onSelectVerbose: _applyVerboseLevel,
           onToggleFastMode: _toggleFastMode,
           onClearFastModeOverride: _clearFastModeOverride,
+          notificationsEnabled: _notificationsEnabled,
+          showNotificationBody: _showNotificationBody,
+          currentSessionNotificationsMuted: _isSessionMutedForNotifications(
+            _currentSession.sessionKey.value,
+          ),
+          onSetNotificationsEnabled: _setNotificationsEnabled,
+          onSetShowNotificationBody: _setShowNotificationBody,
+          onToggleCurrentSessionNotificationMute:
+              _toggleCurrentSessionNotificationMute,
           onPickImages: _pickImages,
           onRemoveAttachment: _removePendingAttachment,
           onSendMessage: _sendMessage,

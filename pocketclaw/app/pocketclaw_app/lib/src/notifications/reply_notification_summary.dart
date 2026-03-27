@@ -20,8 +20,12 @@ final class ReplyNotificationSummary {
 bool shouldNotifyForReply({
   required ChatStreamEvent event,
   required AppLifecycleState? appLifecycleState,
+  required bool notificationsEnabled,
+  required Set<String> mutedSessionKeys,
 }) {
-  if (appLifecycleState == null ||
+  if (!notificationsEnabled ||
+      mutedSessionKeys.contains(event.sessionKey) ||
+      appLifecycleState == null ||
       appLifecycleState == AppLifecycleState.resumed) {
     return false;
   }
@@ -40,6 +44,8 @@ ReplyNotificationSummary buildReplyNotificationSummary({
   required String sessionTitle,
   required String agentName,
   required String replyText,
+  required bool includeReplyBody,
+  required String hiddenBodyText,
   String? runId,
 }) {
   final effectiveSessionTitle = sessionTitle.trim();
@@ -54,7 +60,8 @@ ReplyNotificationSummary buildReplyNotificationSummary({
     (false, true) => effectiveAgentName,
     (false, false) => 'PocketClaw',
   };
-  final body = normalizeReplyNotificationBody(replyText);
+  final normalizedReplyBody = normalizeReplyNotificationBody(replyText);
+  final body = includeReplyBody ? normalizedReplyBody : hiddenBodyText.trim();
   return ReplyNotificationSummary(
     id: Object.hash(title, runId ?? body) & 0x7fffffff,
     title: title,

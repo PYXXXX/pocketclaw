@@ -260,6 +260,26 @@ final class AppStrings {
   String fastModeMapsTo(String summary) => _isZh
       ? '对应 sessions.patch fastMode · $summary'
       : 'Maps to sessions.patch fastMode · $summary';
+  String get notificationSettingsTitle => _isZh ? '通知' : 'Notifications';
+  String get notificationSettingsDescription => _isZh
+      ? '当 OpenClaw 在后台回复时，PocketClaw 可以弹系统通知。这里可以控制是否通知、是否显示正文，以及是否静音当前会话。'
+      : 'PocketClaw can show system notifications for OpenClaw replies while the app is in the background. Control whether replies notify, whether previews show the body, and whether the current session stays muted.';
+  String get replyNotificationsEnabled =>
+      _isZh ? '开启回复通知' : 'Reply notifications';
+  String get replyNotificationsEnabledHelp => _isZh
+      ? '仅在应用不在前台时弹出系统通知。'
+      : 'Only shows system notifications while the app is not in the foreground.';
+  String get showReplyPreview => _isZh ? '通知里显示回复正文' : 'Show reply preview';
+  String get showReplyPreviewHelp => _isZh
+      ? '关闭后，通知只显示标题，正文改成提示文案。'
+      : 'When off, notifications keep the title but replace the body with a generic prompt.';
+  String get muteCurrentSessionNotifications =>
+      _isZh ? '静音当前会话' : 'Mute current session';
+  String get muteCurrentSessionNotificationsHelp => _isZh
+      ? '这个会话后续有回复时不再弹通知，其他会话不受影响。'
+      : 'Future replies from this session stop showing notifications, while other sessions keep notifying.';
+  String get openPocketClawToReadReply =>
+      _isZh ? '打开 PocketClaw 查看回复内容' : 'Open PocketClaw to read the reply';
 
   String get startupReadyMessage => _isZh
       ? 'PocketClaw 已准备好连接真实 Gateway。先完成连接流程，应用能稳定重连后再进入聊天界面。'
@@ -273,6 +293,8 @@ final class AppStrings {
   String get localSessionRestore => _isZh ? '恢复本地会话' : 'Local session restore';
   String get connectFlowPreferenceRestore =>
       _isZh ? '恢复连接流程偏好' : 'Connect flow preference restore';
+  String get notificationPreferenceRestore =>
+      _isZh ? '恢复通知偏好' : 'Notification preference restore';
   String get storedDeviceAuthRefresh =>
       _isZh ? '刷新已保存的设备认证状态' : 'Stored device auth refresh';
   String get receivedDeviceAuthChallenge => _isZh
@@ -294,12 +316,16 @@ final class AppStrings {
       _isZh ? '恢复本地会话失败' : 'Local session restore failed';
   String get connectFlowRestoreFailed =>
       _isZh ? '恢复连接流程偏好失败' : 'Connect flow restore failed';
+  String get notificationPreferencesRestoreFailed =>
+      _isZh ? '恢复通知偏好失败' : 'Notification preference restore failed';
   String get storedDeviceAuthRefreshFailed =>
       _isZh ? '刷新已保存设备认证状态失败' : 'Stored device auth refresh failed';
   String get savingLocalSessionsFailed =>
       _isZh ? '保存本地会话失败' : 'Saving local sessions failed';
   String get savingConnectFlowPreferencesFailed =>
       _isZh ? '保存连接流程偏好失败' : 'Saving connect flow preferences failed';
+  String get savingNotificationPreferencesFailed =>
+      _isZh ? '保存通知偏好失败' : 'Saving notification preferences failed';
   String get renameFailed => _isZh ? '重命名失败' : 'Rename failed';
   String get gatewayConfigurationInvalid =>
       _isZh ? 'Gateway 配置无效' : 'Gateway configuration is invalid';
