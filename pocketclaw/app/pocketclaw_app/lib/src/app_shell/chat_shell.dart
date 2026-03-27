@@ -9,6 +9,7 @@ import 'package:pocketclaw_core/pocketclaw_core.dart';
 import '../chat/pending_image_attachment.dart';
 import 'agent_session_card_view_data.dart';
 import 'app_strings.dart';
+import 'chat_timeline_focus.dart';
 import 'current_session_header.dart';
 import 'session_info_view_data.dart';
 
@@ -45,6 +46,7 @@ class ChatShell extends StatelessWidget {
     required this.notificationsEnabled,
     required this.showNotificationBody,
     required this.currentSessionNotificationsMuted,
+    required this.notificationTimelineFocusNonce,
     required this.onSetNotificationsEnabled,
     required this.onSetShowNotificationBody,
     required this.onToggleCurrentSessionNotificationMute,
@@ -81,6 +83,7 @@ class ChatShell extends StatelessWidget {
   final Future<void> Function(bool enabled) onToggleFastMode;
   final Future<void> Function() onClearFastModeOverride;
   final bool notificationsEnabled;
+  final int notificationTimelineFocusNonce;
   final bool showNotificationBody;
   final bool currentSessionNotificationsMuted;
   final Future<void> Function(bool enabled) onSetNotificationsEnabled;
@@ -178,28 +181,11 @@ class ChatShell extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: timeline.isEmpty
-                        ? Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(strings.timelineEmpty),
-                          )
-                        : ListView.separated(
-                            itemCount: timeline.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final item = timeline[index];
-                              return TimelineEntryCard(
-                                item: item,
-                                icon: iconForRole(item.role),
-                                compact: compact,
-                              );
-                            },
-                          ),
-                  ),
+                child: TimelinePane(
+                  timeline: timeline,
+                  compact: compact,
+                  iconForRole: iconForRole,
+                  focusLatestActivityNonce: notificationTimelineFocusNonce,
                 ),
               ),
               const SizedBox(height: 12),
@@ -452,17 +438,119 @@ class AgentSessionCard extends StatelessWidget {
   }
 }
 
+class TimelinePane extends StatefulWidget {
+  const TimelinePane({
+    super.key,
+    required this.timeline,
+    required this.compact,
+    required this.iconForRole,
+    required this.focusLatestActivityNonce,
+  });
+
+  final List<ChatTimelineItem> timeline;
+  final bool compact;
+  final ChatRoleIconBuilder iconForRole;
+  final int focusLatestActivityNonce;
+
+  @override
+  State<TimelinePane> createState() => _TimelinePaneState();
+}
+
+class _TimelinePaneState extends State<TimelinePane> {
+  final ScrollController _scrollController = ScrollController();
+  int? _highlightedIndex;
+  Timer? _highlightTimer;
+  int _lastAppliedFocusNonce = 0;
+
+  @override
+  void didUpdateWidget(covariant TimelinePane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusLatestActivityNonce == _lastAppliedFocusNonce ||
+        widget.focusLatestActivityNonce == 0 ||
+        widget.timeline.isEmpty) {
+      return;
+    }
+    _lastAppliedFocusNonce = widget.focusLatestActivityNonce;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final targetIndex = indexForLatestAssistantActivity(widget.timeline);
+      if (targetIndex < 0) {
+        return;
+      }
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      setState(() {
+        _highlightedIndex = targetIndex;
+      });
+      _highlightTimer?.cancel();
+      _highlightTimer = Timer(const Duration(seconds: 3), () {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _highlightedIndex = null;
+        });
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _highlightTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: widget.timeline.isEmpty
+            ? Align(
+                alignment: Alignment.topLeft,
+                child: Text(strings.timelineEmpty),
+              )
+            : ListView.separated(
+                controller: _scrollController,
+                itemCount: widget.timeline.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final item = widget.timeline[index];
+                  return TimelineEntryCard(
+                    item: item,
+                    icon: widget.iconForRole(item.role),
+                    compact: widget.compact,
+                    highlighted: index == _highlightedIndex,
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
 class TimelineEntryCard extends StatelessWidget {
   const TimelineEntryCard({
     super.key,
     required this.item,
     required this.icon,
     required this.compact,
+    this.highlighted = false,
   });
 
   final ChatTimelineItem item;
   final IconData icon;
   final bool compact;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -473,13 +561,15 @@ class TimelineEntryCard extends StatelessWidget {
     final isTool = item.role == ChatTimelineRole.tool;
     final isSystem = item.role == ChatTimelineRole.system;
 
-    final backgroundColor = isUser
-        ? colorScheme.primaryContainer
-        : isTool
-            ? colorScheme.tertiaryContainer
-            : isSystem
-                ? colorScheme.surfaceContainerHighest
-                : colorScheme.surfaceContainerLow;
+    final backgroundColor = highlighted
+        ? colorScheme.secondaryContainer
+        : isUser
+            ? colorScheme.primaryContainer
+            : isTool
+                ? colorScheme.tertiaryContainer
+                : isSystem
+                    ? colorScheme.surfaceContainerHighest
+                    : colorScheme.surfaceContainerLow;
     final foregroundColor = isUser
         ? colorScheme.onPrimaryContainer
         : isTool
@@ -511,7 +601,12 @@ class TimelineEntryCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.outlineVariant),
+            border: Border.all(
+              color: highlighted
+                  ? colorScheme.secondary
+                  : colorScheme.outlineVariant,
+              width: highlighted ? 1.5 : 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

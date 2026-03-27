@@ -182,6 +182,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
   bool _notificationsEnabled = true;
   bool _showNotificationBody = true;
   Set<String> _mutedNotificationSessionKeys = <String>{};
+  int _notificationTimelineFocusNonce = 0;
   bool _isBootstrapping = true;
   AppLifecycleState? _appLifecycleState;
   Future<void>? _bootstrapFuture;
@@ -1060,6 +1061,11 @@ class _PocketClawHomeState extends State<PocketClawHome>
     final existing = _registry.findBySessionKey(payload.sessionKey);
     if (existing != null) {
       await _selectCurrentSession(existing);
+      if (mounted) {
+        setState(() {
+          _notificationTimelineFocusNonce += 1;
+        });
+      }
       return;
     }
 
@@ -1068,6 +1074,11 @@ class _PocketClawHomeState extends State<PocketClawHome>
         continue;
       }
       await _openGatewaySession(session);
+      if (mounted) {
+        setState(() {
+          _notificationTimelineFocusNonce += 1;
+        });
+      }
       return;
     }
 
@@ -1087,6 +1098,11 @@ class _PocketClawHomeState extends State<PocketClawHome>
     });
     await _persistSessionRegistry();
     await _selectCurrentSession(entry);
+    if (mounted) {
+      setState(() {
+        _notificationTimelineFocusNonce += 1;
+      });
+    }
   }
 
   bool _isSessionMutedForNotifications(String sessionKey) {
@@ -1990,6 +2006,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
           currentSessionNotificationsMuted: _isSessionMutedForNotifications(
             _currentSession.sessionKey.value,
           ),
+          notificationTimelineFocusNonce: _notificationTimelineFocusNonce,
           onSetNotificationsEnabled: _setNotificationsEnabled,
           onSetShowNotificationBody: _setShowNotificationBody,
           onToggleCurrentSessionNotificationMute:
