@@ -76,6 +76,12 @@ final class AppStrings {
       : 'Use this for Cloudflare, Zero Trust, reverse proxies, or other edge cases. Each line must be "Header-Name: value". Blank lines and # comments are ignored.';
   String get saveConnectionSettings =>
       _isZh ? '保存连接设置' : 'Save connection settings';
+  String get effectiveGatewayUrlLabel => _isZh ? '当前生效 URL' : 'Effective URL';
+  String get usingSavedGatewayUrl => _isZh
+      ? '输入框为空，当前仍使用已保存 URL'
+      : 'Field is empty, still using the saved URL';
+  String get unsavedConnectionChanges =>
+      _isZh ? '存在未保存的连接改动' : 'Unsaved connection changes';
   String get applyingConnectionSettings =>
       _isZh ? '正在应用连接设置…' : 'Applying connection settings…';
   String get applyingConnectionSettingsHelp => _isZh

@@ -211,6 +211,9 @@ class GatewayConfigCard extends StatelessWidget {
     required this.cloudflareAccessClientIdController,
     required this.cloudflareAccessClientSecretController,
     required this.customRequestHeadersController,
+    required this.effectiveGatewayUrl,
+    required this.isUsingSavedUrlFallback,
+    required this.hasUnsavedChanges,
     required this.isApplyingConfiguration,
     required this.onApply,
   });
@@ -221,6 +224,9 @@ class GatewayConfigCard extends StatelessWidget {
   final TextEditingController cloudflareAccessClientIdController;
   final TextEditingController cloudflareAccessClientSecretController;
   final TextEditingController customRequestHeadersController;
+  final String effectiveGatewayUrl;
+  final bool isUsingSavedUrlFallback;
+  final bool hasUnsavedChanges;
   final bool isApplyingConfiguration;
   final Future<void> Function() onApply;
 
@@ -245,6 +251,33 @@ class GatewayConfigCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(strings.gatewayIntro),
             const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (effectiveGatewayUrl.trim().isNotEmpty)
+                  Chip(
+                    avatar: const Icon(Icons.link_outlined, size: 18),
+                    label: Text(
+                      '${strings.effectiveGatewayUrlLabel}: $effectiveGatewayUrl',
+                    ),
+                  ),
+                if (isUsingSavedUrlFallback)
+                  Chip(
+                    avatar: const Icon(Icons.save_outlined, size: 18),
+                    label: Text(strings.usingSavedGatewayUrl),
+                  ),
+                if (hasUnsavedChanges)
+                  Chip(
+                    avatar: const Icon(Icons.pending_outlined, size: 18),
+                    label: Text(strings.unsavedConnectionChanges),
+                  ),
+              ],
+            ),
+            if (effectiveGatewayUrl.trim().isNotEmpty ||
+                isUsingSavedUrlFallback ||
+                hasUnsavedChanges)
+              const SizedBox(height: 12),
             TextField(
               controller: gatewayUrlController,
               decoration: InputDecoration(

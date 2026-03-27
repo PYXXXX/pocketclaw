@@ -17,6 +17,7 @@ import 'src/app_shell/connect_flow_models.dart';
 import 'src/app_shell/connect_flow_stage_resolver.dart';
 import 'src/app_shell/connect_surface.dart';
 import 'src/app_shell/current_session_forget_plan.dart';
+import 'src/app_shell/gateway_config_status.dart';
 import 'src/app_shell/gateway_configuration_apply_controller.dart';
 import 'src/app_shell/gateway_connection_diagnostics.dart';
 import 'src/app_shell/gateway_profile_draft.dart';
@@ -1666,6 +1667,12 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     final strings = AppStrings.of(context);
     final connectSnapshot = _snapshotForConnectFlow();
     final connectionDiagnosticsText = _gatewayConnectionDiagnosticsText();
+    final gatewayDraftProfile = _draftGatewayProfile();
+    final gatewayConfigStatus = summarizeGatewayConfigStatus(
+      savedProfile: _gatewayProfile,
+      draftProfile: gatewayDraftProfile,
+      draftUrl: _gatewayUrlController.text,
+    );
     final sessions = _registry.sessions;
     final showChatShell = _connectFlowStage == ConnectFlowStage.ready;
 
@@ -1694,6 +1701,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
                 cloudflareAccessClientSecretController:
                     _cloudflareAccessClientSecretController,
                 customRequestHeadersController: _customRequestHeadersController,
+                effectiveGatewayUrl: gatewayConfigStatus.effectiveUrl,
+                isUsingSavedUrlFallback:
+                    gatewayConfigStatus.isUsingSavedUrlFallback,
+                hasUnsavedChanges: gatewayConfigStatus.hasUnsavedChanges,
                 isApplyingConfiguration: _isApplyingGatewayConfiguration,
                 onApply: _saveGatewayConfiguration,
               ),
