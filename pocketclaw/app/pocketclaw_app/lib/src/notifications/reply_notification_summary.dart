@@ -1,16 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:gateway_adapter/gateway_adapter.dart';
 
+import 'reply_notification_payload.dart';
+
 final class ReplyNotificationSummary {
   const ReplyNotificationSummary({
     required this.id,
     required this.title,
     required this.body,
+    required this.payload,
   });
 
   final int id;
   final String title;
   final String body;
+  final ReplyNotificationPayload payload;
 }
 
 bool shouldNotifyForReply({
@@ -32,6 +36,7 @@ bool shouldNotifyForReply({
 }
 
 ReplyNotificationSummary buildReplyNotificationSummary({
+  required String sessionKey,
   required String sessionTitle,
   required String agentName,
   required String replyText,
@@ -54,6 +59,10 @@ ReplyNotificationSummary buildReplyNotificationSummary({
     id: Object.hash(title, runId ?? body) & 0x7fffffff,
     title: title,
     body: body,
+    payload: ReplyNotificationPayload(
+      sessionKey: sessionKey,
+      sessionTitle: effectiveSessionTitle,
+    ),
   );
 }
 

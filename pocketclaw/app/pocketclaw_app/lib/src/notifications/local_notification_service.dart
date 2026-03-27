@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'reply_notification_payload.dart';
 import 'reply_notification_summary.dart';
 
 final class LocalNotificationService {
@@ -14,7 +15,10 @@ final class LocalNotificationService {
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
 
-  Future<void> initialize() async {
+  Future<void> initialize({
+    Future<void> Function(ReplyNotificationPayload payload)?
+        onReplyNotificationTap,
+  }) async {
     if (_initialized) {
       return;
     }
@@ -31,7 +35,25 @@ final class LocalNotificationService {
         requestSoundPermission: false,
       ),
     );
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (response) async {
+        final payload = ReplyNotificationPayload.tryParse(response.payload);
+        if (payload == null || onReplyNotificationTap == null) {
+          return;
+        }
+        await onReplyNotificationTap(payload);
+      },
+    );
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    final launchedPayload = ReplyNotificationPayload.tryParse(
+      launchDetails?.notificationResponse?.payload,
+    );
+    if (launchDetails?.didNotificationLaunchApp == true &&
+        launchedPayload != null &&
+        onReplyNotificationTap != null) {
+      await onReplyNotificationTap(launchedPayload);
+    }
     _initialized = true;
   }
 
@@ -76,6 +98,7 @@ final class LocalNotificationService {
           presentSound: true,
         ),
       ),
+      payload: summary.payload.toJsonString(),
     );
   }
 }

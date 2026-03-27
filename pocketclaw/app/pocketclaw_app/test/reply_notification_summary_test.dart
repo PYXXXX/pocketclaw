@@ -64,6 +64,7 @@ void main() {
   group('buildReplyNotificationSummary', () {
     test('uses session and agent names in the title', () {
       final summary = buildReplyNotificationSummary(
+        sessionKey: 'agent:main:pc-home',
         sessionTitle: 'Daily Ops',
         agentName: 'Main Agent',
         replyText: 'Done.',
@@ -73,10 +74,13 @@ void main() {
       expect(summary.title, 'Daily Ops · Main Agent');
       expect(summary.body, 'Done.');
       expect(summary.id, isNonZero);
+      expect(summary.payload.sessionKey, 'agent:main:pc-home');
+      expect(summary.payload.sessionTitle, 'Daily Ops');
     });
 
     test('normalizes multiline reply text for the notification body', () {
       final summary = buildReplyNotificationSummary(
+        sessionKey: 'agent:main:pc-home',
         sessionTitle: 'Daily Ops',
         agentName: 'Main Agent',
         replyText: '  Line 1\n\n   Line 2   \n',

@@ -26,6 +26,7 @@ import 'src/bootstrap/startup_bootstrap.dart';
 import 'src/chat/current_view_data_loader.dart';
 import 'src/chat/pending_image_attachment.dart';
 import 'src/notifications/local_notification_service.dart';
+import 'src/notifications/reply_notification_payload.dart';
 import 'src/notifications/reply_notification_summary.dart';
 import 'src/storage/connect_flow_preferences_store.dart';
 import 'src/storage/local_session_registry_store.dart';
@@ -230,7 +231,9 @@ class _PocketClawHomeState extends State<PocketClawHome>
   }
 
   Future<void> _initializeNotifications() async {
-    await _localNotificationService.initialize();
+    await _localNotificationService.initialize(
+      onReplyNotificationTap: _handleReplyNotificationTap,
+    );
     await _localNotificationService.requestPermissions();
   }
 
@@ -1012,6 +1015,41 @@ class _PocketClawHomeState extends State<PocketClawHome>
     await _applyGatewayConfiguration();
   }
 
+  Future<void> _handleReplyNotificationTap(
+    ReplyNotificationPayload payload,
+  ) async {
+    final existing = _registry.findBySessionKey(payload.sessionKey);
+    if (existing != null) {
+      await _selectCurrentSession(existing);
+      return;
+    }
+
+    for (final session in _gatewaySessions) {
+      if (session.key != payload.sessionKey) {
+        continue;
+      }
+      await _openGatewaySession(session);
+      return;
+    }
+
+    final title = payload.sessionTitle.trim().isNotEmpty
+        ? payload.sessionTitle.trim()
+        : payload.sessionKey;
+    final entry = LocalSessionEntry(
+      sessionKey: SessionKey.fromValue(payload.sessionKey),
+      title: title,
+      origin: LocalSessionOrigin.gateway,
+      gatewayLabel: payload.sessionTitle.trim().isNotEmpty
+          ? payload.sessionTitle.trim()
+          : null,
+    );
+    setState(() {
+      _registry.replace(entry);
+    });
+    await _persistSessionRegistry();
+    await _selectCurrentSession(entry);
+  }
+
   String _notificationSessionTitleFor(String sessionKey) {
     final currentLabel = _currentSessionInfo?.label?.trim();
     if (_currentSession.sessionKey.value == sessionKey &&
@@ -1059,6 +1097,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
       return;
     }
     final summary = buildReplyNotificationSummary(
+      sessionKey: event.sessionKey,
       sessionTitle: _notificationSessionTitleFor(event.sessionKey),
       agentName: _notificationAgentNameFor(event.sessionKey),
       replyText: message.text,
