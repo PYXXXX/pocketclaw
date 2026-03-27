@@ -19,6 +19,7 @@ import 'src/app_shell/connect_surface.dart';
 import 'src/app_shell/current_session_forget_plan.dart';
 import 'src/app_shell/gateway_configuration_apply_controller.dart';
 import 'src/app_shell/gateway_connection_diagnostics.dart';
+import 'src/app_shell/gateway_profile_draft.dart';
 import 'src/app_shell/gateway_url_input.dart';
 import 'src/bootstrap/startup_bootstrap.dart';
 import 'src/chat/current_view_data_loader.dart';
@@ -855,16 +856,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   bool _hasUnsavedGatewayConfiguration() {
-    return normalizeGatewayUrl(_effectiveGatewayUrlInput()) !=
-            _gatewayProfile.url ||
-        _tokenController.text != _gatewayProfile.token ||
-        _passwordController.text != _gatewayProfile.password ||
-        _cloudflareAccessClientIdController.text !=
-            _gatewayProfile.cloudflareAccessClientId ||
-        _cloudflareAccessClientSecretController.text !=
-            _gatewayProfile.cloudflareAccessClientSecret ||
-        _customRequestHeadersController.text !=
-            _gatewayProfile.customRequestHeadersText;
+    return hasUnsavedGatewayConfiguration(
+      savedProfile: _gatewayProfile,
+      draftProfile: _draftGatewayProfile(),
+    );
   }
 
   String _effectiveGatewayUrlInput() {
@@ -875,13 +870,14 @@ class _PocketClawHomeState extends State<PocketClawHome> {
   }
 
   GatewayProfile _draftGatewayProfile() {
-    return _gatewayProfile.copyWith(
-      url: normalizeGatewayUrl(_gatewayUrlController.text),
+    return draftGatewayProfile(
+      savedProfile: _gatewayProfile,
+      draftUrl: _gatewayUrlController.text,
       token: _tokenController.text,
       password: _passwordController.text,
-      cloudflareAccessClientId: _cloudflareAccessClientIdController.text.trim(),
+      cloudflareAccessClientId: _cloudflareAccessClientIdController.text,
       cloudflareAccessClientSecret:
-          _cloudflareAccessClientSecretController.text.trim(),
+          _cloudflareAccessClientSecretController.text,
       customRequestHeadersText: _customRequestHeadersController.text,
     );
   }
@@ -922,31 +918,25 @@ class _PocketClawHomeState extends State<PocketClawHome> {
     }
 
     final applyFuture = _gatewayConfigurationApplyController.run(() async {
+      final profile = _draftGatewayProfile();
       try {
         parseGatewayRequestHeadersText(
-          _customRequestHeadersController.text,
+          profile.customRequestHeadersText,
           strict: true,
         );
-        parseGatewayWebSocketUri(_gatewayUrlController.text);
+        parseGatewayWebSocketUri(profile.url);
       } on FormatException catch (error) {
         _recordError(error, prefix: _strings.gatewayConfigurationInvalid);
         return false;
       }
 
-      final profile = _gatewayProfile.copyWith(
-        url: parseGatewayWebSocketUri(_gatewayUrlController.text).toString(),
-        token: _tokenController.text,
-        password: _passwordController.text,
-        cloudflareAccessClientId:
-            _cloudflareAccessClientIdController.text.trim(),
-        cloudflareAccessClientSecret:
-            _cloudflareAccessClientSecretController.text.trim(),
-        customRequestHeadersText: _customRequestHeadersController.text,
+      final normalizedProfile = profile.copyWith(
+        url: parseGatewayWebSocketUri(profile.url).toString(),
       );
-      _applyProfileToControllers(profile);
+      _applyProfileToControllers(normalizedProfile);
 
       setState(() {
-        _gatewayProfile = profile;
+        _gatewayProfile = normalizedProfile;
         _lastError = null;
         _lastGuidance = null;
         _assistantIdentity = null;
@@ -960,10 +950,10 @@ class _PocketClawHomeState extends State<PocketClawHome> {
           _setTimelineItems(<ChatTimelineItem>[
             ChatTimelineItem(
               role: ChatTimelineRole.system,
-              text: _strings.appliedGatewayConfiguration(profile.url),
+              text: _strings.appliedGatewayConfiguration(normalizedProfile.url),
               createdAt: DateTime.now().toUtc(),
             ),
-            if (gatewayUrlUsesLoopback(profile.url))
+            if (gatewayUrlUsesLoopback(normalizedProfile.url))
               ChatTimelineItem(
                 role: ChatTimelineRole.system,
                 text: _strings.loopbackWarningMessage,
@@ -975,7 +965,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       });
 
       try {
-        await _profileStore.write(profile);
+        await _profileStore.write(normalizedProfile);
       } catch (error) {
         _recordError(
           error,
@@ -984,7 +974,7 @@ class _PocketClawHomeState extends State<PocketClawHome> {
       }
 
       await _persistConnectFlowPreferences();
-      await _replaceGatewayClientTracked(profile);
+      await _replaceGatewayClientTracked(normalizedProfile);
       return true;
     });
 
