@@ -53,6 +53,49 @@ jobs:
         working-directory: pocketclaw/app/pocketclaw_app
         run: flutter create . --project-name pocketclaw_app --platforms=android,ios
 
+      - name: Enable Android desugaring for notifications
+        working-directory: pocketclaw/app/pocketclaw_app/android/app
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path("build.gradle.kts")
+          text = path.read_text()
+
+          compile_options = (
+              "    compileOptions {\n"
+              "        sourceCompatibility = JavaVersion.VERSION_17\n"
+              "        targetCompatibility = JavaVersion.VERSION_17\n"
+              "    }\n"
+          )
+          compile_options_with_desugaring = (
+              "    compileOptions {\n"
+              "        isCoreLibraryDesugaringEnabled = true\n"
+              "        sourceCompatibility = JavaVersion.VERSION_17\n"
+              "        targetCompatibility = JavaVersion.VERSION_17\n"
+              "    }\n"
+          )
+          if compile_options_with_desugaring not in text:
+              if compile_options not in text:
+                  raise SystemExit("compileOptions block not found in android/app/build.gradle.kts")
+              text = text.replace(compile_options, compile_options_with_desugaring, 1)
+
+          desugaring_dependency = (
+              '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n'
+          )
+          if desugaring_dependency not in text:
+              marker = "\nflutter {\n"
+              if marker not in text:
+                  raise SystemExit("flutter block not found in android/app/build.gradle.kts")
+              text = text.replace(
+                  marker,
+                  "\ndependencies {\n" + desugaring_dependency + "}\n" + marker,
+                  1,
+              )
+
+          path.write_text(text)
+          PY
+
       - name: Build release APKs for testers
         working-directory: pocketclaw/app/pocketclaw_app
         run: flutter build apk --release --split-per-abi
