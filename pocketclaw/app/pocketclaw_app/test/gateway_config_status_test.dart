@@ -29,31 +29,32 @@ void main() {
     });
 
     test(
-        'marks typed credential changes as unsaved even with saved-url fallback',
-        () {
-      const savedProfile = GatewayProfile(
-        url: 'wss://saved.example.com/',
-        token: 'saved-token',
-      );
-      final draftProfile = draftGatewayProfile(
-        savedProfile: savedProfile,
-        draftUrl: '',
-        token: 'next-token',
-        password: '',
-        cloudflareAccessClientId: '',
-        cloudflareAccessClientSecret: '',
-        customRequestHeadersText: '',
-      );
+      'marks typed credential changes as unsaved even with saved-url fallback',
+      () {
+        const savedProfile = GatewayProfile(
+          url: 'wss://saved.example.com/',
+          token: 'saved-token',
+        );
+        final draftProfile = draftGatewayProfile(
+          savedProfile: savedProfile,
+          draftUrl: '',
+          token: 'next-token',
+          password: '',
+          cloudflareAccessClientId: '',
+          cloudflareAccessClientSecret: '',
+          customRequestHeadersText: '',
+        );
 
-      final status = summarizeGatewayConfigStatus(
-        savedProfile: savedProfile,
-        draftProfile: draftProfile,
-        draftUrl: '',
-      );
+        final status = summarizeGatewayConfigStatus(
+          savedProfile: savedProfile,
+          draftProfile: draftProfile,
+          draftUrl: '',
+        );
 
-      expect(status.isUsingSavedUrlFallback, isTrue);
-      expect(status.hasUnsavedChanges, isTrue);
-    });
+        expect(status.isUsingSavedUrlFallback, isTrue);
+        expect(status.hasUnsavedChanges, isTrue);
+      },
+    );
 
     test('uses the typed url once the user enters a new one', () {
       const savedProfile = GatewayProfile(url: 'wss://saved.example.com/');

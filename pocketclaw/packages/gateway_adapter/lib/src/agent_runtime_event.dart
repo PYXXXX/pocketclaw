@@ -59,9 +59,9 @@ final class AgentRuntimeEvent {
     final timestamp = switch (ts) {
       int value => DateTime.fromMillisecondsSinceEpoch(value, isUtc: true),
       num value => DateTime.fromMillisecondsSinceEpoch(
-          value.toInt(),
-          isUtc: true,
-        ),
+        value.toInt(),
+        isUtc: true,
+      ),
       _ => DateTime.now().toUtc(),
     };
 
@@ -93,22 +93,24 @@ final class AgentRuntimeEvent {
       'response',
     ]);
 
-    final isToolStream = normalizedStream.contains('tool') ||
+    final isToolStream =
+        normalizedStream.contains('tool') ||
         data.containsKey('toolName') ||
         data.containsKey('tool') ||
         data.containsKey('callId') ||
         data.containsKey('arguments') ||
         data.containsKey('result');
-    final isInternal = normalizedStream.contains('internal') ||
+    final isInternal =
+        normalizedStream.contains('internal') ||
         data['type'] == 'task_completion';
 
     final kind = isToolStream
         ? AgentRuntimeEventKind.tool
         : isInternal
-            ? AgentRuntimeEventKind.internal
-            : normalizedStream.contains('status')
-                ? AgentRuntimeEventKind.status
-                : AgentRuntimeEventKind.unknown;
+        ? AgentRuntimeEventKind.internal
+        : normalizedStream.contains('status')
+        ? AgentRuntimeEventKind.status
+        : AgentRuntimeEventKind.unknown;
 
     final summary = _summaryString(
       data: data,
@@ -125,9 +127,10 @@ final class AgentRuntimeEvent {
     );
 
     final title = switch (kind) {
-      AgentRuntimeEventKind.tool => toolName == null || toolName.isEmpty
-          ? 'Tool event'
-          : 'Tool · $toolName',
+      AgentRuntimeEventKind.tool =>
+        toolName == null || toolName.isEmpty
+            ? 'Tool event'
+            : 'Tool · $toolName',
       AgentRuntimeEventKind.internal => 'Internal event',
       AgentRuntimeEventKind.status => 'Run status',
       AgentRuntimeEventKind.unknown => stream,
@@ -200,8 +203,7 @@ final class AgentRuntimeEvent {
         'complete' ||
         'done' ||
         'success' ||
-        'succeeded' =>
-          resultPayload,
+        'succeeded' => resultPayload,
         _ => argumentsPayload,
       };
       final preview = _previewString(previewSource);
@@ -212,8 +214,7 @@ final class AgentRuntimeEvent {
         'complete' ||
         'done' ||
         'success' ||
-        'succeeded' =>
-          'Completed $toolLabel',
+        'succeeded' => 'Completed $toolLabel',
         'failed' || 'error' => 'Failed $toolLabel',
         'cancelled' || 'canceled' => 'Cancelled $toolLabel',
         _ when normalizedStatus != null && normalizedStatus.isNotEmpty =>

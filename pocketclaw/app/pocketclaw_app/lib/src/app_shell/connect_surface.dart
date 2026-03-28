@@ -43,13 +43,14 @@ class AppStatusBanner extends StatelessWidget {
     final savedGatewayLabel = hasSavedGatewayUrl
         ? savedGatewayUrl.trim()
         : strings.noGatewayConfigured;
-    final bootstrapLabel =
-        hasBootstrapCredentials ? strings.bootstrapSaved : strings.noBootstrap;
+    final bootstrapLabel = hasBootstrapCredentials
+        ? strings.bootstrapSaved
+        : strings.noBootstrap;
     final reconnectLabel = hasStoredDeviceToken
         ? strings.reconnectTokenAvailable
         : hasStoredDeviceIdentity
-            ? strings.deviceIdentitySaved
-            : strings.firstPairingLikely;
+        ? strings.deviceIdentitySaved
+        : strings.firstPairingLikely;
     final usesLoopback = gatewayUrlUsesLoopback(
       hasLiveGatewayUrl ? liveGatewayUrl : savedGatewayUrl,
     );
@@ -235,8 +236,8 @@ class GatewayConfigCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final showAdvancedOptions =
         cloudflareAccessClientIdController.text.trim().isNotEmpty ||
-            cloudflareAccessClientSecretController.text.trim().isNotEmpty ||
-            customRequestHeadersController.text.trim().isNotEmpty;
+        cloudflareAccessClientSecretController.text.trim().isNotEmpty ||
+        customRequestHeadersController.text.trim().isNotEmpty;
 
     return Card(
       child: Padding(

@@ -24,7 +24,7 @@ final class SharedPreferencesConnectFlowPreferencesStore
   SharedPreferencesConnectFlowPreferencesStore({
     Future<SharedPreferences>? sharedPreferences,
   }) : _sharedPreferencesFuture =
-            sharedPreferences ?? SharedPreferences.getInstance();
+           sharedPreferences ?? SharedPreferences.getInstance();
 
   static const String onboardingCompletedKey =
       'pocketclaw.connect.onboarding_completed';

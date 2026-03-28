@@ -5,9 +5,9 @@ final class ChatHistoryParams {
   final int limit;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'sessionKey': sessionKey,
-        'limit': limit,
-      };
+    'sessionKey': sessionKey,
+    'limit': limit,
+  };
 }
 
 final class ChatSendParams {
@@ -26,13 +26,13 @@ final class ChatSendParams {
   final String? idempotencyKey;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'sessionKey': sessionKey,
-        'message': message,
-        'deliver': deliver,
-        if (attachments != null && attachments!.isNotEmpty)
-          'attachments': attachments,
-        if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
-      };
+    'sessionKey': sessionKey,
+    'message': message,
+    'deliver': deliver,
+    if (attachments != null && attachments!.isNotEmpty)
+      'attachments': attachments,
+    if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
+  };
 }
 
 final class ChatAbortParams {
@@ -42,7 +42,7 @@ final class ChatAbortParams {
   final String? runId;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'sessionKey': sessionKey,
-        if (runId != null) 'runId': runId,
-      };
+    'sessionKey': sessionKey,
+    if (runId != null) 'runId': runId,
+  };
 }

@@ -98,10 +98,10 @@ class _PocketClawHomeState extends State<PocketClawHome>
   final TextEditingController _sessionTitleController = TextEditingController();
   late final GatewayConnectRequestFactory _connectRequestFactory =
       GatewayConnectRequestFactory(
-    clientId: _gatewayClientIdForPlatform(defaultTargetPlatform),
-    platform: _gatewayPlatformLabelForPlatform(defaultTargetPlatform),
-    mode: 'ui',
-  );
+        clientId: _gatewayClientIdForPlatform(defaultTargetPlatform),
+        platform: _gatewayPlatformLabelForPlatform(defaultTargetPlatform),
+        mode: 'ui',
+      );
   final SecureKeyValueStore _secureStore = FlutterSecureKeyValueStore();
   final ChatTimelineController _timelineController = ChatTimelineController();
 
@@ -175,8 +175,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
   bool _applyingComposerDraft = false;
   bool _onboardingCompleted = false;
   final GatewayConfigurationApplyController
-      _gatewayConfigurationApplyController =
-      GatewayConfigurationApplyController();
+  _gatewayConfigurationApplyController = GatewayConfigurationApplyController();
   bool _hasStoredDeviceIdentity = false;
   bool _hasStoredDeviceToken = false;
   bool _notificationsEnabled = true;
@@ -287,29 +286,29 @@ class _PocketClawHomeState extends State<PocketClawHome>
 
   Future<void> _bootstrapLocalState() async {
     try {
-      final results =
-          await const SequentialBootstrapRunner().run(<BootstrapTask>[
-        BootstrapTask(
-          label: _strings.savedGatewayConfigurationRestore,
-          action: _restorePersistedGatewayProfile,
-        ),
-        BootstrapTask(
-          label: _strings.localSessionRestore,
-          action: _restorePersistedSessionRegistry,
-        ),
-        BootstrapTask(
-          label: _strings.connectFlowPreferenceRestore,
-          action: _restoreConnectFlowPreferences,
-        ),
-        BootstrapTask(
-          label: _strings.notificationPreferenceRestore,
-          action: _restoreNotificationPreferences,
-        ),
-        BootstrapTask(
-          label: _strings.storedDeviceAuthRefresh,
-          action: _refreshStoredDeviceAuthState,
-        ),
-      ]);
+      final results = await const SequentialBootstrapRunner()
+          .run(<BootstrapTask>[
+            BootstrapTask(
+              label: _strings.savedGatewayConfigurationRestore,
+              action: _restorePersistedGatewayProfile,
+            ),
+            BootstrapTask(
+              label: _strings.localSessionRestore,
+              action: _restorePersistedSessionRegistry,
+            ),
+            BootstrapTask(
+              label: _strings.connectFlowPreferenceRestore,
+              action: _restoreConnectFlowPreferences,
+            ),
+            BootstrapTask(
+              label: _strings.notificationPreferenceRestore,
+              action: _restoreNotificationPreferences,
+            ),
+            BootstrapTask(
+              label: _strings.storedDeviceAuthRefresh,
+              action: _refreshStoredDeviceAuthState,
+            ),
+          ]);
 
       if (!mounted) {
         return;
@@ -522,8 +521,10 @@ class _PocketClawHomeState extends State<PocketClawHome>
         _mutedNotificationSessionKeys = stored.mutedSessionKeys.toSet();
       });
     } catch (error) {
-      _recordError(error,
-          prefix: _strings.notificationPreferencesRestoreFailed);
+      _recordError(
+        error,
+        prefix: _strings.notificationPreferencesRestoreFailed,
+      );
     }
   }
 
@@ -960,8 +961,9 @@ class _PocketClawHomeState extends State<PocketClawHome>
       hasLiveClientToken: _liveGatewayClientProfile.token.trim().isNotEmpty,
       hasDraftPassword: draftProfile.password.trim().isNotEmpty,
       hasSavedPassword: _gatewayProfile.password.trim().isNotEmpty,
-      hasLiveClientPassword:
-          _liveGatewayClientProfile.password.trim().isNotEmpty,
+      hasLiveClientPassword: _liveGatewayClientProfile.password
+          .trim()
+          .isNotEmpty,
       draftHeaderCount: draftProfile.webSocketHeaders.length,
       savedHeaderCount: _gatewayProfile.webSocketHeaders.length,
       liveClientHeaderCount: _liveGatewayClientProfile.webSocketHeaders.length,
@@ -1252,7 +1254,8 @@ class _PocketClawHomeState extends State<PocketClawHome>
     }
 
     final firstFailure = failures.first;
-    final firstError = firstFailure.error ??
+    final firstError =
+        firstFailure.error ??
         StateError(_strings.taskFailed(firstFailure.label));
     final guidance = gatewayErrorGuidanceFor(
       firstError,
@@ -1384,8 +1387,8 @@ class _PocketClawHomeState extends State<PocketClawHome>
       configuredUrl: _liveGatewayClientProfile.url.isNotEmpty
           ? _liveGatewayClientProfile.url
           : (_gatewayProfile.url.isNotEmpty
-              ? _gatewayProfile.url
-              : normalizeGatewayUrl(_effectiveGatewayUrlInput())),
+                ? _gatewayProfile.url
+                : normalizeGatewayUrl(_effectiveGatewayUrlInput())),
     );
     final nextStage = resolveConnectFlowStageForError(error);
     setState(() {
@@ -1445,7 +1448,8 @@ class _PocketClawHomeState extends State<PocketClawHome>
     );
     final entry = LocalSessionEntry(
       sessionKey: sessionKey,
-      title: '${_displayNameForAgent(_selectedAgentId)} '
+      title:
+          '${_displayNameForAgent(_selectedAgentId)} '
           '${_registry.sessions.length + 1}',
     );
 
@@ -2036,7 +2040,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
                 liveGatewayUrl: _liveGatewayClientProfile.url,
                 hasBootstrapCredentials:
                     _gatewayProfile.token.trim().isNotEmpty ||
-                        _gatewayProfile.password.trim().isNotEmpty,
+                    _gatewayProfile.password.trim().isNotEmpty,
                 hasStoredDeviceIdentity: _hasStoredDeviceIdentity,
                 hasStoredDeviceToken: _hasStoredDeviceToken,
               ),
@@ -2047,20 +2051,20 @@ class _PocketClawHomeState extends State<PocketClawHome>
                 duration: const Duration(milliseconds: 220),
                 child: switch (_selectedDestination) {
                   AppDestination.connect => KeyedSubtree(
-                      key: const ValueKey<String>('connect-pane'),
-                      child: connectPane,
-                    ),
+                    key: const ValueKey<String>('connect-pane'),
+                    child: connectPane,
+                  ),
                   AppDestination.chat when showChatShell => KeyedSubtree(
-                      key: const ValueKey<String>('chat-pane'),
-                      child: chatPane,
-                    ),
+                    key: const ValueKey<String>('chat-pane'),
+                    child: chatPane,
+                  ),
                   AppDestination.chat => KeyedSubtree(
-                      key: const ValueKey<String>('chat-locked'),
-                      child: ChatLockedPlaceholder(
-                        onOpenConnect: () =>
-                            _selectDestination(AppDestination.connect),
-                      ),
+                    key: const ValueKey<String>('chat-locked'),
+                    child: ChatLockedPlaceholder(
+                      onOpenConnect: () =>
+                          _selectDestination(AppDestination.connect),
                     ),
+                  ),
                 },
               ),
             ),
@@ -2081,18 +2085,18 @@ class _PocketClawHomeState extends State<PocketClawHome>
           body: _isBootstrapping
               ? const Center(child: CircularProgressIndicator())
               : compact
-                  ? mobileBody
-                  : Row(
-                      children: [
-                        SizedBox(width: 420, child: connectPane),
-                        const VerticalDivider(width: 1),
-                        Expanded(
-                          child: showChatShell
-                              ? chatPane
-                              : const ChatLockedPlaceholder(),
-                        ),
-                      ],
+              ? mobileBody
+              : Row(
+                  children: [
+                    SizedBox(width: 420, child: connectPane),
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: showChatShell
+                          ? chatPane
+                          : const ChatLockedPlaceholder(),
                     ),
+                  ],
+                ),
           bottomNavigationBar: _isBootstrapping || !compact
               ? null
               : NavigationBar(

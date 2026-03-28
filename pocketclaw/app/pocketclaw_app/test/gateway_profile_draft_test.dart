@@ -45,54 +45,58 @@ void main() {
   });
 
   group('hasUnsavedGatewayConfiguration', () {
-    test('treats an empty draft url as unchanged when saved url still applies',
-        () {
-      const savedProfile = GatewayProfile(
-        url: 'wss://saved.example.com/',
-        token: 'saved-token',
-      );
-      final draftProfile = draftGatewayProfile(
-        savedProfile: savedProfile,
-        draftUrl: '   ',
-        token: 'saved-token',
-        password: '',
-        cloudflareAccessClientId: '',
-        cloudflareAccessClientSecret: '',
-        customRequestHeadersText: '',
-      );
-
-      expect(
-        hasUnsavedGatewayConfiguration(
+    test(
+      'treats an empty draft url as unchanged when saved url still applies',
+      () {
+        const savedProfile = GatewayProfile(
+          url: 'wss://saved.example.com/',
+          token: 'saved-token',
+        );
+        final draftProfile = draftGatewayProfile(
           savedProfile: savedProfile,
-          draftProfile: draftProfile,
-        ),
-        isFalse,
-      );
-    });
+          draftUrl: '   ',
+          token: 'saved-token',
+          password: '',
+          cloudflareAccessClientId: '',
+          cloudflareAccessClientSecret: '',
+          customRequestHeadersText: '',
+        );
 
-    test('detects token changes even when the url falls back to saved config',
-        () {
-      const savedProfile = GatewayProfile(
-        url: 'wss://saved.example.com/',
-        token: 'saved-token',
-      );
-      final draftProfile = draftGatewayProfile(
-        savedProfile: savedProfile,
-        draftUrl: '   ',
-        token: 'next-token',
-        password: '',
-        cloudflareAccessClientId: '',
-        cloudflareAccessClientSecret: '',
-        customRequestHeadersText: '',
-      );
+        expect(
+          hasUnsavedGatewayConfiguration(
+            savedProfile: savedProfile,
+            draftProfile: draftProfile,
+          ),
+          isFalse,
+        );
+      },
+    );
 
-      expect(
-        hasUnsavedGatewayConfiguration(
+    test(
+      'detects token changes even when the url falls back to saved config',
+      () {
+        const savedProfile = GatewayProfile(
+          url: 'wss://saved.example.com/',
+          token: 'saved-token',
+        );
+        final draftProfile = draftGatewayProfile(
           savedProfile: savedProfile,
-          draftProfile: draftProfile,
-        ),
-        isTrue,
-      );
-    });
+          draftUrl: '   ',
+          token: 'next-token',
+          password: '',
+          cloudflareAccessClientId: '',
+          cloudflareAccessClientSecret: '',
+          customRequestHeadersText: '',
+        );
+
+        expect(
+          hasUnsavedGatewayConfiguration(
+            savedProfile: savedProfile,
+            draftProfile: draftProfile,
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }
