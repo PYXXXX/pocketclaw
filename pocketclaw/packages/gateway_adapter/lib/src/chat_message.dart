@@ -41,8 +41,8 @@ final class ChatMessage {
     }
 
     final timestampRaw = json['timestamp'];
-    final timestamp = timestampRaw is int
-        ? DateTime.fromMillisecondsSinceEpoch(timestampRaw, isUtc: true)
+    final timestamp = timestampRaw is num
+        ? DateTime.fromMillisecondsSinceEpoch(timestampRaw.toInt(), isUtc: true)
         : null;
 
     return ChatMessage(role: role, text: text, timestamp: timestamp);

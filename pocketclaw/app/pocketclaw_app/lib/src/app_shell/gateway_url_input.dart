@@ -4,7 +4,7 @@ String effectiveGatewayUrlInput({
 }) {
   final trimmedDraft = draftUrl.trim();
   if (trimmedDraft.isNotEmpty) {
-    return draftUrl;
+    return trimmedDraft;
   }
   return savedUrl;
 }

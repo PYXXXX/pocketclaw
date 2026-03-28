@@ -13,15 +13,19 @@ final class LocalNotificationService {
       'Assistant replies from the connected OpenClaw Gateway';
 
   final FlutterLocalNotificationsPlugin _plugin;
-  bool _initialized = false;
+  Future<void>? _initFuture;
 
   Future<void> initialize({
     Future<void> Function(ReplyNotificationPayload payload)?
         onReplyNotificationTap,
-  }) async {
-    if (_initialized) {
-      return;
-    }
+  }) {
+    return _initFuture ??= _doInitialize(onReplyNotificationTap);
+  }
+
+  Future<void> _doInitialize(
+    Future<void> Function(ReplyNotificationPayload payload)?
+        onReplyNotificationTap,
+  ) async {
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(
@@ -54,7 +58,6 @@ final class LocalNotificationService {
         onReplyNotificationTap != null) {
       await onReplyNotificationTap(launchedPayload);
     }
-    _initialized = true;
   }
 
   Future<void> requestPermissions() async {

@@ -110,6 +110,7 @@ final class GatewayWsClient implements ConnectableGatewayClient {
           ),
         );
         _connectCompleter?.completeError(StateError(message));
+        unawaited(disconnect());
       }
     });
 
@@ -142,6 +143,11 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     await _socketSubscription?.cancel();
     _socketSubscription = null;
     await channel?.sink.close();
+
+    if (_connectCompleter?.isCompleted == false) {
+      _connectCompleter
+          ?.completeError(StateError('Gateway client disconnected.'));
+    }
 
     for (final completer in _pending.values) {
       if (!completer.isCompleted) {
@@ -385,6 +391,25 @@ final class GatewayWsClient implements ConnectableGatewayClient {
   }
 
   void _handleSocketDone() {
+    _channel = null;
+    _socketSubscription = null;
+    _connectTimeoutTimer?.cancel();
+    _connectTimeoutTimer = null;
+
+    for (final completer in _pending.values) {
+      if (!completer.isCompleted) {
+        completer.completeError(
+          StateError('Gateway socket closed unexpectedly.'),
+        );
+      }
+    }
+    _pending.clear();
+
+    if (_connectCompleter?.isCompleted == false) {
+      _connectCompleter
+          ?.completeError(StateError('Gateway socket closed during connect.'));
+    }
+
     if (_state.phase != GatewayConnectionPhase.disconnected) {
       _emitState(
         const GatewayConnectionState(
@@ -393,6 +418,12 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         ),
       );
     }
+  }
+
+  Future<void> dispose() async {
+    await disconnect();
+    await _eventController.close();
+    await _connectionController.close();
   }
 
   void _emitState(GatewayConnectionState state) {

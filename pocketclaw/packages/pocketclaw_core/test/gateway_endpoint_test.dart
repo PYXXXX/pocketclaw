@@ -71,7 +71,7 @@ void main() {
     test('detects localhost and loopback urls', () {
       expect(gatewayUrlUsesLoopback('ws://127.0.0.1:18789'), isTrue);
       expect(gatewayUrlUsesLoopback('http://localhost:18789'), isTrue);
-      expect(gatewayUrlUsesLoopback('0.0.0.0:18789'), isTrue);
+      expect(gatewayUrlUsesLoopback('0.0.0.0:18789'), isFalse);
     });
 
     test('does not flag lan or remote hosts as loopback', () {

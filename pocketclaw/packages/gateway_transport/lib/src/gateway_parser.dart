@@ -39,7 +39,7 @@ final class GatewayParser {
     final timestampMs = event.payload['ts'];
     return ConnectChallenge(
       nonce: nonce,
-      timestampMs: timestampMs is int ? timestampMs : null,
+      timestampMs: timestampMs is num ? timestampMs.toInt() : null,
     );
   }
 
@@ -52,10 +52,16 @@ final class GatewayParser {
       throw const GatewayProtocolException('Invalid request frame.');
     }
 
+    if (params != null && params is! Map<String, Object?>) {
+      throw const GatewayProtocolException(
+        'Invalid request frame: params must be a map.',
+      );
+    }
+
     return GatewayRequest(
       id: id,
       method: method,
-      params: params is Map<String, Object?> ? params : null,
+      params: params as Map<String, Object?>?,
     );
   }
 
@@ -69,11 +75,22 @@ final class GatewayParser {
       throw const GatewayProtocolException('Invalid response frame.');
     }
 
+    if (payload != null && payload is! Map<String, Object?>) {
+      throw const GatewayProtocolException(
+        'Invalid response frame: payload must be a map.',
+      );
+    }
+    if (error != null && error is! Map<String, Object?>) {
+      throw const GatewayProtocolException(
+        'Invalid response frame: error must be a map.',
+      );
+    }
+
     return GatewayResponse(
       id: id,
       ok: ok,
-      payload: payload is Map<String, Object?> ? payload : null,
-      error: error is Map<String, Object?> ? error : null,
+      payload: payload as Map<String, Object?>?,
+      error: error as Map<String, Object?>?,
     );
   }
 
@@ -89,7 +106,7 @@ final class GatewayParser {
     return GatewayEvent(
       event: event,
       payload: payload,
-      seq: seq is int ? seq : null,
+      seq: seq is num ? seq.toInt() : null,
     );
   }
 }

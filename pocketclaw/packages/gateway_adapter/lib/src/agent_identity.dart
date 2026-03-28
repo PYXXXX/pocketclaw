@@ -6,10 +6,9 @@ final class AgentIdentity {
   final String? avatar;
 
   factory AgentIdentity.fromJson(Map<String, Object?> json) {
+    final rawName = (json['name'] as String?)?.trim();
     return AgentIdentity(
-      name: (json['name'] as String?)?.trim().isNotEmpty == true
-          ? json['name'] as String
-          : 'Assistant',
+      name: rawName != null && rawName.isNotEmpty ? rawName : 'Assistant',
       agentId: json['agentId'] as String?,
       avatar: json['avatar'] as String?,
     );

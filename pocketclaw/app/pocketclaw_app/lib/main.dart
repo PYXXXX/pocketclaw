@@ -1195,7 +1195,13 @@ class _PocketClawHomeState extends State<PocketClawHome>
   }
 
   void _handleChatStreamEvent(ChatStreamEvent event) {
-    if (event.sessionKey != _currentSession.sessionKey.value || !mounted) {
+    if (!mounted) {
+      return;
+    }
+
+    unawaited(_maybeShowReplyNotification(event));
+
+    if (event.sessionKey != _currentSession.sessionKey.value) {
       return;
     }
 
@@ -1211,7 +1217,6 @@ class _PocketClawHomeState extends State<PocketClawHome>
         _activeRunId = null;
       }
     });
-    unawaited(_maybeShowReplyNotification(event));
   }
 
   Future<void> _loadCurrentViewData() async {
@@ -1433,6 +1438,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
   }
 
   void _createSession() {
+    _syncCurrentSessionDraft(schedulePersist: false);
     _storeCurrentAttachmentDraft();
     final sessionKey = _sessionKeyFactory.createTimestamped(
       agentId: _selectedAgentId,
@@ -1462,6 +1468,7 @@ class _PocketClawHomeState extends State<PocketClawHome>
     _attachmentDraftsBySession[entry.sessionKey.value] =
         const <PendingImageAttachment>[];
     _applySessionTitle(entry.title);
+    _applyComposerDraft('');
     unawaited(_persistSessionRegistry());
   }
 
