@@ -61,15 +61,16 @@ final class GatewayChatService {
     required String message,
     List<Object?>? attachments,
   }) {
+    final requestId = _nextRequestId('send');
     return _client.request(
       GatewayRequest(
-        id: _nextRequestId('send'),
+        id: requestId,
         method: GatewayMethodNames.chatSend,
         params: ChatSendParams(
           sessionKey: sessionKey,
           message: message,
           attachments: attachments,
-          idempotencyKey: _nextRequestId('run'),
+          idempotencyKey: 'run-${requestId.split('-').last}',
         ).toJson(),
       ),
     );

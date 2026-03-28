@@ -82,6 +82,19 @@ final class ChatTimelineController {
 
     _items.removeAt(existingIndex);
     _reindexUpdateKeys();
+
+    final staleRunIds = <String>[];
+    for (final entry in _assistantIndexByRunId.entries) {
+      if (entry.value == existingIndex) {
+        staleRunIds.add(entry.key);
+      } else if (entry.value > existingIndex) {
+        _assistantIndexByRunId[entry.key] = entry.value - 1;
+      }
+    }
+    for (final runId in staleRunIds) {
+      _assistantIndexByRunId.remove(runId);
+    }
+
     return true;
   }
 
@@ -358,7 +371,7 @@ final class ChatTimelineController {
     if (incoming.startsWith(existing) || existing.isEmpty) {
       return incoming;
     }
-    return incoming;
+    return existing.length > incoming.length ? existing : incoming;
   }
 
   String _preferTerminalText(String existing, String incoming) {
