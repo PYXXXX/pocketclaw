@@ -12,11 +12,11 @@ final class SessionsListParams {
   final int? limit;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'includeGlobal': includeGlobal,
-        'includeUnknown': includeUnknown,
-        if (activeMinutes != null) 'activeMinutes': activeMinutes,
-        if (limit != null) 'limit': limit,
-      };
+    'includeGlobal': includeGlobal,
+    'includeUnknown': includeUnknown,
+    if (activeMinutes != null) 'activeMinutes': activeMinutes,
+    if (limit != null) 'limit': limit,
+  };
 }
 
 final class SessionPatchParams {
@@ -31,10 +31,10 @@ final class SessionPatchParams {
     this.clearFastMode = false,
     this.verboseLevel,
     this.clearVerboseLevel = false,
-  })  : assert(!(clearModel && model != null)),
-        assert(!(clearThinkingLevel && thinkingLevel != null)),
-        assert(!(clearFastMode && fastMode != null)),
-        assert(!(clearVerboseLevel && verboseLevel != null));
+  }) : assert(!(clearModel && model != null)),
+       assert(!(clearThinkingLevel && thinkingLevel != null)),
+       assert(!(clearFastMode && fastMode != null)),
+       assert(!(clearVerboseLevel && verboseLevel != null));
 
   final String key;
   final String? label;
@@ -48,13 +48,12 @@ final class SessionPatchParams {
   final bool clearVerboseLevel;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'key': key,
-        if (label != null) 'label': label,
-        if (clearModel || model != null) 'model': model,
-        if (clearThinkingLevel || thinkingLevel != null)
-          'thinkingLevel': thinkingLevel,
-        if (clearFastMode || fastMode != null) 'fastMode': fastMode,
-        if (clearVerboseLevel || verboseLevel != null)
-          'verboseLevel': verboseLevel,
-      };
+    'key': key,
+    if (label != null) 'label': label,
+    if (clearModel || model != null) 'model': model,
+    if (clearThinkingLevel || thinkingLevel != null)
+      'thinkingLevel': thinkingLevel,
+    if (clearFastMode || fastMode != null) 'fastMode': fastMode,
+    if (clearVerboseLevel || verboseLevel != null) 'verboseLevel': verboseLevel,
+  };
 }

@@ -7,7 +7,7 @@ import 'gateway_request.dart';
 
 final class GatewayFrameCodec {
   GatewayFrameCodec({GatewayParser? parser})
-      : _parser = parser ?? const GatewayParser();
+    : _parser = parser ?? const GatewayParser();
 
   final GatewayParser _parser;
 

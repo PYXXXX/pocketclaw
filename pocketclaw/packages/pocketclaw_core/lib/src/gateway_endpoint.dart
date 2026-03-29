@@ -6,9 +6,7 @@ bool gatewayUrlUsesLoopback(String rawUrl) {
   }
 
   final host = uri.host.toLowerCase();
-  return host == 'localhost' ||
-      host == '127.0.0.1' ||
-      host == '::1';
+  return host == 'localhost' || host == '127.0.0.1' || host == '::1';
 }
 
 Uri parseGatewayWebSocketUri(String rawUrl) {
@@ -34,9 +32,7 @@ Uri parseGatewayWebSocketUri(String rawUrl) {
   }
 
   if (uri.host.trim().isEmpty) {
-    throw FormatException(
-      'Gateway URL must include a host. Got: $normalized',
-    );
+    throw FormatException('Gateway URL must include a host. Got: $normalized');
   }
 
   if (uri.path.isEmpty) {

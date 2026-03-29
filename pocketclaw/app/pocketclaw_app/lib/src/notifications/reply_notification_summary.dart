@@ -49,11 +49,12 @@ ReplyNotificationSummary buildReplyNotificationSummary({
   String? runId,
 }) {
   final effectiveSessionTitle = sessionTitle.trim();
-  final effectiveAgentName =
-      agentName.trim().isEmpty ? 'Assistant' : agentName.trim();
+  final effectiveAgentName = agentName.trim().isEmpty
+      ? 'Assistant'
+      : agentName.trim();
   final title = switch ((
     effectiveSessionTitle.isNotEmpty,
-    effectiveAgentName.isNotEmpty
+    effectiveAgentName.isNotEmpty,
   )) {
     (true, true) => '$effectiveSessionTitle · $effectiveAgentName',
     (true, false) => effectiveSessionTitle,

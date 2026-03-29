@@ -12,7 +12,8 @@ final class GatewayDeviceToken {
       deviceId: json['deviceId'] as String,
       role: json['role'] as String,
       token: json['token'] as String,
-      scopes: rawScopes?.map((value) => value.toString()).toList() ??
+      scopes:
+          rawScopes?.map((value) => value.toString()).toList() ??
           const <String>[],
     );
   }

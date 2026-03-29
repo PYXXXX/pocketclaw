@@ -10,8 +10,9 @@ final class AgentSummary {
 
   factory AgentSummary.fromJson(Map<String, Object?> json) {
     final identity = json['identity'];
-    final identityMap =
-        identity is Map<String, Object?> ? identity : const <String, Object?>{};
+    final identityMap = identity is Map<String, Object?>
+        ? identity
+        : const <String, Object?>{};
 
     return AgentSummary(
       id: json['id'] as String? ?? 'main',

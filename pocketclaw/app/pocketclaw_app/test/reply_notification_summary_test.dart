@@ -26,18 +26,20 @@ void main() {
       );
     });
 
-    test('notifies for final assistant replies while the app is backgrounded',
-        () {
-      expect(
-        shouldNotifyForReply(
-          event: assistantFinal,
-          appLifecycleState: AppLifecycleState.paused,
-          notificationsEnabled: true,
-          mutedSessionKeys: const <String>{},
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'notifies for final assistant replies while the app is backgrounded',
+      () {
+        expect(
+          shouldNotifyForReply(
+            event: assistantFinal,
+            appLifecycleState: AppLifecycleState.paused,
+            notificationsEnabled: true,
+            mutedSessionKeys: const <String>{},
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('ignores non-assistant or empty final events', () {
       expect(
@@ -69,27 +71,28 @@ void main() {
     });
 
     test(
-        'does not notify when notifications are disabled or the session is muted',
-        () {
-      expect(
-        shouldNotifyForReply(
-          event: assistantFinal,
-          appLifecycleState: AppLifecycleState.paused,
-          notificationsEnabled: false,
-          mutedSessionKeys: const <String>{},
-        ),
-        isFalse,
-      );
-      expect(
-        shouldNotifyForReply(
-          event: assistantFinal,
-          appLifecycleState: AppLifecycleState.paused,
-          notificationsEnabled: true,
-          mutedSessionKeys: const <String>{'agent:main:pc-home'},
-        ),
-        isFalse,
-      );
-    });
+      'does not notify when notifications are disabled or the session is muted',
+      () {
+        expect(
+          shouldNotifyForReply(
+            event: assistantFinal,
+            appLifecycleState: AppLifecycleState.paused,
+            notificationsEnabled: false,
+            mutedSessionKeys: const <String>{},
+          ),
+          isFalse,
+        );
+        expect(
+          shouldNotifyForReply(
+            event: assistantFinal,
+            appLifecycleState: AppLifecycleState.paused,
+            notificationsEnabled: true,
+            mutedSessionKeys: const <String>{'agent:main:pc-home'},
+          ),
+          isFalse,
+        );
+      },
+    );
   });
 
   group('buildReplyNotificationSummary', () {

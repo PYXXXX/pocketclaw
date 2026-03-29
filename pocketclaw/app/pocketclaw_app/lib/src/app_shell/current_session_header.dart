@@ -81,9 +81,8 @@ class CurrentSessionHeader extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: canForgetCurrentSession
                   ? () => unawaited(
-                        _confirmForgetCurrentSession(context,
-                            viewData: viewData),
-                      )
+                      _confirmForgetCurrentSession(context, viewData: viewData),
+                    )
                   : null,
               icon: const Icon(Icons.delete_outline),
               label: Text(viewData.forgetActionLabel),

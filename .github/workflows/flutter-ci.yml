@@ -43,15 +43,15 @@ jobs:
 
       - name: Analyze workspace
         working-directory: pocketclaw
-        run: ~/.pub-cache/bin/melos run analyze
+        run: dart pub global run melos run analyze
 
       - name: Run package tests
         working-directory: pocketclaw
-        run: ~/.pub-cache/bin/melos run test
+        run: dart pub global run melos run test
 
       - name: Prepare Flutter app scaffolding
         working-directory: pocketclaw/app/pocketclaw_app
-        run: flutter create . --project-name pocketclaw_app --platforms=android,ios
+        run: flutter create . --project-name pocketclaw_app --platforms=android --no-overwrite
 
       - name: Enable Android desugaring for notifications
         working-directory: pocketclaw/app/pocketclaw_app/android/app
@@ -84,14 +84,21 @@ jobs:
               '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n'
           )
           if desugaring_dependency not in text:
-              marker = "\nflutter {\n"
-              if marker not in text:
-                  raise SystemExit("flutter block not found in android/app/build.gradle.kts")
-              text = text.replace(
-                  marker,
-                  "\ndependencies {\n" + desugaring_dependency + "}\n" + marker,
-                  1,
-              )
+              deps_marker = "\ndependencies {\n"
+              flutter_marker = "\nflutter {\n"
+              if deps_marker in text:
+                  # Append to existing dependencies block
+                  idx = text.index(deps_marker) + len(deps_marker)
+                  text = text[:idx] + desugaring_dependency + text[idx:]
+              elif flutter_marker in text:
+                  # Create new dependencies block before flutter block
+                  text = text.replace(
+                      flutter_marker,
+                      "\ndependencies {\n" + desugaring_dependency + "}\n" + flutter_marker,
+                      1,
+                  )
+              else:
+                  raise SystemExit("Neither dependencies nor flutter block found in android/app/build.gradle.kts")
 
           path.write_text(text)
           PY

@@ -8,16 +8,18 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  test('notification preferences default to enabled with visible body',
-      () async {
-    final store = SharedPreferencesNotificationPreferencesStore();
+  test(
+    'notification preferences default to enabled with visible body',
+    () async {
+      final store = SharedPreferencesNotificationPreferencesStore();
 
-    final preferences = await store.read();
+      final preferences = await store.read();
 
-    expect(preferences.notificationsEnabled, isTrue);
-    expect(preferences.showReplyBody, isTrue);
-    expect(preferences.mutedSessionKeys, isEmpty);
-  });
+      expect(preferences.notificationsEnabled, isTrue);
+      expect(preferences.showReplyBody, isTrue);
+      expect(preferences.mutedSessionKeys, isEmpty);
+    },
+  );
 
   test('notification preferences persist mute list and toggles', () async {
     final store = SharedPreferencesNotificationPreferencesStore();

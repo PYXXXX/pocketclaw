@@ -5,7 +5,7 @@ import 'reply_notification_summary.dart';
 
 final class LocalNotificationService {
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
-      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static const String _replyChannelId = 'pocketclaw_replies';
   static const String _replyChannelName = 'PocketClaw replies';
@@ -17,14 +17,14 @@ final class LocalNotificationService {
 
   Future<void> initialize({
     Future<void> Function(ReplyNotificationPayload payload)?
-        onReplyNotificationTap,
+    onReplyNotificationTap,
   }) {
     return _initFuture ??= _doInitialize(onReplyNotificationTap);
   }
 
   Future<void> _doInitialize(
     Future<void> Function(ReplyNotificationPayload payload)?
-        onReplyNotificationTap,
+    onReplyNotificationTap,
   ) async {
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -63,15 +63,18 @@ final class LocalNotificationService {
   Future<void> requestPermissions() async {
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
     await _plugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
+          IOSFlutterLocalNotificationsPlugin
+        >()
         ?.requestPermissions(alert: true, badge: false, sound: true);
     await _plugin
         .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin>()
+          MacOSFlutterLocalNotificationsPlugin
+        >()
         ?.requestPermissions(alert: true, badge: false, sound: true);
   }
 

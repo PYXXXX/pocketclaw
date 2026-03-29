@@ -14,8 +14,8 @@ import 'gateway_device_token.dart';
 import 'gateway_error_codes.dart';
 import 'gateway_request_error.dart';
 
-typedef WebSocketChannelFactory = Future<WebSocketChannel> Function(
-    Uri uri, Map<String, String> headers);
+typedef WebSocketChannelFactory =
+    Future<WebSocketChannel> Function(Uri uri, Map<String, String> headers);
 
 final class WebSocketHandshakeTarget {
   const WebSocketHandshakeTarget({
@@ -48,9 +48,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     required this.config,
     GatewayFrameCodec? codec,
     WebSocketChannelFactory? channelFactory,
-  })  : _codec = codec ?? GatewayFrameCodec(),
-        _parser = const GatewayParser(),
-        _channelFactory = channelFactory ?? _defaultChannelFactory;
+  }) : _codec = codec ?? GatewayFrameCodec(),
+       _parser = const GatewayParser(),
+       _channelFactory = channelFactory ?? _defaultChannelFactory;
 
   final GatewayConnectionConfig config;
   final GatewayFrameCodec _codec;
@@ -145,8 +145,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     await channel?.sink.close();
 
     if (_connectCompleter?.isCompleted == false) {
-      _connectCompleter
-          ?.completeError(StateError('Gateway client disconnected.'));
+      _connectCompleter?.completeError(
+        StateError('Gateway client disconnected.'),
+      );
     }
 
     for (final completer in _pending.values) {
@@ -304,14 +305,15 @@ final class GatewayWsClient implements ConnectableGatewayClient {
       final code = error.detailsCode ?? error.code;
       final shouldRetryWithoutDeviceToken =
           code == GatewayErrorCodes.authDeviceTokenMismatch &&
-              attempt.usedStoredDeviceToken &&
-              attempt.hasBootstrapAuth;
+          attempt.usedStoredDeviceToken &&
+          attempt.hasBootstrapAuth;
       if (!shouldRetryWithoutDeviceToken) {
         rethrow;
       }
 
       final auth = Map<String, Object?>.from(
-          config.connectRequest.auth ?? const <String, Object?>{});
+        config.connectRequest.auth ?? const <String, Object?>{},
+      );
       final retryRequest = attempt.request.copyWith(
         auth: auth.isEmpty ? null : auth,
       );
@@ -354,7 +356,8 @@ final class GatewayWsClient implements ConnectableGatewayClient {
         deviceId: deviceId,
         role: role,
         token: token.trim(),
-        scopes: (authMap['scopes'] as List?)?.whereType<String>().toList() ??
+        scopes:
+            (authMap['scopes'] as List?)?.whereType<String>().toList() ??
             const <String>[],
       ),
     );
@@ -406,8 +409,9 @@ final class GatewayWsClient implements ConnectableGatewayClient {
     _pending.clear();
 
     if (_connectCompleter?.isCompleted == false) {
-      _connectCompleter
-          ?.completeError(StateError('Gateway socket closed during connect.'));
+      _connectCompleter?.completeError(
+        StateError('Gateway socket closed during connect.'),
+      );
     }
 
     if (_state.phase != GatewayConnectionPhase.disconnected) {
@@ -570,9 +574,7 @@ Future<WebSocketHandshakeTarget> prepareWebSocketHandshakeTarget(
   );
 
   final client = HttpClient();
-  final cookies = <String, String>{
-    ..._parseCookieHeader(headers['Cookie']),
-  };
+  final cookies = <String, String>{..._parseCookieHeader(headers['Cookie'])};
   final visited = <Uri>[initialPreflightUri];
   var currentPreflightUri = initialPreflightUri;
   HttpClientResponse? lastResponse;
@@ -621,9 +623,9 @@ Future<WebSocketHandshakeTarget> prepareWebSocketHandshakeTarget(
       }
 
       final resolvedLocation = currentPreflightUri.resolve(location.trim());
-      if (resolvedLocation.host
-          .toLowerCase()
-          .contains('cloudflareaccess.com')) {
+      if (resolvedLocation.host.toLowerCase().contains(
+        'cloudflareaccess.com',
+      )) {
         throw StateError(
           'Cloudflare Access redirected the request to an interactive login flow before the WebSocket upgrade. '
           'Preflight GET $currentPreflightUri returned HTTP ${response.statusCode} '
@@ -682,8 +684,9 @@ Map<String, String> _parseCookieHeader(String? rawCookieHeader) {
     if (separator <= 0) {
       continue;
     }
-    result[trimmed.substring(0, separator).trim()] =
-        trimmed.substring(separator + 1).trim();
+    result[trimmed.substring(0, separator).trim()] = trimmed
+        .substring(separator + 1)
+        .trim();
   }
   return result;
 }
@@ -768,11 +771,12 @@ void _ensureSuccessfulWebSocketUpgrade(
 
   final isUpgradeResponse =
       response.statusCode == HttpStatus.switchingProtocols &&
-          connectionHeader != null &&
-          connectionHeader
-              .any((value) => value.toLowerCase().contains('upgrade')) &&
-          upgradeHeader != null &&
-          upgradeHeader.toLowerCase() == 'websocket';
+      connectionHeader != null &&
+      connectionHeader.any(
+        (value) => value.toLowerCase().contains('upgrade'),
+      ) &&
+      upgradeHeader != null &&
+      upgradeHeader.toLowerCase() == 'websocket';
 
   if (!isUpgradeResponse) {
     throw StateError(

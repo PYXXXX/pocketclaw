@@ -13,10 +13,7 @@ GatewayProfile draftGatewayProfile({
 }) {
   return savedProfile.copyWith(
     url: normalizeGatewayUrl(
-      effectiveGatewayUrlInput(
-        draftUrl: draftUrl,
-        savedUrl: savedProfile.url,
-      ),
+      effectiveGatewayUrlInput(draftUrl: draftUrl, savedUrl: savedProfile.url),
     ),
     token: token,
     password: password,

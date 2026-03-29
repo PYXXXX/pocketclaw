@@ -27,7 +27,7 @@ final class SharedPreferencesNotificationPreferencesStore
   SharedPreferencesNotificationPreferencesStore({
     Future<SharedPreferences>? sharedPreferences,
   }) : _sharedPreferencesFuture =
-            sharedPreferences ?? SharedPreferences.getInstance();
+           sharedPreferences ?? SharedPreferences.getInstance();
 
   static const String notificationsEnabledKey =
       'pocketclaw.notifications.enabled';
