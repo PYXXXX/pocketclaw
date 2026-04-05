@@ -83,17 +83,18 @@ final class ChatTimelineController {
     _items.removeAt(existingIndex);
     _reindexUpdateKeys();
 
-    final staleRunIds = <String>[];
+    final updated = <String, int>{};
     for (final entry in _assistantIndexByRunId.entries) {
       if (entry.value == existingIndex) {
-        staleRunIds.add(entry.key);
-      } else if (entry.value > existingIndex) {
-        _assistantIndexByRunId[entry.key] = entry.value - 1;
+        continue;
       }
+      updated[entry.key] = entry.value > existingIndex
+          ? entry.value - 1
+          : entry.value;
     }
-    for (final runId in staleRunIds) {
-      _assistantIndexByRunId.remove(runId);
-    }
+    _assistantIndexByRunId
+      ..clear()
+      ..addAll(updated);
 
     return true;
   }

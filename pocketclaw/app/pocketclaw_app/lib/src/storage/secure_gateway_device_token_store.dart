@@ -19,10 +19,14 @@ final class SecureGatewayDeviceTokenStore implements GatewayDeviceTokenStore {
       return null;
     }
 
-    final decoded = jsonDecode(raw);
-    return GatewayDeviceToken.fromJson(
-      Map<String, Object?>.from(decoded as Map),
-    );
+    try {
+      final decoded = jsonDecode(raw);
+      return GatewayDeviceToken.fromJson(
+        Map<String, Object?>.from(decoded as Map),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

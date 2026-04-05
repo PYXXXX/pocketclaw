@@ -62,11 +62,10 @@ final class SharedPreferencesLocalSessionRegistryStore
     required String currentSessionKey,
   }) async {
     final prefs = await _sharedPreferencesFuture;
-    await prefs.setString(
-      registryStorageKey,
-      jsonEncode(registry.toJsonList()),
-    );
-    await prefs.setString(currentSessionStorageKey, currentSessionKey);
+    await Future.wait(<Future<bool>>[
+      prefs.setString(registryStorageKey, jsonEncode(registry.toJsonList())),
+      prefs.setString(currentSessionStorageKey, currentSessionKey),
+    ]);
   }
 
   @override

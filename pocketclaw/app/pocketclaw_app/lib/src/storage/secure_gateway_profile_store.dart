@@ -26,7 +26,11 @@ final class SecureGatewayProfileStore implements GatewayProfileStore {
       return null;
     }
 
-    return GatewayProfile.fromJson(_decodeMap(raw));
+    try {
+      return GatewayProfile.fromJson(_decodeMap(raw));
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

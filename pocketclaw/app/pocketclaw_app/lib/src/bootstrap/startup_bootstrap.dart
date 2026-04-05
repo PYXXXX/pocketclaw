@@ -9,15 +9,21 @@ final class BootstrapTask {
   final BootstrapAction action;
 }
 
-enum BootstrapTaskStatus { completed, timedOut }
+enum BootstrapTaskStatus { completed, timedOut, failed }
 
 final class BootstrapTaskResult {
-  const BootstrapTaskResult({required this.label, required this.status});
+  const BootstrapTaskResult({
+    required this.label,
+    required this.status,
+    this.error,
+  });
 
   final String label;
   final BootstrapTaskStatus status;
+  final Object? error;
 
   bool get didTimeout => status == BootstrapTaskStatus.timedOut;
+  bool get didFail => status == BootstrapTaskStatus.failed;
 }
 
 final class SequentialBootstrapRunner {
@@ -44,6 +50,14 @@ final class SequentialBootstrapRunner {
           BootstrapTaskResult(
             label: task.label,
             status: BootstrapTaskStatus.timedOut,
+          ),
+        );
+      } catch (error) {
+        results.add(
+          BootstrapTaskResult(
+            label: task.label,
+            status: BootstrapTaskStatus.failed,
+            error: error,
           ),
         );
       }

@@ -19,6 +19,7 @@ final class PendingImageAttachment {
   Map<String, Object?> toGatewayAttachment() {
     return <String, Object?>{
       'type': 'image',
+      'name': name,
       'mimeType': mimeType,
       'content': base64Content,
     };

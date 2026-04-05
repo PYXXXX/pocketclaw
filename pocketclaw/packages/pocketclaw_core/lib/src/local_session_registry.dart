@@ -103,6 +103,10 @@ class LocalSessionRegistry {
       sessionKey: SessionKey.forClient(agentId: agentId, clientKey: clientKey),
       title: title,
     );
+    final existing = findBySessionKey(entry.sessionKey.value);
+    if (existing != null) {
+      return existing;
+    }
     _sessions.add(entry);
     return entry;
   }

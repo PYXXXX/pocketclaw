@@ -17,7 +17,9 @@ final class ChatMessage {
 
     String text = '';
     final content = json['content'];
-    if (content is List<Object?>) {
+    if (content is String) {
+      text = content;
+    } else if (content is List<Object?>) {
       final buffer = <String>[];
       for (final item in content) {
         if (item is! Map<String, Object?>) {

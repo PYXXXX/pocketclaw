@@ -19,10 +19,14 @@ final class SecureGatewayDeviceIdentityStore
       return null;
     }
 
-    final decoded = jsonDecode(raw);
-    return GatewayDeviceIdentity.fromJson(
-      Map<String, Object?>.from(decoded as Map),
-    );
+    try {
+      final decoded = jsonDecode(raw);
+      return GatewayDeviceIdentity.fromJson(
+        Map<String, Object?>.from(decoded as Map),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
